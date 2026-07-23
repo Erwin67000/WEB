@@ -74,8 +74,6 @@ export default function BoutiquePage() {
         </p>
         <p className="price-disclaimer">{PRICE_DISCLAIMER}</p>
         <p className="hint page-pad-x" style={{ paddingLeft: 0 }}>
-          Source :{' '}
-          <code className="mono-inline">{MATRICE_CATALOGUE_URL}</code>
         </p>
       </header>
 
