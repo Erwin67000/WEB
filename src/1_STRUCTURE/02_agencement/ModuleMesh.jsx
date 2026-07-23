@@ -299,10 +299,8 @@ export default function AgencementView({
   return (
     <>
       <group scale={[SCALE, SCALE, SCALE]}>
-        <group
-          position={[-dims.L / 2, 0, dims.W / 2]}
-          rotation={[-Math.PI / 2, 0, 0]}
-        >
+        {/* Origine fixe (0,0,0) — même repère que l’ossature */}
+        <group position={[0, 0, 0]} rotation={[-Math.PI / 2, 0, 0]}>
           <PanneauxMesh
             dims={dims}
             panneaux={panneaux}
@@ -312,7 +310,7 @@ export default function AgencementView({
         </group>
       </group>
 
-      <group position={[(-dims.L / 2) * SCALE, 0, (dims.W / 2) * SCALE]}>
+      <group position={[0, 0, 0]}>
         <ModulesMesh
           dims={dims}
           modules={modules}

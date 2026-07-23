@@ -33,30 +33,40 @@ export const TVA = 0.2
  */
 export const PRIX = {
   /** Ossature bois 40×40 */
-  ossatureForfait: 80,
+  ossatureForfait: 350,
   /** € HT / m de longueur cumulée 4×(L+W+H) */
-  ossatureParMetre: 12,
+  ossatureParMetre: 15,
 
   /** Forfait HT par panneau (fond, joue, dessus…) */
-  panneauForfait: 25,
+  panneauForfait: 30,
   /** € HT / m² de panneau */
-  panneauParM2: 45,
+  panneauParM2: 180,
 
   /** Tablette */
-  tabletteForfait: 15,
-  tabletteParM2: 30,
+  tabletteForfait: 30,
+  tabletteParM2: 180,
 
   /** Tiroir */
-  tiroirForfait: 45,
-  tiroirParM2: 40,
+  tiroirForfait: 80,
+  tiroirParM2: 60,
 
   /** Porte (module) */
-  porteForfait: 35,
-  porteParM2: 25,
+  porteForfait: 80,
+  porteParM2: 200,
 
   /** Produit numérique modèle 3D (HT) — bouton client */
   modele3d: 45,
 }
+
+/** Min et max des valeurs de Longueur (mm), Largeur (mm), Hauteur (mm) */
+export const LONGUEUR_MIN = 200
+export const LONGUEUR_MAX = 2200
+export const LARGEUR_MIN = 200
+export const LARGEUR_MAX = 2200
+export const HAUTEUR_MIN = 200
+export const HAUTEUR_MAX = 2200
+
+
 
 /** @deprecated utiliser PRIX.ossatureParMetre */
 export const PRIX_METRE_ARETE = PRIX.ossatureParMetre

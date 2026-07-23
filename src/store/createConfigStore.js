@@ -37,6 +37,7 @@ import {
   EPAISSEURS_PANNEAU,
   EPAISSEURS_PORTE,
 } from '../3_INPUT/master_input.js'
+import { clampDims } from '../3_INPUT/matrice_input.js'
 import {
   parseModulesSpec,
   parsePanneauxSpec,
@@ -264,7 +265,9 @@ export function createConfigStore(opts = {}) {
     updateDims: (id, dims) =>
       set((s) => ({
         units: s.units.map((u) =>
-          u.id === id ? { ...u, dims: { ...u.dims, ...dims } } : u,
+          u.id === id
+            ? { ...u, dims: { ...u.dims, ...clampDims(dims) } }
+            : u,
         ),
         dirty: true,
       })),
@@ -478,7 +481,7 @@ export function createConfigStore(opts = {}) {
 
       const unit = defaultUnit({
         label: row.name,
-        dims: { L: row.L_mm, W: row.W_mm, H: row.H_mm },
+        dims: clampDims({ L: row.L_mm, W: row.W_mm, H: row.H_mm }),
         // Bois local atelier (non choisi client) + finition surface catalogue
         woodFinish: BOIS_ATELIER_ID,
         ossatureFinish: resolveOssatureFinish(

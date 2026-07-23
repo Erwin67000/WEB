@@ -134,10 +134,12 @@ export default function OssatureView({
       rotation={[0, rotationZ, 0]}
       scale={[SCALE, SCALE, SCALE]}
     >
-      <group
-        position={[-dims.L / 2, 0, dims.W / 2]}
-        rotation={[-Math.PI / 2, 0, 0]}
-      >
+      {/*
+        Origine meuble fixée (0,0,0) : en changeant L ou W, le repère reste
+        en place et le volume s’allonge uniquement vers +X / +Y meuble.
+        (plus de centrage −L/2 / +W/2)
+      */}
+      <group position={[0, 0, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         {ossature.meshes.map((m) => (
           <AreteMesh
             key={m.id}

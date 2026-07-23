@@ -2,6 +2,7 @@
  * Matrice configuration — une colonne par paramètre, une ligne par config.
  * Sert de schéma + helpers pour unités / modules / devis.
  */
+import { clampDims } from '../../3_INPUT/matrice_input.js'
 
 /** Modules d’agencement interne (la porte façade = panneau "porte" dans PANNEAU_DEFS). */
 export const MODULE_KINDS = {
@@ -49,7 +50,7 @@ export function makeQuoteRef() {
 }
 
 export function defaultUnit(overrides = {}) {
-  return {
+  const unit = {
     id: uid('meuble'),
     label: 'Meuble 1',
     dims: { L: 600, W: 400, H: 900 },
@@ -74,6 +75,8 @@ export function defaultUnit(overrides = {}) {
     panneaux: [],
     ...overrides,
   }
+  if (unit.dims) unit.dims = clampDims({ L: 600, W: 400, H: 900, ...unit.dims })
+  return unit
 }
 
 export function defaultContact() {

@@ -80,8 +80,7 @@ export default function AccueilPage() {
           <span className="gold">comme signature</span>
         </h1>
         <p className="hero-lead">
-          Philae remplace le caisson mélaminé par une structure d&apos;arêtes en
-          bois massif — puissante, libre, précise.
+          Forme & Fonctions
         </p>
         <div className="hero-actions">
           <button

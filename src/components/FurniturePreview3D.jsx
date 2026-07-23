@@ -55,10 +55,7 @@ function FrozenUnit({ unit }) {
       />
       <group rotation={[0, (unit.rotationZ || 0) * (Math.PI / 180), 0]}>
         <group scale={[SCALE, SCALE, SCALE]}>
-          <group
-            position={[-dims.L / 2, 0, dims.W / 2]}
-            rotation={[-Math.PI / 2, 0, 0]}
-          >
+          <group position={[0, 0, 0]} rotation={[-Math.PI / 2, 0, 0]}>
             <PanneauxMesh
               dims={dims}
               panneaux={unit.panneaux || []}
@@ -66,7 +63,7 @@ function FrozenUnit({ unit }) {
             />
           </group>
         </group>
-        <group position={[(-dims.L / 2) * SCALE, 0, (dims.W / 2) * SCALE]}>
+        <group position={[0, 0, 0]}>
           <ModulesMesh
             dims={dims}
             modules={unit.modules || []}
@@ -80,7 +77,12 @@ function FrozenUnit({ unit }) {
 
 function PreviewScene({ unit, autoRotate = false }) {
   const maxDim = Math.max(unit.dims.L, unit.dims.W, unit.dims.H) * SCALE
-  const targetY = (unit.dims.H * SCALE) / 2
+  // Origine fixe au coin (0,0,0) → viser le centre du volume
+  const target = [
+    (unit.dims.L * SCALE) / 2,
+    (unit.dims.H * SCALE) / 2,
+    -(unit.dims.W * SCALE) / 2,
+  ]
 
   return (
     <>
@@ -112,7 +114,7 @@ function PreviewScene({ unit, autoRotate = false }) {
         minDistance={maxDim * 1.2}
         maxDistance={maxDim * 8}
         maxPolarAngle={Math.PI * 0.49}
-        target={[0, targetY * 0.6, 0]}
+        target={target}
         autoRotate={autoRotate}
         autoRotateSpeed={0.6}
       />
@@ -206,11 +208,12 @@ export default function FurniturePreview3D({
     [unitProp, catalogRow],
   )
 
+  // Vue par défaut tournée 180° autour de l’axe vertical (face avant)
   const cameraPos = useMemo(() => {
-    if (!unit) return [1.8, 1.2, 2.2]
+    if (!unit) return [-1.8, 1.2, -2.2]
     const m = Math.max(unit.dims.L, unit.dims.W, unit.dims.H) * SCALE
     const d = Math.max(1.4, m * 3.2)
-    return [d * 0.85, d * 0.55, d]
+    return [-d * 0.85, d * 0.55, -d]
   }, [unit])
 
   if (!unit) {

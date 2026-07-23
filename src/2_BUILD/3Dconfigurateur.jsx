@@ -14,6 +14,13 @@ import { useActiveConfigStore } from '../store/ConfigStoreContext.jsx'
 
 const SCALE = 0.001
 
+/**
+ * Caméra par défaut : tournée de 180° autour de l’axe vertical (Y Three = Z meuble).
+ * Avant [2.2, 1.6, 2.8] montrait l’arrière → on regarde depuis l’opposé.
+ */
+export const DEFAULT_CAMERA_POS = [-2.2, 1.6, -2.8]
+export const DEFAULT_CAMERA_TARGET = [0.35, 0.45, -0.25]
+
 function UnitGroup({ unit, selected, wireframe }) {
   const pos = [
     (unit.positionMm?.x || 0) * SCALE,
@@ -134,6 +141,16 @@ function SceneContent() {
   const wireframe = useActiveConfigStore((s) => s.wireframe)
   const env = ENVIRONMENTS[environmentId] || ENVIRONMENTS.none
 
+  const active = units.find((u) => u.id === activeUnitId) || units[0]
+  // Cible orbit = centre du volume (origine meuble fixée au coin 0,0,0)
+  const orbitTarget = active
+    ? [
+        ((active.positionMm?.x || 0) + active.dims.L / 2) * SCALE,
+        ((active.positionMm?.z || 0) + active.dims.H / 2) * SCALE,
+        -((active.positionMm?.y || 0) + active.dims.W / 2) * SCALE,
+      ]
+    : DEFAULT_CAMERA_TARGET
+
   return (
     <>
       <color attach="background" args={[env.bg || '#0a0a0a']} />
@@ -142,7 +159,7 @@ function SceneContent() {
       <SunLight enabled={sunEnabled} intensity={sunIntensity} />
       {/* Remplissage sans ombre si soleil off — géométrie toujours visible */}
       {!sunEnabled && (
-        <directionalLight position={[3, 5, 2]} intensity={0.45} color="#fff8ee" />
+        <directionalLight position={[-3, 5, -2]} intensity={0.45} color="#fff8ee" />
       )}
 
       {showGrid && !env.room && (
@@ -189,7 +206,7 @@ function SceneContent() {
         minDistance={0.5}
         maxDistance={20}
         maxPolarAngle={Math.PI * 0.49}
-        target={[0, 0.4, 0]}
+        target={orbitTarget}
       />
     </>
   )
@@ -204,15 +221,21 @@ export default function Configurateur3D() {
       <Canvas
         shadows
         dpr={[1, 1.5]}
-        camera={{ position: [2.2, 1.6, 2.8], fov: 45, near: 0.01, far: 100 }}
+        camera={{
+          position: DEFAULT_CAMERA_POS,
+          fov: 45,
+          near: 0.01,
+          far: 100,
+        }}
         gl={{
           antialias: true,
           toneMapping: THREE.ACESFilmicToneMapping,
           powerPreference: 'high-performance',
         }}
-        onCreated={({ gl }) => {
+        onCreated={({ gl, camera }) => {
           gl.shadowMap.enabled = true
           gl.shadowMap.type = THREE.PCFSoftShadowMap
+          camera.lookAt(...DEFAULT_CAMERA_TARGET)
         }}
       >
         <Suspense fallback={null}>
