@@ -28,32 +28,32 @@ const STRENGTHS = [
   {
     n: '01',
     title: 'Géométrie signature',
-    text: "Trois arêtes se rejoignent à chaque sommet. L'angle n'est pas décoratif : il porte la structure et l'identité Philae.",
+    text: "Les trois arêtes se rejoignent à chaque sommet. L\'angle porte la structure et l\'identité Philae.",
   },
   {
     n: '02',
     title: 'Bois massif',
-    text: "Fini le panneau seul comme ossature. Le cadre est en bois massif, durable, réparable, digne d'un objet d'architecture.",
+    text: "Le cadre est en bois massif. Robuste, durable, et précis.",
   },
   {
     n: '03',
-    title: 'Léger & robuste',
-    text: 'Moins de matière inutile, plus de rigidité par la géométrie. Un meuble plus facile à monter, déménager, réemployer.',
+    title: 'Léger & compact',
+    text: 'En remplaçant le caisson en panneau mélaminé, par une structure d\'arêtes, la taille des panneaux et le poids du meuble sont réduits.',
   },
   {
     n: '04',
     title: 'Montable / démontable',
-    text: "Le système d'assemblage vise la clarté : monter le cadre en quelques minutes, le démonter sans le détruire.",
+    text: "Le système d\'assemblage permet un montage de l\'ossature complète en 5 minutes, et peut être réversible.",
   },
   {
     n: '05',
     title: 'Aménagements libres',
-    text: "Tablettes, portes, tiroirs : vous composez l'intérieur. Le panneau n'est plus une obligation, c'est un choix.",
+    text: "Tablettes, portes, tiroirs : vous composez l'intérieur.",
   },
   {
     n: '06',
     title: 'Sur mesure réel',
-    text: "Dimensions, finitions, ensembles multi-meubles, scènes d'ambiance. Du configurateur à l'atelier, une seule vérité — la matrice.",
+    text: "Dimensions, finitions, ensembles multi-meubles, scènes d'ambiance.",
   },
 ]
 
@@ -81,8 +81,7 @@ export default function AccueilPage() {
         </h1>
         <p className="hero-lead">
           Philae remplace le caisson mélaminé par une structure d&apos;arêtes en
-          bois massif — puissante, libre, précise. Noir, or, ivoire :
-          l&apos;ambiance d&apos;un atelier d&apos;excellence.
+          bois massif — puissante, libre, précise.
         </p>
         <div className="hero-actions">
           <button
