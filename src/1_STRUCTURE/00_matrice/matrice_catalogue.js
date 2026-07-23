@@ -183,8 +183,17 @@ export function parseMatriceCatalogue(text) {
       L_mm: Number(obj.L_mm) || 0,
       W_mm: Number(obj.W_mm) || 0,
       H_mm: Number(obj.H_mm) || 0,
+      /**
+       * texture / ossature_finish = finition client (brut, vernis_clair…).
+       * wood_finish = essence atelier (souvent chene) — non choisie par le client.
+       */
       wood_finish: (obj.wood_finish || 'chene').toLowerCase(),
-      texture: obj.texture || '',
+      texture: (obj.texture || obj.ossature_finish || '').toLowerCase(),
+      ossature_finish: (
+        obj.ossature_finish ||
+        obj.texture ||
+        ''
+      ).toLowerCase(),
       /** Spec brute CSV (string) */
       modules_spec: modulesSpec,
       /** Modules normalisés pour le store */

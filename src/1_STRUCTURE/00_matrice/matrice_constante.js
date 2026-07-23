@@ -74,7 +74,13 @@ export const ARETE_EDGE_WIDTH = 2.4
  */
 export const BOUTIQUE_CHECKOUT_URL = ''
 
-/** Essence / teinte bois (couleur ossature de base). */
+/**
+ * Essence atelier (non choisie par le client) — teinte de base du bois local.
+ * Le client choisit uniquement la finition de surface (FINITIONS_OSSATURE_CLIENT).
+ */
+export const BOIS_ATELIER_ID = 'chene'
+
+/** Essence / teinte bois (couleur ossature de base — usage atelier / rétrocompat). */
 export const FINITIONS = {
   chene: { id: 'chene', label: 'Chêne', color: '#c4a574', edge: '#9a7b4f' },
   hetre: { id: 'hetre', label: 'Hêtre', color: '#d4b896', edge: '#b8956a' },
@@ -188,6 +194,39 @@ export const PANNEAU_COULEURS = {
 
 export const DEFAULT_PANNEAU_COULEUR = 'gris_cendre'
 export const DEFAULT_FINITION_OSSATURE = 'brut'
+
+/**
+ * Résout une finition ossature client depuis une valeur catalogue
+ * (texture, wood_finish, ossature_finish, alias libres).
+ * Valeurs valides client : brut | vernis_clair | vernis_fonce | huile
+ */
+export function resolveOssatureFinish(raw) {
+  const s = String(raw || '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '_')
+    .replace(/-/g, '_')
+  if (!s) return DEFAULT_FINITION_OSSATURE
+  if (FINITIONS_OSSATURE[s]) return s
+  const aliases = {
+    vernis: 'vernis_clair',
+    clair: 'vernis_clair',
+    fonce: 'vernis_fonce',
+    foncé: 'vernis_fonce',
+    huile_naturelle: 'huile',
+    oil: 'huile',
+    raw: 'brut',
+    bois_brut: 'brut',
+    chene_clair: 'vernis_clair',
+    hetre_clair: 'vernis_clair',
+    sapin_clair: 'brut',
+    noyer_fonce: 'vernis_fonce',
+  }
+  if (aliases[s] && FINITIONS_OSSATURE[aliases[s]]) return aliases[s]
+  // Anciennes essences catalogue → finition par défaut
+  if (FINITIONS[s]) return DEFAULT_FINITION_OSSATURE
+  return DEFAULT_FINITION_OSSATURE
+}
 
 export default {
   LARGEUR_ARETE,

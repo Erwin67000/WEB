@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { FINITIONS } from '../1_STRUCTURE/00_matrice/matrice_constante.js'
+import {
+  FINITIONS_OSSATURE,
+  resolveOssatureFinish,
+} from '../1_STRUCTURE/00_matrice/matrice_constante.js'
 import { MODULE_KINDS } from '../1_STRUCTURE/00_matrice/matrice_configuration.js'
 import { formatTag, getCatalogItem } from '../data/catalog.js'
 import FurniturePreview3D from '../components/FurniturePreview3D.jsx'
@@ -52,7 +55,10 @@ export default function ArticlePage() {
     )
   }
 
-  const fin = FINITIONS[row.wood_finish]
+  const finishId = resolveOssatureFinish(
+    row.ossature_finish || row.texture || row.wood_finish,
+  )
+  const fin = FINITIONS_OSSATURE[finishId]
   const moduleLabels = (row.modules || [])
     .map((m) => MODULE_KINDS[m.kind]?.label || m.kind)
     .join(', ')

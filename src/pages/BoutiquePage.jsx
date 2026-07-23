@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { FINITIONS } from '../1_STRUCTURE/00_matrice/matrice_constante.js'
+import {
+  FINITIONS_OSSATURE,
+  resolveOssatureFinish,
+} from '../1_STRUCTURE/00_matrice/matrice_constante.js'
 import {
   formatTag,
   loadCatalog,
@@ -128,7 +131,10 @@ export default function BoutiquePage() {
 
       <div className="product-grid page-pad-x">
         {visible.map((r) => {
-          const fin = FINITIONS[r.wood_finish]
+          const finishId = resolveOssatureFinish(
+            r.ossature_finish || r.texture || r.wood_finish,
+          )
+          const fin = FINITIONS_OSSATURE[finishId]
           return (
             <article
               key={r.id}

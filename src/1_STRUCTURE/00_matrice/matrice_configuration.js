@@ -55,9 +55,12 @@ export function defaultUnit(overrides = {}) {
     dims: { L: 600, W: 400, H: 900 },
     positionMm: { x: 0, y: 0, z: 0 },
     rotationZ: 0,
-    /** Essence bois (teinte) */
+    /**
+     * Essence atelier (bois local) — non exposée au client.
+     * Teinte de base pour le rendu 3D uniquement.
+     */
     woodFinish: 'chene',
-    /** Traitement de surface ossature : brut | vernis_clair | … */
+    /** Traitement de surface ossature client : brut | vernis_clair | vernis_fonce | huile */
     ossatureFinish: 'brut',
     /** Texte libre finition ossature → export matrice */
     ossatureFinitionNote: '',

@@ -21,6 +21,8 @@ import {
   EPAISSEUR_PANNEAU,
   EPAISSEUR_PORTE,
   BOUTIQUE_CHECKOUT_URL,
+  BOIS_ATELIER_ID,
+  resolveOssatureFinish,
 } from '../1_STRUCTURE/00_matrice/matrice_constante.js'
 import {
   captureViewportScreenshot,
@@ -28,6 +30,7 @@ import {
   downloadBlob,
   openMailtoDevis,
 } from './devisExport.js'
+import { downloadFilledDevis } from '../2_BUILD/document/fillDevisTemplate.js'
 import {
   downloadMasterInputCsv,
   downloadMasterInputJson,
@@ -476,7 +479,11 @@ export function createConfigStore(opts = {}) {
       const unit = defaultUnit({
         label: row.name,
         dims: { L: row.L_mm, W: row.W_mm, H: row.H_mm },
-        woodFinish: row.wood_finish || 'chene',
+        // Bois local atelier (non choisi client) + finition surface catalogue
+        woodFinish: BOIS_ATELIER_ID,
+        ossatureFinish: resolveOssatureFinish(
+          row.ossature_finish || row.texture || row.wood_finish,
+        ),
         modules,
         panneaux,
         positionMm: { x: 0, y: 0, z: 0 },
@@ -611,15 +618,27 @@ export function createConfigStore(opts = {}) {
         )
       }
 
+      // Publipostage Word (template devis.docx)
+      let docxOk = false
+      try {
+        await downloadFilledDevis(s, pricing)
+        docxOk = true
+      } catch (err) {
+        console.warn('[devis] template Word non généré :', err)
+      }
+
       openMailtoDevis({
         quoteRef: s.quoteRef,
         contact: s.contact,
         notes: s.notes,
         pricing,
         subjectPrefix: 'Demande de devis',
+        extraLines: docxOk
+          ? ['Fichier Word devis téléchargé — à joindre au mail.']
+          : ['(Word devis non généré — voir console)'],
       })
 
-      return { ...payload, emailed: true }
+      return { ...payload, emailed: true, docx: docxOk }
     },
 
     /** Demande modèle 3D à 45 € HT (forfait fixe). */

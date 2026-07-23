@@ -10,6 +10,8 @@ import {
 import {
   EPAISSEUR_PANNEAU,
   EPAISSEUR_PORTE,
+  BOIS_ATELIER_ID,
+  resolveOssatureFinish,
 } from '../1_STRUCTURE/00_matrice/matrice_constante.js'
 import { ConfigStoreProvider } from '../store/ConfigStoreContext.jsx'
 import { createConfigStore } from '../store/createConfigStore.js'
@@ -45,7 +47,8 @@ function FrozenUnit({ unit }) {
     <group>
       <OssatureView
         dims={dims}
-        woodFinish={unit.woodFinish}
+        woodFinish={unit.woodFinish || BOIS_ATELIER_ID}
+        ossatureFinish={unit.ossatureFinish || 'brut'}
         wireframe={false}
         rotationZ={(unit.rotationZ || 0) * (Math.PI / 180)}
         selected={false}
@@ -135,7 +138,10 @@ export function unitFromCatalogRow(row) {
     id: row.id,
     label: row.name,
     dims: { L: row.L_mm, W: row.W_mm, H: row.H_mm },
-    woodFinish: row.wood_finish,
+    woodFinish: BOIS_ATELIER_ID,
+    ossatureFinish: resolveOssatureFinish(
+      row.ossature_finish || row.texture || row.wood_finish,
+    ),
     modules: modules.map((m, i) => ({
       id: m.id || `preview-${row.id}-${i}`,
       kind: m.kind,
