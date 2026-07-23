@@ -5,6 +5,7 @@ table-basse-grande,Table basse grande,table,"#table #salon #basique",1200,1500,4
 etagere-grande,Étagère grande,etagere,"#etagere #salon #basique #tablettes",600,400,1600,chene,brut,shelf:3,,871,45,25,salon,Version basique — ossature ouverte + 3 tablettes,true,true,30,false,PHL-ETA-600
 etagere-moyenne,Étagère moyenne,etagere,"#etagere #salon #basique #tablettes",400,300,1600,chene,brut,shelf:3,,771,45,25,salon,Version basique — ossature ouverte + 3 tablettes,false,true,35,false,PHL-ETA-400
 bibliotheque-300,Bibliothèque 300,bibliotheque,"#bibliotheque #salon #basique #tablettes",300,300,1200,chene,brut,shelf:4,,771,45,25,salon,Version basique — colonne + 4 tablettes,true,true,40,false,PHL-BIB-300
+servante-400,Servante 400,servante,"#servante #atelier #basique",400,400,800,chene,brut,shelf:2|drawer:1,fond|dessus_exterieur|dessous,1023,45,25,atelier,Version basique — ossature + 2 tablettes + 1 tiroir,true,true,45,false,PHL-SER-400
 bureau-500,Bureau 500,bureau,"#bureau #travail #basique",500,350,800,chene,brut,shelf:1,dessus_exterieur,686,45,25,salon,Version basique — plateau supérieur + 1 tablette,true,true,50,false,PHL-BUR-500
 banc-petit,Banc petit,banc,"#banc #entree #basique",900,350,450,chene,brut,,dessus_exterieur|dessous,750,45,25,salon,Version basique — assise + socle,true,true,60,false,PHL-BAN-900
 banc-moyen,Banc moyen,banc,"#banc #salon #basique",1200,400,450,chene,brut,,dessus_exterieur|dessous,847,45,25,salon,Version basique — assise + socle,false,true,65,false,PHL-BAN-1200
