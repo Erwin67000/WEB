@@ -1,0 +1,8 @@
+id,name,category,tags,L_mm,W_mm,H_mm,wood_finish,texture,modules,price_furniture_ttc_eur,price_model3d_ht_eur,price_json_ht_eur,scene,short_description,featured,active,sort_order,docs_ready,sku
+buffet-chene-120,Buffet chêne 120,buffet,"#buffet #salon",1200,450,750,chene,chene_clair,drawer:2,890,49,25,salon,Buffet bas 2 tiroirs signature Philae,true,true,10,true,PHL-BUF-120-CH
+colonne-noyer-50,Colonne noyer 50,colonne,"#colonne #salon",500,400,1800,noyer,noyer_fonce,door:1|shelf:2,1240,49,25,salon,Colonne haute porte + tablettes,true,true,20,true,PHL-COL-50-NO
+cube-brut-60,Cube brut 60,module,"#module #atelier",600,600,600,brut,bois_brut,,420,49,25,atelier,Module cube ossature pure,false,true,30,true,PHL-CUB-60-BR
+console-frene-140,Console frêne 140,console,"#console #entree",1400,350,850,frene,frene_naturel,shelf:1|panel_external:1,980,49,25,couloir,Console étroite pour entrée,true,true,40,true,PHL-CON-140-FR
+armoire-chambre-100,Armoire chambre 100,armoire,"#armoire #chambre",1000,550,2000,chene,chene_clair,door:2|shelf:3|panel_functional:1,1680,49,25,chambre,Armoire 2 portes,true,true,50,true,PHL-ARM-100-CH
+tablette-murale-80,Étagère murale 80,etagere,"#etagere #salon",800,250,400,frene,frene_naturel,shelf:2,310,49,25,salon,Petit volume ouvert,false,true,60,true,PHL-ETA-80-FR
+tablette-murale-120,Étagère murale 120,etagere,"#etagere #salon",1200,250,400,frene,frene_naturel,shelf:2,310,49,25,salon,Petit volume ouvert,false,true,60,true,PHL-ETA-80-FR

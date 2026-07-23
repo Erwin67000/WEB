@@ -1,0 +1,14 @@
+# Cloudflare Workers — assets statiques (Vite dist/)
+# Le nom doit correspondre au projet Cloudflare (ex. "web").
+# À la connexion du repo, Cloudflare peut surcharger le nom si besoin.
+
+name = "web"
+compatibility_date = "2025-03-01"
+workers_dev = true
+
+# Site Vite SPA : tout le build est dans dist/
+[assets]
+directory = "./dist"
+# Routes React (/boutique, /configurateur, …) → index.html
+not_found_handling = "single-page-application"
+html_handling = "auto-trailing-slash"
