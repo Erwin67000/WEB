@@ -3,6 +3,9 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "scripts": {
     "dev": "vite",
     "sync:catalogue": "node scripts/sync-catalogue.mjs",
@@ -30,3 +33,4 @@
     "wrangler": "^4.0.0"
   }
 }
+
