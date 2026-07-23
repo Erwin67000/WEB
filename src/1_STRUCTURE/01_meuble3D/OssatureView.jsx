@@ -1,16 +1,24 @@
-import { useMemo } from 'react'
+import { useMemo, useLayoutEffect, useEffect, useRef } from 'react'
+import { useThree, extend } from '@react-three/fiber'
 import * as THREE from 'three'
+import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js'
+import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeometry.js'
+import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js'
 import { buildOssature } from './ossature.js'
 import {
   FINITIONS,
   FINITIONS_OSSATURE,
   DEFAULT_FINITION_OSSATURE,
+  ARETE_EDGE_COLOR,
+  ARETE_EDGE_WIDTH,
 } from '../00_matrice/matrice_constante.js'
+
+extend({ LineSegments2, LineSegmentsGeometry, LineMaterial })
 
 /**
  * Rendu des 12 arêtes d'un meuble Philae.
  * Coordonnées en mm → scale 0.001 vers mètres Three.js.
- * Faces : DoubleSide comme avant (pas d’inversion de winding).
+ * Lignes d’arêtes : noir brillant, légèrement épaissies (LineSegments2).
  */
 const SCALE = 0.001
 
@@ -21,17 +29,35 @@ function shadeHex(hex, factor) {
 }
 
 function AreteMesh({ mesh, color, edgeColor, wireframe, roughness, metalness }) {
-  const { geometry, edges } = useMemo(() => {
+  const { size } = useThree()
+  const lineMatRef = useRef(null)
+
+  const geometry = useMemo(() => {
     const geo = new THREE.BufferGeometry()
     geo.setAttribute('position', new THREE.BufferAttribute(mesh.positions, 3))
     geo.setIndex(new THREE.BufferAttribute(mesh.indices, 1))
     geo.computeVertexNormals()
-
-    const edgeGeo = new THREE.BufferGeometry()
-    edgeGeo.setAttribute('position', new THREE.BufferAttribute(mesh.wire, 3))
-
-    return { geometry: geo, edges: edgeGeo }
+    return geo
   }, [mesh])
+
+  const edgeGeometry = useMemo(() => {
+    const geo = new LineSegmentsGeometry()
+    geo.setPositions(Array.from(mesh.wire))
+    return geo
+  }, [mesh])
+
+  useLayoutEffect(() => {
+    if (lineMatRef.current) {
+      lineMatRef.current.resolution.set(size.width, size.height)
+    }
+  }, [size.width, size.height])
+
+  useEffect(() => {
+    return () => {
+      geometry.dispose()
+      edgeGeometry.dispose()
+    }
+  }, [geometry, edgeGeometry])
 
   return (
     <group>
@@ -44,9 +70,16 @@ function AreteMesh({ mesh, color, edgeColor, wireframe, roughness, metalness }) 
           wireframe={wireframe}
         />
       </mesh>
-      <lineSegments geometry={edges}>
-        <lineBasicMaterial color={edgeColor} linewidth={1} />
-      </lineSegments>
+      <lineSegments2 geometry={edgeGeometry}>
+        <lineMaterial
+          ref={lineMatRef}
+          color={edgeColor}
+          linewidth={ARETE_EDGE_WIDTH}
+          transparent={false}
+          depthTest
+          resolution={[size.width, size.height]}
+        />
+      </lineSegments2>
     </group>
   )
 }
@@ -72,9 +105,9 @@ export default function OssatureView({
   const color = selected
     ? '#d4b896'
     : shadeHex(finish.color, surf.shade ?? 1)
-  const edgeColor = selected ? '#2d6a4f' : finish.edge
+  // Lignes d’arêtes : noir brillant (sélection : vert discret)
+  const edgeColor = selected ? '#1b4332' : ARETE_EDGE_COLOR
 
-  // Three.js: Y up — on mappe Z meuble → Y scene, Y meuble → -Z scene
   return (
     <group
       position={position}
@@ -93,7 +126,7 @@ export default function OssatureView({
             edgeColor={edgeColor}
             wireframe={wireframe}
             roughness={surf.roughness}
-            metalness={surf.metalness}
+            metalness={Math.max(surf.metalness ?? 0.05, 0.12)}
           />
         ))}
         {selected && (

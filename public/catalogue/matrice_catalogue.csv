@@ -11,5 +11,4 @@ colonne-60,Colonne 60,colonne,"#colonne #salon #hetre #tablettes",600,400,1800,h
 chevet-45,Chevet 45,chevet,"#chevet #chambre #sapin #tiroir",450,350,550,sapin,sapin_clair,drawer:1,fond|joue1|joue2|dessus_exterieur|dessous,180,49,25,chambre,Chevet compact un tiroir,false,true,70,false,PHL-CHE-45-SA
 bibliotheque-100,Bibliothèque 100,bibliotheque,"#bibliotheque #salon #noyer #tablettes",1000,400,2000,noyer,noyer_fonce,shelf:4,fond|joue1|joue2|dessus_exterieur|dessous,520,49,25,salon,Bibliothèque haute quatre tablettes,true,true,80,false,PHL-BIB-100-NO
 cube-60,Cube 60,module,"#module #atelier #brut",600,600,600,brut,bois_brut,,,220,49,25,atelier,Module cube ossature pure — base atelier,false,true,90,false,PHL-CUB-60-BR
-cube-100,Cube 100,module,"#module #atelier #brut",1000,1000,1000,brut,bois_brut,,,320,49,25,atelier,Module cube ossature pure — base atelier,false,true,90,false,PHL-CUB-100-BR
-
+cube-100,Cube 100,module,"#module #atelier #brut",1000,1000,1000,brut,bois_brut,,,220,49,25,atelier,Module cube ossature pure — base atelier,false,true,90,false,PHL-CUB-100-BR

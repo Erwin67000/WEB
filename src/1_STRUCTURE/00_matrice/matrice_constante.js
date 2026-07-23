@@ -22,11 +22,57 @@ export const CO2E_MELAMINE = 0.85 // kg CO₂e / kg
 
 export const TVA = 0.2
 
-/** Prix indicatif HT par mètre d'arête 40×40 (bois tendre). */
-export const PRIX_METRE_ARETE = 12
+/**
+ * Matrice de prix HT (indicatif atelier) — à ajuster ici.
+ *
+ * Ossature : forfait + variable × longueur cumulée des 12 arêtes
+ *   longueur_m = 4 × (L + W + H) / 1000   (L,W,H en mm)
+ *
+ * Panneau : forfait par panneau + variable × surface (m²)
+ * Tablette / tiroir : forfait + variable × surface (m²)
+ */
+export const PRIX = {
+  /** Ossature bois 40×40 */
+  ossatureForfait: 80,
+  /** € HT / m de longueur cumulée 4×(L+W+H) */
+  ossatureParMetre: 12,
 
-/** Prix indicatif HT par m² de panneau. */
-export const PRIX_M2_PANNEAU = 45
+  /** Forfait HT par panneau (fond, joue, dessus…) */
+  panneauForfait: 25,
+  /** € HT / m² de panneau */
+  panneauParM2: 45,
+
+  /** Tablette */
+  tabletteForfait: 15,
+  tabletteParM2: 30,
+
+  /** Tiroir */
+  tiroirForfait: 45,
+  tiroirParM2: 40,
+
+  /** Porte (module) */
+  porteForfait: 35,
+  porteParM2: 25,
+
+  /** Produit numérique modèle 3D (HT) — bouton client */
+  modele3d: 45,
+}
+
+/** @deprecated utiliser PRIX.ossatureParMetre */
+export const PRIX_METRE_ARETE = PRIX.ossatureParMetre
+/** @deprecated utiliser PRIX.panneauParM2 */
+export const PRIX_M2_PANNEAU = PRIX.panneauParM2
+
+/** Couleur des lignes d’arêtes ossature (noir brillant). */
+export const ARETE_EDGE_COLOR = '#0a0a0a'
+/** Épaisseur des lignes d’arêtes en pixels (LineMaterial / LineSegments2). */
+export const ARETE_EDGE_WIDTH = 2.4
+
+/**
+ * URL boutique / checkout (à configurer plus tard).
+ * Vide = bouton Acheter affiche un message d’attente.
+ */
+export const BOUTIQUE_CHECKOUT_URL = ''
 
 /** Essence / teinte bois (couleur ossature de base). */
 export const FINITIONS = {

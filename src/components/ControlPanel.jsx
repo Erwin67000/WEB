@@ -98,9 +98,6 @@ export default function ControlPanel() {
   const sunEnabled = useActiveConfigStore((s) => s.sunEnabled)
   const sunIntensity = useActiveConfigStore((s) => s.sunIntensity)
   const wireframe = useActiveConfigStore((s) => s.wireframe)
-  const showPanneauRectangles = useActiveConfigStore((s) => s.showPanneauRectangles)
-  const showPanneauRectFaces = useActiveConfigStore((s) => s.showPanneauRectFaces)
-  const showPanneauSolid = useActiveConfigStore((s) => s.showPanneauSolid)
   const epaisseurPanneau = useActiveConfigStore((s) => s.epaisseurPanneau)
   const epaisseurPorte = useActiveConfigStore((s) => s.epaisseurPorte)
   const notes = useActiveConfigStore((s) => s.notes)
@@ -123,22 +120,13 @@ export default function ControlPanel() {
   const setSun = useActiveConfigStore((s) => s.setSun)
   const setSunIntensity = useActiveConfigStore((s) => s.setSunIntensity)
   const setWireframe = useActiveConfigStore((s) => s.setWireframe)
-  const setShowPanneauRectangles = useActiveConfigStore(
-    (s) => s.setShowPanneauRectangles,
-  )
-  const setShowPanneauRectFaces = useActiveConfigStore(
-    (s) => s.setShowPanneauRectFaces,
-  )
-  const setShowPanneauSolid = useActiveConfigStore((s) => s.setShowPanneauSolid)
   const setEpaisseurPanneau = useActiveConfigStore((s) => s.setEpaisseurPanneau)
   const setEpaisseurPorte = useActiveConfigStore((s) => s.setEpaisseurPorte)
   const setNotes = useActiveConfigStore((s) => s.setNotes)
   const setContact = useActiveConfigStore((s) => s.setContact)
-  const downloadJSON = useActiveConfigStore((s) => s.downloadJSON)
-  const downloadMasterCsv = useActiveConfigStore((s) => s.downloadMasterCsv)
   const requestDevis = useActiveConfigStore((s) => s.requestDevis)
-  const requestCNC = useActiveConfigStore((s) => s.requestCNC)
-  const addToCart = useActiveConfigStore((s) => s.addToCart)
+  const requestModele3D = useActiveConfigStore((s) => s.requestModele3D)
+  const requestAcheter = useActiveConfigStore((s) => s.requestAcheter)
   const refreshQuoteRef = useActiveConfigStore((s) => s.refreshQuoteRef)
 
   const storeApi = useActiveConfigStoreApi()
@@ -159,12 +147,13 @@ export default function ControlPanel() {
   )
 
   const [flash, setFlash] = useState('')
+  const [mobileOpen, setMobileOpen] = useState(false)
   const [openSections, setOpenSections] = useState({
     meuble: true,
     dims: true,
     modules: true,
     panneaux: true,
-    scene: true,
+    scene: false,
     contact: false,
     devis: true,
   })
@@ -176,11 +165,23 @@ export default function ControlPanel() {
 
   const notify = (msg) => {
     setFlash(msg)
-    setTimeout(() => setFlash(''), 2800)
+    setTimeout(() => setFlash(''), 3200)
   }
 
   return (
-    <aside className="control-panel">
+    <aside className={`control-panel${mobileOpen ? ' mobile-open' : ''}`}>
+      <button
+        type="button"
+        className="panel-mobile-toggle"
+        onClick={() => setMobileOpen((o) => !o)}
+        aria-expanded={mobileOpen}
+      >
+        <span className="panel-mobile-handle" />
+        <span>
+          {mobileOpen ? 'Masquer les options' : 'Options & devis'}
+        </span>
+        <span className="chev">{mobileOpen ? '▾' : '▴'}</span>
+      </button>
       <div className="panel-scroll">
         {/* Meubles */}
         <section className="panel-section">
@@ -453,35 +454,6 @@ export default function ControlPanel() {
                 })}
               </div>
 
-              <p className="muted" style={{ margin: '0.65rem 0 0.35rem' }}>
-                Panneaux — 4 rectangles chacun (base / décalé / tolérance / arrière)
-              </p>
-              <label className="check-item">
-                <input
-                  type="checkbox"
-                  checked={showPanneauRectangles}
-                  onChange={(e) => setShowPanneauRectangles(e.target.checked)}
-                />
-                Rectangles (base / décalé / tolérance / arrière)
-              </label>
-              <label className="check-item">
-                <input
-                  type="checkbox"
-                  checked={showPanneauRectFaces}
-                  onChange={(e) => setShowPanneauRectFaces(e.target.checked)}
-                  disabled={!showPanneauRectangles}
-                />
-                Faces semi-transparentes
-              </label>
-              <label className="check-item">
-                <input
-                  type="checkbox"
-                  checked={showPanneauSolid}
-                  onChange={(e) => setShowPanneauSolid(e.target.checked)}
-                />
-                Solide 3D panneau (par-dessus)
-              </label>
-
               <p className="muted" style={{ margin: '0.5rem 0 0.25rem' }}>
                 Épaisseurs (mm)
               </p>
@@ -512,15 +484,8 @@ export default function ControlPanel() {
                 </select>
               </label>
 
-              <div className="muted" style={{ fontSize: '0.72rem', lineHeight: 1.45 }}>
-                <span style={{ color: '#4cc9f0' }}>■</span> base &nbsp;
-                <span style={{ color: '#f72585' }}>■</span> décalé &nbsp;
-                <span style={{ color: '#ffd60a' }}>■</span> tolérance &nbsp;
-                <span style={{ color: '#80ed99' }}>■</span> arrière
-              </div>
-
               <p className="muted" style={{ margin: '0.65rem 0 0.3rem' }}>
-                Panneaux (toggle true/false — aucun au départ)
+                Panneaux (aucun au départ)
               </p>
               <div className="check-grid">
                 {Object.entries(PANNEAU_LABELS).map(([id, label]) => {
@@ -721,61 +686,49 @@ export default function ControlPanel() {
                   </p>
                 </div>
               )}
-              <div className="row-actions col">
+              <div className="row-actions col client-actions">
                 <button
                   type="button"
                   className="btn primary"
-                  onClick={() => {
-                    requestDevis()
-                    notify('Demande de devis exportée')
+                  onClick={async () => {
+                    const result = await requestDevis()
+                    notify(
+                      result?.emailed
+                        ? 'Devis préparé — client mail ouvert'
+                        : 'Devis téléchargé (HTML + photo)',
+                    )
                   }}
                 >
-                  Demander un devis
-                </button>
-                <button
-                  type="button"
-                  className="btn"
-                  onClick={() => {
-                    downloadJSON()
-                    notify('Configuration JSON téléchargée')
-                  }}
-                >
-                  Export JSON
+                  Devis ({pricing.ttc.toFixed(0)} € TTC)
                 </button>
                 <button
                   type="button"
                   className="btn primary"
-                  onClick={() => {
-                    downloadMasterCsv()
-                    notify('master_input CSV exporté')
+                  onClick={async () => {
+                    await requestModele3D()
+                    notify('Demande modèle 3D (45 €) préparée')
                   }}
                 >
-                  Export master_input CSV
+                  Modèle 3D (45 €)
                 </button>
                 <button
                   type="button"
                   className="btn"
                   onClick={() => {
-                    requestCNC('Demande CNC depuis configurateur')
-                    notify('Demande CNC exportée')
+                    const result = requestAcheter()
+                    notify(
+                      result?.url
+                        ? 'Redirection boutique…'
+                        : 'Achat en ligne : bientôt disponible',
+                    )
                   }}
                 >
-                  Demande CNC
-                </button>
-                <button
-                  type="button"
-                  className="btn"
-                  onClick={() => {
-                    addToCart()
-                    notify('Ajouté au panier')
-                  }}
-                >
-                  Ajouter au panier
+                  Acheter
                 </button>
               </div>
               <p className="legal-hint">
-                Prix indicatifs, merci de nous transmettre votre demande de configuration pour analyse.
-                Contact : contact@philae.design
+                Prix indicatifs. Le devis résume meubles, dimensions, aménagements
+                et panneaux. Contact : contact@philae.design
               </p>
             </div>
           )}

@@ -8,6 +8,7 @@ import {
   EPAISSEUR_PORTE,
   TOLERANCE,
   DECALAGE_PANNEAU,
+  PRIX,
 } from '../00_matrice/matrice_constante.js'
 import { uid } from '../00_matrice/matrice_configuration.js'
 import { buildGeometrie } from '../00_matrice/matrice_geometrie.js'
@@ -343,10 +344,63 @@ export function moduleLayout(mod, { L, W, H }, moduleList = []) {
   }
 }
 
+/**
+ * Prix HT d’un module d’aménagement (forfait + variable surface).
+ * Tablette : surface L×W ; tiroir / porte : surface façade L×H.
+ */
 export function modulePriceHT(mod, dims) {
-  const area = (dims.L * dims.H) / 1e6
-  if (mod.kind === 'drawer') return 45 + area * 20
-  if (mod.kind === 'door') return 35 + area * 15
-  if (mod.kind === 'shelf') return 12 + (dims.L * dims.W) / 1e6 * 30
-  return 10
+  // Import local pour éviter cycle si matrice importe agencement un jour
+  // Constantes lues depuis matrice_constante via lazy require pattern inline
+  return modulePriceBreakdown(mod, dims).total
+}
+
+/** Détail ligne devis pour un module. */
+export function modulePriceBreakdown(mod, dims) {
+  const shelfArea = (dims.L * dims.W) / 1e6
+  const faceArea = (dims.L * dims.H) / 1e6
+
+  if (mod.kind === 'shelf') {
+    const forfait = PRIX.tabletteForfait
+    const variable = shelfArea * PRIX.tabletteParM2
+    return {
+      kind: 'shelf',
+      label: 'Tablette',
+      forfait,
+      surfaceM2: shelfArea,
+      variable,
+      total: forfait + variable,
+    }
+  }
+  if (mod.kind === 'drawer') {
+    const forfait = PRIX.tiroirForfait
+    const variable = faceArea * PRIX.tiroirParM2
+    return {
+      kind: 'drawer',
+      label: 'Tiroir',
+      forfait,
+      surfaceM2: faceArea,
+      variable,
+      total: forfait + variable,
+    }
+  }
+  if (mod.kind === 'door') {
+    const forfait = PRIX.porteForfait
+    const variable = faceArea * PRIX.porteParM2
+    return {
+      kind: 'door',
+      label: 'Porte',
+      forfait,
+      surfaceM2: faceArea,
+      variable,
+      total: forfait + variable,
+    }
+  }
+  return {
+    kind: mod.kind,
+    label: mod.kind,
+    forfait: 10,
+    surfaceM2: 0,
+    variable: 0,
+    total: 10,
+  }
 }

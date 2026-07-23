@@ -85,7 +85,7 @@ function PanneauSolidMesh({ panneau, color, edgeColor }) {
         />
       </mesh>
       <lineSegments geometry={edges}>
-        <lineBasicMaterial color={edgeColor} />
+        <lineBasicMaterial color="#0a0a0a" linewidth={2} />
       </lineSegments>
     </group>
   )
