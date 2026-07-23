@@ -1,4 +1,4 @@
-import { useMemo, useLayoutEffect, useEffect, useRef } from 'react'
+import { useMemo, useEffect, useLayoutEffect, useRef } from 'react'
 import { useThree, extend } from '@react-three/fiber'
 import * as THREE from 'three'
 import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js'
@@ -18,7 +18,7 @@ extend({ LineSegments2, LineSegmentsGeometry, LineMaterial })
 /**
  * Rendu des 12 arêtes d'un meuble Philae.
  * Coordonnées en mm → scale 0.001 vers mètres Three.js.
- * Lignes d’arêtes : noir brillant, légèrement épaissies (LineSegments2).
+ * Contours : noir brillant (toujours), un peu épaissis (LineSegments2).
  */
 const SCALE = 0.001
 
@@ -28,8 +28,8 @@ function shadeHex(hex, factor) {
   return `#${c.getHexString()}`
 }
 
-function AreteMesh({ mesh, color, edgeColor, wireframe, roughness, metalness }) {
-  const { size } = useThree()
+function AreteMesh({ mesh, color, wireframe, roughness, metalness }) {
+  const { size, gl } = useThree()
   const lineMatRef = useRef(null)
 
   const geometry = useMemo(() => {
@@ -40,24 +40,36 @@ function AreteMesh({ mesh, color, edgeColor, wireframe, roughness, metalness }) 
     return geo
   }, [mesh])
 
-  const edgeGeometry = useMemo(() => {
+  /** Contour filaire classique (fiable, noir) */
+  const edgeBasic = useMemo(() => {
+    const geo = new THREE.BufferGeometry()
+    geo.setAttribute('position', new THREE.BufferAttribute(mesh.wire, 3))
+    return geo
+  }, [mesh])
+
+  /** Contour épais (Line2) — résolution écran mise à jour */
+  const edgeFat = useMemo(() => {
     const geo = new LineSegmentsGeometry()
     geo.setPositions(Array.from(mesh.wire))
     return geo
   }, [mesh])
 
+  const dpr = gl.getPixelRatio?.() || 1
+  const resW = Math.max(1, size.width * dpr)
+  const resH = Math.max(1, size.height * dpr)
+
   useLayoutEffect(() => {
-    if (lineMatRef.current) {
-      lineMatRef.current.resolution.set(size.width, size.height)
-    }
-  }, [size.width, size.height])
+    const mat = lineMatRef.current
+    if (mat?.resolution) mat.resolution.set(resW, resH)
+  }, [resW, resH])
 
   useEffect(() => {
     return () => {
       geometry.dispose()
-      edgeGeometry.dispose()
+      edgeBasic.dispose()
+      edgeFat.dispose()
     }
-  }, [geometry, edgeGeometry])
+  }, [geometry, edgeBasic, edgeFat])
 
   return (
     <group>
@@ -70,14 +82,23 @@ function AreteMesh({ mesh, color, edgeColor, wireframe, roughness, metalness }) 
           wireframe={wireframe}
         />
       </mesh>
-      <lineSegments2 geometry={edgeGeometry}>
+      {/* Base noire toujours visible (comme vignettes boutique) */}
+      <lineSegments geometry={edgeBasic} renderOrder={2}>
+        <lineBasicMaterial
+          color={ARETE_EDGE_COLOR}
+          depthTest
+          transparent={false}
+        />
+      </lineSegments>
+      {/* Surcouche légèrement plus épaisse */}
+      <lineSegments2 geometry={edgeFat} renderOrder={3}>
         <lineMaterial
           ref={lineMatRef}
-          color={edgeColor}
+          color={ARETE_EDGE_COLOR}
           linewidth={ARETE_EDGE_WIDTH}
           transparent={false}
           depthTest
-          resolution={[size.width, size.height]}
+          resolution={[resW, resH]}
         />
       </lineSegments2>
     </group>
@@ -102,11 +123,10 @@ export default function OssatureView({
     FINITIONS_OSSATURE[ossatureFinish] ||
     FINITIONS_OSSATURE[DEFAULT_FINITION_OSSATURE]
 
+  // Sélection : teinte un peu plus claire sur le volume, arêtes restent noires
   const color = selected
-    ? '#d4b896'
+    ? shadeHex(finish.color, (surf.shade ?? 1) * 1.08)
     : shadeHex(finish.color, surf.shade ?? 1)
-  // Lignes d’arêtes : noir brillant (sélection : vert discret)
-  const edgeColor = selected ? '#1b4332' : ARETE_EDGE_COLOR
 
   return (
     <group
@@ -123,7 +143,6 @@ export default function OssatureView({
             key={m.id}
             mesh={m}
             color={color}
-            edgeColor={edgeColor}
             wireframe={wireframe}
             roughness={surf.roughness}
             metalness={Math.max(surf.metalness ?? 0.05, 0.12)}

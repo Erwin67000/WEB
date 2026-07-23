@@ -86,7 +86,8 @@ export const FINITIONS = {
 
 /**
  * Finition de surface de l’ossature (traitement) — enregistrée dans la matrice.
- * S’applique par-dessus l’essence (FINITIONS).
+ * S’applique par-dessus l’essence atelier (bois local, non choisi par le client).
+ * previewColor : pastille UI client.
  */
 export const FINITIONS_OSSATURE = {
   brut: {
@@ -94,8 +95,8 @@ export const FINITIONS_OSSATURE = {
     label: 'Brut',
     roughness: 0.88,
     metalness: 0.02,
-    /** multiplie la teinte essence (1 = inchangé) */
     shade: 1,
+    previewColor: '#c4a574',
   },
   vernis_clair: {
     id: 'vernis_clair',
@@ -103,6 +104,7 @@ export const FINITIONS_OSSATURE = {
     roughness: 0.32,
     metalness: 0.08,
     shade: 1.06,
+    previewColor: '#d4b896',
   },
   vernis_fonce: {
     id: 'vernis_fonce',
@@ -110,13 +112,7 @@ export const FINITIONS_OSSATURE = {
     roughness: 0.28,
     metalness: 0.1,
     shade: 0.72,
-  },
-  grave: {
-    id: 'grave',
-    label: 'Gravé',
-    roughness: 0.78,
-    metalness: 0.04,
-    shade: 0.9,
+    previewColor: '#8a6a42',
   },
   huile: {
     id: 'huile',
@@ -124,6 +120,16 @@ export const FINITIONS_OSSATURE = {
     roughness: 0.48,
     metalness: 0.03,
     shade: 0.95,
+    previewColor: '#b8956a',
+  },
+  // Conservées pour rétrocompat exports / anciennes configs (non proposées au client)
+  grave: {
+    id: 'grave',
+    label: 'Gravé',
+    roughness: 0.78,
+    metalness: 0.04,
+    shade: 0.9,
+    previewColor: '#a88860',
   },
   cire: {
     id: 'cire',
@@ -131,8 +137,17 @@ export const FINITIONS_OSSATURE = {
     roughness: 0.42,
     metalness: 0.05,
     shade: 1.02,
+    previewColor: '#c9b48a',
   },
 }
+
+/** Finitions proposées au client dans le control panel. */
+export const FINITIONS_OSSATURE_CLIENT = [
+  'brut',
+  'vernis_clair',
+  'vernis_fonce',
+  'huile',
+]
 
 /**
  * 5 couleurs panneau — tons site (or / ivoire / bois), contrastent légèrement.

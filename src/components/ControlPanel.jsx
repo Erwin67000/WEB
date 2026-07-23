@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react'
 import { useActiveConfigStore, useActiveConfigStoreApi } from '../store/ConfigStoreContext.jsx'
 import {
-  FINITIONS,
   FINITIONS_OSSATURE,
+  FINITIONS_OSSATURE_CLIENT,
   PANNEAU_COULEURS,
   EPAISSEUR_PANNEAU,
 } from '../1_STRUCTURE/00_matrice/matrice_constante.js'
@@ -36,36 +36,27 @@ const DESSUS_OPTIONS = [
   { id: 'dessus_exterieur', label: 'Dessus extérieur' },
 ]
 
-function NumField({ label, value, onChange, min, max, step = 1, unit = 'mm' }) {
-  return (
-    <label className="field">
-      <span className="field-label">{label}</span>
-      <div className="field-input-row">
-        <input
-          type="number"
-          value={value}
-          min={min}
-          max={max}
-          step={step}
-          onChange={(e) => onChange(Number(e.target.value))}
-        />
-        <span className="field-unit">{unit}</span>
-      </div>
-    </label>
-  )
-}
-
-/** Slider + saisie numérique (Longueur / Profondeur / Hauteur / Z tablette). */
+/**
+ * Rangée compacte : Label · [valeur] · unité, puis slider dessous.
+ * (Longueur / Profondeur / Hauteur / Pos. X / Pos. Y / Z tablette)
+ */
 function SliderDim({ label, value, onChange, min, max, step = 5, unit = 'mm' }) {
   return (
-    <label className="field slider-dim">
-      <span className="field-label">
-        {label}{' '}
-        <strong className="slider-val">
-          {value}
-          {unit}
-        </strong>
-      </span>
+    <label className="field slider-dim slider-dim-compact">
+      <div className="slider-dim-head">
+        <span className="field-label">{label}</span>
+        <div className="slider-dim-input">
+          <input
+            type="number"
+            value={value}
+            min={min}
+            max={max}
+            step={step}
+            onChange={(e) => onChange(Number(e.target.value))}
+          />
+          <span className="field-unit">{unit}</span>
+        </div>
+      </div>
       <input
         type="range"
         min={min}
@@ -74,16 +65,27 @@ function SliderDim({ label, value, onChange, min, max, step = 5, unit = 'mm' }) 
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
       />
-      <div className="field-input-row">
-        <input
-          type="number"
-          value={value}
-          min={min}
-          max={max}
-          step={step}
-          onChange={(e) => onChange(Number(e.target.value))}
-        />
-        <span className="field-unit">{unit}</span>
+    </label>
+  )
+}
+
+/** Rotation seule (sans slider long) — compacte. */
+function NumFieldInline({ label, value, onChange, min, max, step = 1, unit = '°' }) {
+  return (
+    <label className="field slider-dim-compact">
+      <div className="slider-dim-head">
+        <span className="field-label">{label}</span>
+        <div className="slider-dim-input">
+          <input
+            type="number"
+            value={value}
+            min={min}
+            max={max}
+            step={step}
+            onChange={(e) => onChange(Number(e.target.value))}
+          />
+          <span className="field-unit">{unit}</span>
+        </div>
       </div>
     </label>
   )
@@ -148,14 +150,15 @@ export default function ControlPanel() {
 
   const [flash, setFlash] = useState('')
   const [mobileOpen, setMobileOpen] = useState(false)
+  /** Au départ : seule la section Dimensions est ouverte. */
   const [openSections, setOpenSections] = useState({
-    meuble: true,
+    meuble: false,
     dims: true,
-    modules: true,
-    panneaux: true,
+    modules: false,
+    panneaux: false,
     scene: false,
     contact: false,
-    devis: true,
+    devis: false,
   })
 
   if (!unit) return null
@@ -260,78 +263,59 @@ export default function ControlPanel() {
                 step={DIM_LIMITS.H.step}
                 onChange={(H) => updateDims(unit.id, { H })}
               />
-              <div className="field-grid-3">
-                <NumField
-                  label="Pos. X"
-                  value={unit.positionMm.x}
-                  min={-5000}
-                  max={5000}
-                  step={10}
-                  onChange={(x) => updatePosition(unit.id, { x })}
-                />
-                <NumField
-                  label="Pos. Y"
-                  value={unit.positionMm.y}
-                  min={-5000}
-                  max={5000}
-                  step={10}
-                  onChange={(y) => updatePosition(unit.id, { y })}
-                />
-                <NumField
-                  label="Rot. Z"
-                  value={unit.rotationZ}
-                  min={-180}
-                  max={180}
-                  step={5}
-                  unit="°"
-                  onChange={(rotationZ) => updateUnit(unit.id, { rotationZ })}
-                />
+              <SliderDim
+                label="Pos. X"
+                value={unit.positionMm.x}
+                min={-5000}
+                max={5000}
+                step={10}
+                onChange={(x) => updatePosition(unit.id, { x })}
+              />
+              <SliderDim
+                label="Pos. Y"
+                value={unit.positionMm.y}
+                min={-5000}
+                max={5000}
+                step={10}
+                onChange={(y) => updatePosition(unit.id, { y })}
+              />
+              <NumFieldInline
+                label="Rot. Z"
+                value={unit.rotationZ}
+                min={-180}
+                max={180}
+                step={5}
+                unit="°"
+                onChange={(rotationZ) => updateUnit(unit.id, { rotationZ })}
+              />
+
+              <p className="field-label" style={{ marginTop: '0.35rem' }}>
+                Finition ossature
+              </p>
+              <div className="finish-choice-list">
+                {FINITIONS_OSSATURE_CLIENT.map((id) => {
+                  const f = FINITIONS_OSSATURE[id]
+                  if (!f) return null
+                  const active = (unit.ossatureFinish || 'brut') === id
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      className={`finish-choice-btn${active ? ' active' : ''}`}
+                      onClick={() =>
+                        updateUnit(unit.id, { ossatureFinish: id })
+                      }
+                    >
+                      <span className="finish-choice-label">{f.label}</span>
+                      <span
+                        className="finish-choice-swatch"
+                        style={{ background: f.previewColor }}
+                        title={f.label}
+                      />
+                    </button>
+                  )
+                })}
               </div>
-              <label className="field">
-                <span className="field-label">Essence bois</span>
-                <select
-                  value={unit.woodFinish}
-                  onChange={(e) =>
-                    updateUnit(unit.id, { woodFinish: e.target.value })
-                  }
-                >
-                  {Object.values(FINITIONS).map((f) => (
-                    <option key={f.id} value={f.id}>
-                      {f.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="field">
-                <span className="field-label">Finition ossature</span>
-                <select
-                  value={unit.ossatureFinish || 'brut'}
-                  onChange={(e) =>
-                    updateUnit(unit.id, { ossatureFinish: e.target.value })
-                  }
-                >
-                  {Object.values(FINITIONS_OSSATURE).map((f) => (
-                    <option key={f.id} value={f.id}>
-                      {f.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="field">
-                <span className="field-label">
-                  Note finition (libre → matrice)
-                </span>
-                <textarea
-                  rows={2}
-                  value={unit.ossatureFinitionNote || ''}
-                  onChange={(e) =>
-                    updateUnit(unit.id, {
-                      ossatureFinitionNote: e.target.value,
-                    })
-                  }
-                  placeholder="Ex. vernis mat satiné, teinte sur échantillon atelier…"
-                />
-              </label>
             </div>
           )}
         </section>

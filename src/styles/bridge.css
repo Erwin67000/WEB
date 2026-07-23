@@ -383,17 +383,118 @@ a.site-brand {
   }
 }
 
-/* ——— Sliders dimensions + Z tablette ——— */
-.slider-dim input[type='range'] {
+/* ——— Sliders dimensions + Z tablette (compact : label | valeur | mm) ——— */
+.slider-dim input[type='range'],
+.slider-dim-compact input[type='range'] {
   width: 100%;
   accent-color: var(--gold, #c9a227);
-  margin: 0.15rem 0 0.35rem;
+  margin: 0.2rem 0 0;
+  height: 1.1rem;
+}
+
+.slider-dim-compact {
+  gap: 0.15rem !important;
+}
+
+.slider-dim-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  min-height: 1.75rem;
+}
+
+.slider-dim-head .field-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 0.78rem;
+  color: var(--text-muted, #9a958c);
+}
+
+.slider-dim-input {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-shrink: 0;
+}
+
+.slider-dim-input input[type='number'] {
+  width: 4.25rem;
+  background: var(--bg-elevated, #1a1610);
+  border: 1px solid var(--border, #2a2620);
+  border-radius: 4px;
+  padding: 0.28rem 0.35rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.85rem;
+  color: var(--gold, #c9a227);
+  font-weight: 600;
+}
+
+.slider-dim-input input[type='number']:focus {
+  outline: none;
+  border-color: var(--gold, #c9a227);
+}
+
+.slider-dim-input .field-unit {
+  font-size: 0.72rem;
+  color: var(--text-muted, #9a958c);
+  width: auto;
+  min-width: 1.4rem;
 }
 
 .slider-val {
   color: var(--gold, #c9a227);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+}
+
+/* ——— Finitions ossature (pastille à droite) ——— */
+.finish-choice-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.finish-choice-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.4rem 0.55rem;
+  border: 1px solid var(--border, #2a2620);
+  border-radius: 4px;
+  background: var(--bg-elevated, #1a1610);
+  color: var(--text-muted, #9a958c);
+  cursor: pointer;
+  font-size: 0.8rem;
+  text-align: left;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.finish-choice-btn:hover {
+  color: var(--text, #f5f0e6);
+  border-color: #555;
+}
+
+.finish-choice-btn.active {
+  border-color: var(--gold, #c9a227);
+  color: var(--text, #f5f0e6);
+  background: #1f1a14;
+}
+
+.finish-choice-label {
+  flex: 1;
+}
+
+.finish-choice-swatch {
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25);
+  flex-shrink: 0;
 }
 
 /* ——— Couleurs panneau (5 swatches) ——— */
