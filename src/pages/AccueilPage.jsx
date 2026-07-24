@@ -5,7 +5,7 @@ const SLIDES = [
   {
     kicker: 'Cadre Philae',
     title: "Structure & Volumes",
-    text: "Douze arêtes en bois massif définissent le volume. Le meuble naît d'une géométrie claire, pas d'un caisson fermé.",
+    text: "Douze arêtes en bois massif définissent le volume. Le meuble naît d'une intention claire.",
   },
   {
     kicker: 'Liberté,',

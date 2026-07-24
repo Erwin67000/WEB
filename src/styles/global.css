@@ -811,10 +811,175 @@ a.btn.primary:hover {
 }
 
 /*
- * Responsive
- * — Portrait (téléphone vertical) : panel en bas, déroulant
- * — Landscape (écran pivoté 90°, iPhone horizontal) : panel à gauche comme le PC
+ * Responsive configurateur
+ * — Compact UNIQUEMENT pour .control-panel sur téléphone (≤900px)
+ * — N’altère PAS le control panel PC ni le reste du site
  */
+
+/* ——— Compact control panel (portrait + paysage) ——— */
+@media (max-width: 900px) {
+  .main-nav {
+    display: none;
+  }
+
+  .contact-layout {
+    grid-template-columns: 1fr;
+  }
+
+  /* Densité typo / contrôles — scoped .control-panel seulement */
+  .control-panel .panel-scroll {
+    font-size: 0.78rem;
+    line-height: 1.3;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .control-panel .section-head {
+    padding: 0.38rem 0.55rem;
+    font-size: 0.62rem;
+    letter-spacing: 0.05em;
+  }
+
+  .control-panel .section-body {
+    padding: 0 0.5rem 0.5rem;
+    gap: 0.28rem;
+  }
+
+  .control-panel .field-label,
+  .control-panel .slider-dim-head .field-label {
+    font-size: 0.6rem;
+  }
+
+  .control-panel .field-unit {
+    font-size: 0.58rem;
+    min-width: 1.1rem;
+  }
+
+  .control-panel .slider-dim-input input[type='number'],
+  .control-panel .field input[type='number'],
+  .control-panel .field input[type='text'],
+  .control-panel .field input[type='email'],
+  .control-panel .field input[type='tel'],
+  .control-panel .field select,
+  .control-panel .field textarea {
+    padding: 0.22rem 0.3rem;
+    font-size: 0.72rem;
+    border-radius: 4px;
+  }
+
+  .control-panel .slider-dim-input input[type='number'] {
+    width: 3.4rem;
+  }
+
+  .control-panel .slider-dim input[type='range'],
+  .control-panel .slider-dim-compact input[type='range'],
+  .control-panel .field input[type='range'] {
+    height: 0.85rem;
+    margin: 0.05rem 0 0;
+  }
+
+  .control-panel .btn {
+    padding: 0.38rem 0.55rem;
+    font-size: 0.68rem;
+  }
+
+  .control-panel .btn-sm {
+    padding: 0.25rem 0.45rem;
+    font-size: 0.65rem;
+  }
+
+  .control-panel .unit-chip,
+  .control-panel .unit-chip-input {
+    padding: 0.2rem 0.45rem;
+    font-size: 0.65rem;
+  }
+
+  .control-panel .finish-choice-btn {
+    padding: 0.28rem 0.4rem;
+    font-size: 0.65rem;
+  }
+
+  .control-panel .finish-choice-swatch {
+    width: 1.05rem;
+    height: 1.05rem;
+  }
+
+  .control-panel .color-swatch-btn {
+    padding: 0.28rem 0.35rem;
+    font-size: 0.6rem;
+    gap: 0.3rem;
+  }
+
+  .control-panel .color-swatch {
+    width: 0.95rem;
+    height: 0.95rem;
+  }
+
+  .control-panel .panneau-chip {
+    padding: 0.18rem 0.38rem;
+    font-size: 0.6rem;
+  }
+
+  .control-panel .panneau-pick-btn {
+    padding: 0.4rem 0.5rem;
+    font-size: 0.68rem;
+  }
+
+  .control-panel .pick-hint,
+  .control-panel .muted,
+  .control-panel .legal-hint {
+    font-size: 0.58rem !important;
+    line-height: 1.3;
+  }
+
+  .control-panel .price-block {
+    font-size: 0.72em;
+    gap: 0.15rem;
+  }
+
+  .control-panel .price-block strong {
+    font-size: 0.95em;
+  }
+
+  .control-panel .quote-ref {
+    font-size: 0.68rem;
+  }
+
+  .control-panel .impact-block {
+    font-size: 0.6rem;
+    padding: 0.35rem 0.45rem;
+  }
+
+  .control-panel .mod-item {
+    padding: 0.3rem 0.4rem;
+  }
+
+  .control-panel .mod-head {
+    font-size: 0.72rem;
+  }
+
+  .control-panel .check-item {
+    font-size: 0.68rem;
+    gap: 0.3rem;
+  }
+
+  .control-panel .panel-flash {
+    font-size: 0.68rem;
+    padding: 0.45rem 0.6rem;
+  }
+
+  .control-panel .panel-mobile-toggle {
+    padding: 0.4rem 0.55rem;
+    font-size: 0.6rem;
+    gap: 0.4rem;
+  }
+
+  .control-panel .panel-mobile-handle {
+    width: 28px;
+    height: 3px;
+  }
+}
+
+/* Portrait téléphone : panel bas déroulant */
 @media (max-width: 900px) and (orientation: portrait) {
   .config-layout {
     grid-template-columns: 1fr;
@@ -835,6 +1000,8 @@ a.btn.primary:hover {
     border-top: 1px solid var(--border);
     max-height: none;
     height: auto;
+    /* safe-area bas (home indicator) */
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
   .panel-mobile-toggle {
@@ -843,54 +1010,31 @@ a.btn.primary:hover {
 
   .control-panel .panel-scroll {
     display: none;
-    max-height: min(48vh, 420px);
-    padding-bottom: 1.25rem;
-    font-size: 0.92em;
+    max-height: min(46vh, 360px);
+    padding: 0.25rem 0.15rem 0.85rem;
+    padding-left: max(0.35rem, env(safe-area-inset-left, 0px));
+    padding-right: max(0.35rem, env(safe-area-inset-right, 0px));
   }
 
   .control-panel.mobile-open .panel-scroll {
     display: block;
   }
-
-  .control-panel .section-head {
-    padding: 0.55rem 0.85rem;
-    font-size: 0.72rem;
-  }
-
-  .control-panel .section-body {
-    padding: 0 0.85rem 0.75rem;
-    gap: 0.4rem;
-  }
-
-  .control-panel .field-label {
-    font-size: 0.68rem;
-  }
-
-  .control-panel .btn {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.82rem;
-  }
-
-  .control-panel .price-block {
-    font-size: 0.85em;
-  }
-
-  .main-nav {
-    display: none;
-  }
-
-  .contact-layout {
-    grid-template-columns: 1fr;
-  }
 }
 
-/* iPhone / tablette en paysage : même disposition que le site PC (panel gauche) */
+/* Paysage téléphone : panel gauche (comme PC) + safe-area notch */
 @media (max-width: 900px) and (orientation: landscape) {
   .config-layout {
-    grid-template-columns: min(280px, 36vw) 1fr;
+    /* largeur mini confortable + safe-area gauche (encoche) */
+    grid-template-columns:
+      minmax(
+        calc(168px + env(safe-area-inset-left, 0px)),
+        min(46vw, 280px)
+      )
+      1fr;
     grid-template-rows: 1fr;
     height: 100%;
     min-height: 0;
+    width: 100%;
   }
 
   .control-panel {
@@ -900,11 +1044,17 @@ a.btn.primary:hover {
     max-height: none;
     height: 100%;
     min-height: 0;
+    min-width: 0; /* évite débordement grille */
+    overflow: hidden;
+    /* Encoche / bord gauche iPhone paysage */
+    padding-left: env(safe-area-inset-left, 0px);
+    box-sizing: border-box;
   }
 
   .viewport-3d {
     order: 1;
     min-height: 0;
+    min-width: 0;
   }
 
   .panel-mobile-toggle {
@@ -914,32 +1064,33 @@ a.btn.primary:hover {
   .control-panel .panel-scroll {
     display: block;
     max-height: none;
-    flex: 1;
-    font-size: 0.88em;
+    flex: 1 1 0;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding: 0.2rem 0.35rem 0.75rem 0.4rem;
+    box-sizing: border-box;
   }
 
-  .control-panel .section-head {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.7rem;
+  /* Éviter que sliders / chips débordent et se coupent à gauche */
+  .control-panel .section-body,
+  .control-panel .slider-dim,
+  .control-panel .slider-dim-compact,
+  .control-panel .row-actions,
+  .control-panel .color-swatch-grid,
+  .control-panel .finish-choice-list {
+    min-width: 0;
+    max-width: 100%;
   }
 
-  .control-panel .section-body {
-    padding: 0 0.75rem 0.65rem;
-    gap: 0.35rem;
-  }
-
-  .main-nav {
-    display: none;
-  }
-
-  .contact-layout {
-    grid-template-columns: 1fr;
+  .control-panel .slider-dim-head {
+    gap: 0.25rem;
   }
 }
 
 @media (max-width: 560px) and (orientation: portrait) {
   .control-panel.mobile-open .panel-scroll {
-    max-height: min(52vh, 380px);
+    max-height: min(50vh, 340px);
   }
 
   .control-panel .field-grid-3 {
