@@ -146,7 +146,7 @@ export default function AccueilPage() {
             Transformer<span className="gold"> la conception du mobilier</span>
           </h2>
           <p className="section-body">
-            Donner la priorité à la structure, et non aux panneaux. L'ossature est le squelette du meuble, elle définit le volume et la géométrie. Les panneaux deviennent des décisions conscientes, et non des contraintes.
+            Donner la priorité à la structure, et aux fonctions. L'ossature définit le volume et la géométrie. Le panneau est optionnel.
           </p>
         </div>
       </section>
