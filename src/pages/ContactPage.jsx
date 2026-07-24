@@ -27,9 +27,8 @@ export default function ContactPage() {
         <p className="section-kicker">Atelier</p>
         <h1 className="hero-title">Contact</h1>
         <p className="hero-lead">
-          Une question, un projet sur mesure, un devis d&apos;ensemble : le
-          formulaire exporte votre demande depuis la configuration en cours
-          (réf. <strong className="gold-inline">{quoteRef}</strong>).
+          Pour toute demande d'information, ou envie de réaliser un projet d'envegure, 
+          envoyez noous directement un message via le formulaire ci-dessous. Nous vous répondrons dans les plus brefs délais.
         </p>
       </header>
 

@@ -131,10 +131,6 @@ export default function ConceptPage() {
           <div className="concept-text">
             <h2>Une esthétique d&apos;arête</h2>
             <p>
-              Noir, or, ivoire. Une typographie géométrique, presque structurelle
-              — comme si chaque lettre était une pièce d&apos;assemblage.
-            </p>
-            <p>
               Philae ne cherche pas l&apos;effet décoratif : il cherche la{' '}
               <strong>puissance calme</strong> d&apos;un objet juste, libre dans
               ses proportions, exigeant dans sa matière.

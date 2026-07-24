@@ -3,24 +3,24 @@ import { useNavigate } from 'react-router-dom'
 
 const SLIDES = [
   {
-    kicker: 'Structure',
-    title: "L'ossature d'abord",
+    kicker: 'Cadre Philae',
+    title: "Structure & Volumes",
     text: "Douze arêtes en bois massif définissent le volume. Le meuble naît d'une géométrie claire, pas d'un caisson fermé.",
   },
   {
-    kicker: 'Liberté',
-    title: 'L · W · H sur mesure',
-    text: "Chaque dimension est un choix. Le configurateur déploie l'ossature en temps réel, prête pour l'atelier.",
+    kicker: 'Liberté,',
+    title: 'Sur-mesure',
+    text: "Chez Philae on fait pas dans la demi-mesure.",
   },
   {
     kicker: 'Fonctions',
     title: 'Portes, tablettes, tiroirs',
-    text: "Les aménagements s'inscrivent dans le cadre. Panneaux et modules deviennent des décisions conscientes.",
+    text: "Les aménagements s'intégrent dans le cadre.",
   },
   {
-    kicker: 'Atelier',
-    title: 'Du pixel au plan de coupe',
-    text: 'Une seule chaîne : configurateur, devis, fabrication, montage. Transparence et exigence.',
+    kicker: 'De la 3D à l\'Atelier',
+    title: 'Créer votre propre mobilier',
+    text: 'Définissez vos besoins, construisez votre meuble adapté.',
   },
 ]
 
@@ -141,22 +141,12 @@ export default function AccueilPage() {
 
       <section className="home-section">
         <div className="home-section-inner">
-          <p className="section-kicker">Pourquoi Philae</p>
+          <p className="section-kicker">Concept Philae</p>
           <h2 className="section-title-lg">
-            Une logique <span className="gold">inverse</span>
+            Transformer<span className="gold">la conception du mobilier</span>
           </h2>
           <p className="section-body">
-            L&apos;industrie du meuble a longtemps privilégié le volume fermé :
-            des panneaux sur toutes les faces, une esthétique standardisée, une
-            matière composite. Philae inverse le raisonnement. D&apos;abord le
-            cadre — rigide, dimensionné, signature. Ensuite les fonctions.
-            Enfin, les panneaux, s&apos;ils ont un vrai rôle.
-          </p>
-          <p className="section-body">
-            Résultat : un meuble plus léger, plus lisible, plus honnête dans sa
-            construction. Vous voyez la structure. Vous choisissez ce qui
-            s&apos;y installe. Une seule matrice pilote le configurateur et
-            l&apos;atelier.
+            Donner la priorité à la structure, et non aux panneaux. L'ossature est le squelette du meuble, elle définit le volume et la géométrie. Les panneaux deviennent des décisions conscientes, et non des contraintes.
           </p>
         </div>
       </section>
@@ -192,7 +182,7 @@ export default function AccueilPage() {
               <h3>1 · Explorer</h3>
               <p>
                 Parcourez la boutique ou ouvrez le configurateur. Testez les
-                proportions L · W · H et les finitions.
+                proportions et les finitions.
               </p>
             </article>
             <article className="path-step">
@@ -205,8 +195,7 @@ export default function AccueilPage() {
             <article className="path-step">
               <h3>3 · Valider</h3>
               <p>
-                Demande, devis, échanges avec l&apos;atelier. La géométrie
-                devient plan de fabrication.
+                Demande, devis, échanges avec l&apos;atelier.
               </p>
             </article>
             <article className="path-step">
