@@ -5,6 +5,7 @@ import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js'
 import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeometry.js'
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js'
 import { buildOssature } from './ossature.js'
+import { inflateWireMm } from './edgeWire.js'
 import {
   FINITIONS,
   FINITIONS_OSSATURE,
@@ -17,10 +18,11 @@ extend({ LineSegments2, LineSegmentsGeometry, LineMaterial })
 
 /**
  * Rendu des 12 arêtes d'un meuble Philae.
- * Coordonnées en mm → scale 0.001 vers mètres Three.js.
- * Contours : noir brillant (toujours), un peu épaissis (LineSegments2).
+ * Contours noirs dilatés (anti z-fighting) + polygonOffset sur le volume.
  */
 const SCALE = 0.001
+/** Dilatation filaire (mm meuble) pour sortir les lignes du solide */
+const WIRE_INFLATE_MM = 1.1
 
 function shadeHex(hex, factor) {
   const c = new THREE.Color(hex)
@@ -40,19 +42,22 @@ function AreteMesh({ mesh, color, wireframe, roughness, metalness }) {
     return geo
   }, [mesh])
 
-  /** Contour filaire classique (fiable, noir) */
+  const inflatedWire = useMemo(
+    () => inflateWireMm(mesh.wire, WIRE_INFLATE_MM),
+    [mesh],
+  )
+
   const edgeBasic = useMemo(() => {
     const geo = new THREE.BufferGeometry()
-    geo.setAttribute('position', new THREE.BufferAttribute(mesh.wire, 3))
+    geo.setAttribute('position', new THREE.BufferAttribute(inflatedWire, 3))
     return geo
-  }, [mesh])
+  }, [inflatedWire])
 
-  /** Contour épais (Line2) — résolution écran mise à jour */
   const edgeFat = useMemo(() => {
     const geo = new LineSegmentsGeometry()
-    geo.setPositions(Array.from(mesh.wire))
+    geo.setPositions(Array.from(inflatedWire))
     return geo
-  }, [mesh])
+  }, [inflatedWire])
 
   const dpr = gl.getPixelRatio?.() || 1
   const resW = Math.max(1, size.width * dpr)
@@ -73,24 +78,26 @@ function AreteMesh({ mesh, color, wireframe, roughness, metalness }) {
 
   return (
     <group>
-      <mesh geometry={geometry} castShadow receiveShadow>
+      <mesh geometry={geometry} castShadow receiveShadow renderOrder={0}>
         <meshStandardMaterial
           color={color}
           roughness={roughness ?? 0.55}
           metalness={metalness ?? 0.05}
           side={THREE.DoubleSide}
           wireframe={wireframe}
+          // Recule le volume dans le depth buffer → les lignes gagnent si coplanaires
+          polygonOffset
+          polygonOffsetFactor={1.5}
+          polygonOffsetUnits={2}
         />
       </mesh>
-      {/* Base noire toujours visible (comme vignettes boutique) */}
       <lineSegments geometry={edgeBasic} renderOrder={2}>
         <lineBasicMaterial
           color={ARETE_EDGE_COLOR}
           depthTest
-          transparent={false}
+          depthWrite={false}
         />
       </lineSegments>
-      {/* Surcouche légèrement plus épaisse */}
       <lineSegments2 geometry={edgeFat} renderOrder={3}>
         <lineMaterial
           ref={lineMatRef}
@@ -98,6 +105,7 @@ function AreteMesh({ mesh, color, wireframe, roughness, metalness }) {
           linewidth={ARETE_EDGE_WIDTH}
           transparent={false}
           depthTest
+          depthWrite={false}
           resolution={[resW, resH]}
         />
       </lineSegments2>
@@ -123,7 +131,6 @@ export default function OssatureView({
     FINITIONS_OSSATURE[ossatureFinish] ||
     FINITIONS_OSSATURE[DEFAULT_FINITION_OSSATURE]
 
-  // Sélection : teinte un peu plus claire sur le volume, arêtes restent noires
   const color = selected
     ? shadeHex(finish.color, (surf.shade ?? 1) * 1.08)
     : shadeHex(finish.color, surf.shade ?? 1)
@@ -134,11 +141,6 @@ export default function OssatureView({
       rotation={[0, rotationZ, 0]}
       scale={[SCALE, SCALE, SCALE]}
     >
-      {/*
-        Origine meuble fixée (0,0,0) : en changeant L ou W, le repère reste
-        en place et le volume s’allonge uniquement vers +X / +Y meuble.
-        (plus de centrage −L/2 / +W/2)
-      */}
       <group position={[0, 0, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         {ossature.meshes.map((m) => (
           <AreteMesh

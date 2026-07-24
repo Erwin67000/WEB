@@ -7,6 +7,7 @@ import {
   DEFAULT_PANNEAU_COULEUR,
   resolvePanneauColor,
 } from '../00_matrice/matrice_constante.js'
+import { inflateWireMm } from '../01_meuble3D/edgeWire.js'
 import { useActiveConfigStore } from '../../store/ConfigStoreContext.jsx'
 
 const SCALE = 0.001
@@ -61,7 +62,7 @@ function RectangleFace({ rectangle, opacity = 0.12 }) {
  * Vous redéfinirez la suite de triangles dans matrice_panneau_grok si besoin.
  */
 function PanneauSolidMesh({ panneau, color, edgeColor }) {
-  const { geometry, edges } = useMemo(() => {
+  const { geometry, edgeInflated } = useMemo(() => {
     const buf = panneau.toBuffers()
     const geo = new THREE.BufferGeometry()
     geo.setAttribute('position', new THREE.BufferAttribute(buf.positions, 3))
@@ -69,24 +70,32 @@ function PanneauSolidMesh({ panneau, color, edgeColor }) {
     geo.setIndex(new THREE.BufferAttribute(buf.indices, 1))
     geo.computeVertexNormals()
 
+    const w = inflateWireMm(buf.wire, 0.9)
     const edgeGeo = new THREE.BufferGeometry()
-    edgeGeo.setAttribute('position', new THREE.BufferAttribute(buf.wire, 3))
+    edgeGeo.setAttribute('position', new THREE.BufferAttribute(w, 3))
 
-    return { geometry: geo, edges: edgeGeo }
+    return { geometry: geo, edgeInflated: edgeGeo }
   }, [panneau])
 
   return (
     <group>
-      <mesh geometry={geometry} castShadow receiveShadow>
+      <mesh geometry={geometry} castShadow receiveShadow renderOrder={0}>
         <meshStandardMaterial
           color={color}
           roughness={0.55}
           metalness={0.04}
           side={THREE.DoubleSide}
+          polygonOffset
+          polygonOffsetFactor={1.5}
+          polygonOffsetUnits={2}
         />
       </mesh>
-      <lineSegments geometry={edges}>
-        <lineBasicMaterial color="#0a0a0a" linewidth={2} />
+      <lineSegments geometry={edgeInflated} renderOrder={2}>
+        <lineBasicMaterial
+          color={edgeColor || '#0a0a0a'}
+          depthTest
+          depthWrite={false}
+        />
       </lineSegments>
     </group>
   )
