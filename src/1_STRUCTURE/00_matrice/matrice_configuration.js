@@ -43,7 +43,8 @@ export const ENVIRONMENTS = {
     glb: '/environnement/chambre/chambre.glb',
     /** Origine GLB = origine meuble 1 — pas de décalage */
     position: [0, 0, 0],
-    rotation: [0, 0, 0],
+    /** 90° autour de l’axe vertical (Z SketchUp = Y Three) */
+    rotation: [0, Math.PI / 2, 0],
     scale: 1,
   },
 }
