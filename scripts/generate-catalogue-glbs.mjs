@@ -113,81 +113,41 @@ function meshFromBuffers(positions, indices, color, name) {
 }
 
 /**
- * Dilate le wire (mm) depuis son centroïde pour éviter le z-fighting.
+ * Filaire exact (pas de dilatation géométrique) → fins cylindres centrés
+ * sur le segment. Anti z-fighting côté viewer via polygonOffset sur les solides.
+ * radiusMm très fin (~0.25 mm) pour rester collé à l’arête même en zoom fort.
  */
-function inflateWireMm(wire, inflateMm = 1.1) {
-  const src = wire instanceof Float32Array ? wire : Float32Array.from(wire)
-  const n = Math.floor(src.length / 3)
-  if (n < 2) return src
-  let cx = 0
-  let cy = 0
-  let cz = 0
-  for (let i = 0; i < n; i++) {
-    cx += src[i * 3]
-    cy += src[i * 3 + 1]
-    cz += src[i * 3 + 2]
-  }
-  cx /= n
-  cy /= n
-  cz /= n
-  let avgR = 0
-  for (let i = 0; i < n; i++) {
-    const dx = src[i * 3] - cx
-    const dy = src[i * 3 + 1] - cy
-    const dz = src[i * 3 + 2] - cz
-    avgR += Math.sqrt(dx * dx + dy * dy + dz * dz)
-  }
-  avgR /= n
-  if (avgR < 1e-6) return src.slice()
-  const scale = (avgR + inflateMm) / avgR
-  const out = new Float32Array(src.length)
-  for (let i = 0; i < n; i++) {
-    out[i * 3] = cx + (src[i * 3] - cx) * scale
-    out[i * 3 + 1] = cy + (src[i * 3 + 1] - cy) * scale
-    out[i * 3 + 2] = cz + (src[i * 3 + 2] - cz) * scale
-  }
-  return out
-}
-
-/**
- * Filaire → fins cylindres MeshStandard (fiable dans GLB, pas de LineBasic).
- * wire meuble mm : paires de points.
- */
-function tubesFromWire(wire, color, name, radiusMm = 0.55) {
+function tubesFromWire(wire, color, name, radiusMm = 0.28) {
   if (!wire || wire.length < 6) return null
-  const inflated = inflateWireMm(wire, 1.15)
   const group = new THREE.Group()
   group.name = name
   const r = radiusMm * SCALE
   const mat = new THREE.MeshStandardMaterial({
     color: color || 0x0a0a0a,
-    roughness: 0.45,
-    metalness: 0.15,
+    roughness: 0.4,
+    metalness: 0.2,
+    // Lignes un peu plus « proches caméra » dans le Z-buffer
+    polygonOffset: true,
+    polygonOffsetFactor: -1,
+    polygonOffsetUnits: -1,
+    depthWrite: false,
   })
-  const nSeg = Math.floor(inflated.length / 6)
+  const nSeg = Math.floor(wire.length / 6)
   for (let i = 0; i < nSeg; i++) {
     const o = i * 6
-    const a = meubleToThree(
-      inflated[o],
-      inflated[o + 1],
-      inflated[o + 2],
-    )
-    const b = meubleToThree(
-      inflated[o + 3],
-      inflated[o + 4],
-      inflated[o + 5],
-    )
+    const a = meubleToThree(wire[o], wire[o + 1], wire[o + 2])
+    const b = meubleToThree(wire[o + 3], wire[o + 4], wire[o + 5])
     const dir = new THREE.Vector3().subVectors(b, a)
     const len = dir.length()
     if (len < 1e-6) continue
-    const geo = new THREE.CylinderGeometry(r, r, len, 5, 1)
-    // Cylinder default le long de Y
+    const geo = new THREE.CylinderGeometry(r, r, len, 4, 1)
     const mesh = new THREE.Mesh(geo, mat)
     mesh.position.copy(a).add(b).multiplyScalar(0.5)
     mesh.quaternion.setFromUnitVectors(
       new THREE.Vector3(0, 1, 0),
       dir.clone().normalize(),
     )
+    mesh.renderOrder = 2
     group.add(mesh)
   }
   return group
@@ -210,17 +170,17 @@ function buildRowGroup(row) {
 
   const edgeColor = 0x0a0a0a
 
-  // Ossature : volume + filaire (tubes noirs dilatés)
+  // Ossature : volume + filaire exact (tubes fins centrés sur l’arête)
   const oss = buildOssature(dims)
   for (const m of oss.meshes) {
     root.add(
       meshFromBuffers(m.positions, m.indices, woodColor, `arete-${m.id}`),
     )
-    const lines = tubesFromWire(m.wire, edgeColor, `arete-wire-${m.id}`)
+    const lines = tubesFromWire(m.wire, edgeColor, `arete-wire-${m.id}`, 0.28)
     if (lines) root.add(lines)
   }
 
-  // Panneaux solides + contours
+  // Panneaux solides + contours exacts
   for (const nom of row.panneaux || []) {
     try {
       const data = buildPanneauComplet(nom, dims, {
@@ -239,7 +199,7 @@ function buildRowGroup(row) {
         buf.wire,
         edgeColor,
         `panneau-wire-${nom}`,
-        0.45,
+        0.25,
       )
       if (plines) root.add(plines)
     } catch (e) {
@@ -247,64 +207,48 @@ function buildRowGroup(row) {
     }
   }
 
-  // Modules (boîtes + contours EdgesGeometry en tubes via wire synthétique)
+  // Modules (boîtes + contours exacts sur arêtes de la boîte)
   const modules = row.modules || []
   for (const mod of modules) {
     const layout = moduleLayout(mod, dims, modules)
     const [cx, cy, cz] = layout.center
     const [sx, sy, sz] = layout.size
     const center = meubleToThree(cx, cy, cz)
-    const geo = new THREE.BoxGeometry(
-      sx * SCALE,
-      sz * SCALE,
-      sy * SCALE,
-    )
+    const geo = new THREE.BoxGeometry(sx * SCALE, sz * SCALE, sy * SCALE)
     const mat = new THREE.MeshStandardMaterial({
       color: panneauColor,
       roughness: 0.6,
       metalness: 0.02,
       polygonOffset: true,
-      polygonOffsetFactor: 1.5,
+      polygonOffsetFactor: 2,
       polygonOffsetUnits: 2,
     })
     const mesh = new THREE.Mesh(geo, mat)
     mesh.position.copy(center)
     mesh.name = `mod-${mod.kind}-${mod.bayIndex}`
     root.add(mesh)
-    // Contour boîte : EdgesGeometry en petits cylindres
+
     const edges = new THREE.EdgesGeometry(geo)
     const pos = edges.attributes.position
-    const wireThree = new Float32Array(pos.array.length)
-    // EdgesGeometry déjà en three-space (local box) ; on dilate en m
-    for (let i = 0; i < pos.count; i++) {
-      const x = pos.getX(i)
-      const y = pos.getY(i)
-      const z = pos.getZ(i)
-      const len = Math.sqrt(x * x + y * y + z * z) || 1
-      const sc = (len + 0.0008) / len
-      wireThree[i * 3] = x * sc
-      wireThree[i * 3 + 1] = y * sc
-      wireThree[i * 3 + 2] = z * sc
-    }
     const edgeGroup = new THREE.Group()
     edgeGroup.position.copy(center)
     edgeGroup.name = `mod-wire-${mod.kind}-${mod.bayIndex}`
-    const r = 0.00045
+    const r = 0.00028
     const edgeMat = new THREE.MeshStandardMaterial({
       color: edgeColor,
-      roughness: 0.45,
-      metalness: 0.15,
+      roughness: 0.4,
+      metalness: 0.2,
+      polygonOffset: true,
+      polygonOffsetFactor: -1,
+      polygonOffsetUnits: -1,
+      depthWrite: false,
     })
     for (let i = 0; i < pos.count; i += 2) {
-      const a = new THREE.Vector3(
-        wireThree[i * 3],
-        wireThree[i * 3 + 1],
-        wireThree[i * 3 + 2],
-      )
+      const a = new THREE.Vector3(pos.getX(i), pos.getY(i), pos.getZ(i))
       const b = new THREE.Vector3(
-        wireThree[(i + 1) * 3],
-        wireThree[(i + 1) * 3 + 1],
-        wireThree[(i + 1) * 3 + 2],
+        pos.getX(i + 1),
+        pos.getY(i + 1),
+        pos.getZ(i + 1),
       )
       const dir = new THREE.Vector3().subVectors(b, a)
       const len = dir.length()
@@ -318,6 +262,7 @@ function buildRowGroup(row) {
         new THREE.Vector3(0, 1, 0),
         dir.normalize(),
       )
+      cyl.renderOrder = 2
       edgeGroup.add(cyl)
     }
     root.add(edgeGroup)

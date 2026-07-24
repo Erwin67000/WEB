@@ -5,7 +5,6 @@ import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js'
 import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeometry.js'
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js'
 import { buildOssature } from './ossature.js'
-import { inflateWireMm } from './edgeWire.js'
 import {
   FINITIONS,
   FINITIONS_OSSATURE,
@@ -17,12 +16,10 @@ import {
 extend({ LineSegments2, LineSegmentsGeometry, LineMaterial })
 
 /**
- * Rendu des 12 arêtes d'un meuble Philae.
- * Contours noirs dilatés (anti z-fighting) + polygonOffset sur le volume.
+ * Contours d’arêtes : position exacte des wires (pas de dilatation géométrique).
+ * Anti z-fighting via polygonOffset depth-buffer uniquement.
  */
 const SCALE = 0.001
-/** Dilatation filaire (mm meuble) pour sortir les lignes du solide */
-const WIRE_INFLATE_MM = 1.1
 
 function shadeHex(hex, factor) {
   const c = new THREE.Color(hex)
@@ -42,22 +39,20 @@ function AreteMesh({ mesh, color, wireframe, roughness, metalness }) {
     return geo
   }, [mesh])
 
-  const inflatedWire = useMemo(
-    () => inflateWireMm(mesh.wire, WIRE_INFLATE_MM),
-    [mesh],
-  )
-
   const edgeBasic = useMemo(() => {
     const geo = new THREE.BufferGeometry()
-    geo.setAttribute('position', new THREE.BufferAttribute(inflatedWire, 3))
+    geo.setAttribute(
+      'position',
+      new THREE.BufferAttribute(mesh.wire.slice(), 3),
+    )
     return geo
-  }, [inflatedWire])
+  }, [mesh])
 
   const edgeFat = useMemo(() => {
     const geo = new LineSegmentsGeometry()
-    geo.setPositions(Array.from(inflatedWire))
+    geo.setPositions(Array.from(mesh.wire))
     return geo
-  }, [inflatedWire])
+  }, [mesh])
 
   const dpr = gl.getPixelRatio?.() || 1
   const resW = Math.max(1, size.width * dpr)
@@ -78,6 +73,7 @@ function AreteMesh({ mesh, color, wireframe, roughness, metalness }) {
 
   return (
     <group>
+      {/* Solide : légèrement repoussé dans le Z-buffer (invisible) */}
       <mesh geometry={geometry} castShadow receiveShadow renderOrder={0}>
         <meshStandardMaterial
           color={color}
@@ -85,17 +81,20 @@ function AreteMesh({ mesh, color, wireframe, roughness, metalness }) {
           metalness={metalness ?? 0.05}
           side={THREE.DoubleSide}
           wireframe={wireframe}
-          // Recule le volume dans le depth buffer → les lignes gagnent si coplanaires
           polygonOffset
-          polygonOffsetFactor={1.5}
+          polygonOffsetFactor={2}
           polygonOffsetUnits={2}
         />
       </mesh>
+      {/* Lignes à la position exacte — depth bias vers la caméra */}
       <lineSegments geometry={edgeBasic} renderOrder={2}>
         <lineBasicMaterial
           color={ARETE_EDGE_COLOR}
           depthTest
           depthWrite={false}
+          polygonOffset
+          polygonOffsetFactor={-2}
+          polygonOffsetUnits={-2}
         />
       </lineSegments>
       <lineSegments2 geometry={edgeFat} renderOrder={3}>
@@ -106,6 +105,9 @@ function AreteMesh({ mesh, color, wireframe, roughness, metalness }) {
           transparent={false}
           depthTest
           depthWrite={false}
+          polygonOffset
+          polygonOffsetFactor={-2}
+          polygonOffsetUnits={-2}
           resolution={[resW, resH]}
         />
       </lineSegments2>

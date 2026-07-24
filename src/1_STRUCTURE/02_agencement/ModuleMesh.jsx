@@ -7,7 +7,7 @@ import {
   DEFAULT_PANNEAU_COULEUR,
   resolvePanneauColor,
 } from '../00_matrice/matrice_constante.js'
-import { inflateWireMm } from '../01_meuble3D/edgeWire.js'
+
 import { useActiveConfigStore } from '../../store/ConfigStoreContext.jsx'
 
 const SCALE = 0.001
@@ -62,7 +62,7 @@ function RectangleFace({ rectangle, opacity = 0.12 }) {
  * Vous redéfinirez la suite de triangles dans matrice_panneau_grok si besoin.
  */
 function PanneauSolidMesh({ panneau, color, edgeColor }) {
-  const { geometry, edgeInflated } = useMemo(() => {
+  const { geometry, edges } = useMemo(() => {
     const buf = panneau.toBuffers()
     const geo = new THREE.BufferGeometry()
     geo.setAttribute('position', new THREE.BufferAttribute(buf.positions, 3))
@@ -70,11 +70,13 @@ function PanneauSolidMesh({ panneau, color, edgeColor }) {
     geo.setIndex(new THREE.BufferAttribute(buf.indices, 1))
     geo.computeVertexNormals()
 
-    const w = inflateWireMm(buf.wire, 0.9)
     const edgeGeo = new THREE.BufferGeometry()
-    edgeGeo.setAttribute('position', new THREE.BufferAttribute(w, 3))
+    edgeGeo.setAttribute(
+      'position',
+      new THREE.BufferAttribute(buf.wire.slice(), 3),
+    )
 
-    return { geometry: geo, edgeInflated: edgeGeo }
+    return { geometry: geo, edges: edgeGeo }
   }, [panneau])
 
   return (
@@ -86,15 +88,18 @@ function PanneauSolidMesh({ panneau, color, edgeColor }) {
           metalness={0.04}
           side={THREE.DoubleSide}
           polygonOffset
-          polygonOffsetFactor={1.5}
+          polygonOffsetFactor={2}
           polygonOffsetUnits={2}
         />
       </mesh>
-      <lineSegments geometry={edgeInflated} renderOrder={2}>
+      <lineSegments geometry={edges} renderOrder={2}>
         <lineBasicMaterial
           color={edgeColor || '#0a0a0a'}
           depthTest
           depthWrite={false}
+          polygonOffset
+          polygonOffsetFactor={-2}
+          polygonOffsetUnits={-2}
         />
       </lineSegments>
     </group>

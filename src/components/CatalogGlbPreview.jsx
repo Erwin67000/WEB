@@ -79,15 +79,36 @@ function GlbModel({ url }) {
       if (o.isMesh) {
         o.castShadow = false
         o.receiveShadow = false
+        const mats = Array.isArray(o.material) ? o.material : [o.material]
+        for (const m of mats) {
+          if (!m) continue
+          // Solides un peu « en arrière » dans le Z-buffer ; tubes filaires
+          // déjà exportés avec polygonOffset négatif
+          const isEdge =
+            typeof o.name === 'string' &&
+            (o.name.includes('wire') || o.name.includes('-wire'))
+          if (isEdge) {
+            m.polygonOffset = true
+            m.polygonOffsetFactor = -2
+            m.polygonOffsetUnits = -2
+            m.depthWrite = false
+            o.renderOrder = 2
+          } else {
+            m.polygonOffset = true
+            m.polygonOffsetFactor = 2
+            m.polygonOffsetUnits = 2
+            o.renderOrder = 0
+          }
+          m.needsUpdate = true
+        }
       }
-      // Lignes exportées dans le GLB
       if (o.isLineSegments || o.isLine) {
         o.frustumCulled = false
+        o.renderOrder = 2
       }
     })
     return c
   }, [scene])
-  // Légère rehaussée pour éviter tout contact sol / artefacts
   return (
     <group position={[0, 0.02, 0]}>
       <primitive object={clone} />
