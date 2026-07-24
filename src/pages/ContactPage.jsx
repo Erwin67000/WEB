@@ -28,7 +28,7 @@ export default function ContactPage() {
         <h1 className="hero-title">Contact</h1>
         <p className="hero-lead">
           Une question, un projet sur mesure, un devis d&apos;ensemble : le
-          formulaire exporte votre demande depuis la matrice en cours
+          formulaire exporte votre demande depuis la configuration en cours
           (réf. <strong className="gold-inline">{quoteRef}</strong>).
         </p>
       </header>
@@ -60,7 +60,7 @@ export default function ContactPage() {
           </button>
           {sent && (
             <p className="form-success">
-              Demande exportée depuis la matrice. Écrivez-nous aussi à{' '}
+              Demande exportée depuis la configuration. Écrivez-nous aussi à{' '}
               <a href="mailto:contact@philae.design">contact@philae.design</a>.
             </p>
           )}

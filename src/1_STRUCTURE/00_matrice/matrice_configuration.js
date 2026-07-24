@@ -70,6 +70,8 @@ export function defaultUnit(overrides = {}) {
      * terracotta | olive | bleu_poudre | gris_cendre | jaune_orange
      */
     panneauCouleur: 'gris_cendre',
+    /** Hex libre si panneauCouleur === 'surmesure' */
+    panneauCouleurHex: '#c9a227',
     modules: [],
     // Aucun panneau au départ — l’utilisateur active ce qu’il veut
     panneaux: [],

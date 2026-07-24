@@ -2,12 +2,13 @@
 export const LARGEUR_ARETE = 40
 export const HAUTEUR_ARETE = 40
 export const TOLERANCE = 1
-/** Défauts épaisseur (mm) — choix discrets 12 | 14 | 16 dans le panel. */
-export const EPAISSEUR_PANNEAU = 12
-export const EPAISSEUR_PORTE = 12
-/** Options proposées dans l’UI. */
-export const EPAISSEURS_PANNEAU = [12, 14, 16]
-export const EPAISSEURS_PORTE = [12, 14, 16]
+/** Épaisseur figée fabrication (mm) — plus de choix UI client. */
+export const EPAISSEUR_PANNEAU = 14
+export const EPAISSEUR_PORTE = 14
+/** @deprecated figé à 14 mm */
+export const EPAISSEURS_PANNEAU = [14]
+/** @deprecated figé à 14 mm */
+export const EPAISSEURS_PORTE = [14]
 /** Décalage face panneau depuis le point d’arête (mm) — fixe, plus de slider. */
 export const DECALAGE_PANNEAU = 0
 
@@ -200,9 +201,53 @@ export const PANNEAU_COULEURS = {
     color: '#e8b86d',
     edge: '#c49448',
   },
+  /** Couleur libre (spectre) — le hex est dans unit.panneauCouleurHex */
+  surmesure: {
+    id: 'surmesure',
+    label: 'Sur mesure',
+    color: '#c9a227',
+    edge: '#8a7020',
+  },
 }
 
 export const DEFAULT_PANNEAU_COULEUR = 'gris_cendre'
+export const DEFAULT_PANNEAU_HEX = '#c9a227'
+
+/** Résout la couleur de panneau (id catalogue ou hex sur mesure). */
+export function resolvePanneauColor(panneauCouleur, panneauCouleurHex) {
+  if (panneauCouleur === 'surmesure' || String(panneauCouleur || '').startsWith('#')) {
+    const hex =
+      panneauCouleurHex ||
+      (String(panneauCouleur || '').startsWith('#') ? panneauCouleur : DEFAULT_PANNEAU_HEX)
+    return {
+      id: 'surmesure',
+      label: 'Sur mesure',
+      color: hex,
+      edge: shadeEdge(hex),
+    }
+  }
+  return (
+    PANNEAU_COULEURS[panneauCouleur] ||
+    PANNEAU_COULEURS[DEFAULT_PANNEAU_COULEUR]
+  )
+}
+
+function shadeEdge(hex) {
+  try {
+    const n = parseInt(String(hex).replace('#', ''), 16)
+    const r = Math.max(0, ((n >> 16) & 255) * 0.72)
+    const g = Math.max(0, ((n >> 8) & 255) * 0.72)
+    const b = Math.max(0, (n & 255) * 0.72)
+    return (
+      '#' +
+      [r, g, b]
+        .map((v) => Math.round(v).toString(16).padStart(2, '0'))
+        .join('')
+    )
+  } catch {
+    return '#666666'
+  }
+}
 export const DEFAULT_FINITION_OSSATURE = 'brut'
 
 /**

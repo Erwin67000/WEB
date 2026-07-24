@@ -22,9 +22,9 @@ import {
 } from '../1_STRUCTURE/00_matrice/matrice_constante.js'
 import { CLIENT_FIELDS } from './matrice_client.js'
 
-/** Choix discrets d’épaisseur (mm). */
-export const EPAISSEURS_PANNEAU = [12, 14, 16]
-export const EPAISSEURS_PORTE = [12, 14, 16]
+/** Épaisseurs (mm) — figées à 14. */
+export const EPAISSEURS_PANNEAU = [14]
+export const EPAISSEURS_PORTE = [14]
 
 /** Tous les noms de panneaux connus (ordre stable pour CSV / toggles). */
 export const PANNEAU_KEYS = [

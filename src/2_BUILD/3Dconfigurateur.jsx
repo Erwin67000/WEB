@@ -1,4 +1,4 @@
-import { Suspense, useRef } from 'react'
+import { Suspense, useEffect, useRef } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import {
   OrbitControls,
@@ -9,6 +9,7 @@ import {
 import * as THREE from 'three'
 import OssatureView from '../1_STRUCTURE/01_meuble3D/OssatureView.jsx'
 import AgencementView from '../1_STRUCTURE/02_agencement/ModuleMesh.jsx'
+import FacePickPlanes from '../1_STRUCTURE/02_agencement/FacePickPlanes.jsx'
 import { ENVIRONMENTS } from '../1_STRUCTURE/00_matrice/matrice_configuration.js'
 import { useActiveConfigStore } from '../store/ConfigStoreContext.jsx'
 
@@ -21,31 +22,69 @@ const SCALE = 0.001
 export const DEFAULT_CAMERA_POS = [-2.2, 1.6, -2.8]
 export const DEFAULT_CAMERA_TARGET = [0.35, 0.45, -0.25]
 
-function UnitGroup({ unit, selected, wireframe }) {
+/**
+ * Apparition légère : scale + légère montée (meubel 1 ou meuble ajouté).
+ * key=unit.id force un rejoue de l’anim à chaque nouvel id.
+ */
+function UnitGroup({ unit, selected, wireframe, pickMode, onPickFace }) {
+  const groupRef = useRef()
+  const t0 = useRef(performance.now())
+
+  useEffect(() => {
+    t0.current = performance.now()
+  }, [unit.id])
+
+  useFrame(() => {
+    const g = groupRef.current
+    if (!g) return
+    const t = Math.min(1, (performance.now() - t0.current) / 520)
+    // easeOutCubic
+    const e = 1 - (1 - t) ** 3
+    const s = 0.88 + 0.12 * e
+    g.scale.setScalar(s)
+    // petite montée (mm → m via pos déjà en m côté parent)
+    const lift = (1 - e) * 0.06
+    g.position.y =
+      (unit.positionMm?.z || 0) * SCALE + lift
+  })
+
   const pos = [
     (unit.positionMm?.x || 0) * SCALE,
     (unit.positionMm?.z || 0) * SCALE,
     -(unit.positionMm?.y || 0) * SCALE,
   ]
+  const rotY = (unit.rotationZ || 0) * (Math.PI / 180)
+
   return (
-    <group position={pos}>
+    <group ref={groupRef} position={pos}>
       <OssatureView
         dims={unit.dims}
         woodFinish={unit.woodFinish}
         ossatureFinish={unit.ossatureFinish}
         wireframe={wireframe}
-        rotationZ={(unit.rotationZ || 0) * (Math.PI / 180)}
+        rotationZ={rotY}
         selected={selected}
       />
-      <group rotation={[0, (unit.rotationZ || 0) * (Math.PI / 180), 0]}>
+      <group rotation={[0, rotY, 0]}>
         <AgencementView
           dims={unit.dims}
           modules={unit.modules}
           panneaux={unit.panneaux}
           woodFinish={unit.woodFinish}
           panneauCouleur={unit.panneauCouleur}
+          panneauCouleurHex={unit.panneauCouleurHex}
         />
       </group>
+      {pickMode && selected && (
+        <group position={[0, 0, 0]}>
+          <FacePickPlanes
+            dims={unit.dims}
+            panneaux={unit.panneaux || []}
+            rotationZ={rotY}
+            onPick={onPickFace}
+          />
+        </group>
+      )}
     </group>
   )
 }
@@ -139,6 +178,8 @@ function SceneContent() {
   const sunIntensity = useActiveConfigStore((s) => s.sunIntensity)
   const showGrid = useActiveConfigStore((s) => s.showGrid)
   const wireframe = useActiveConfigStore((s) => s.wireframe)
+  const panneauPickMode = useActiveConfigStore((s) => s.panneauPickMode)
+  const togglePanneau = useActiveConfigStore((s) => s.togglePanneau)
   const env = ENVIRONMENTS[environmentId] || ENVIRONMENTS.none
 
   const active = units.find((u) => u.id === activeUnitId) || units[0]
@@ -151,13 +192,18 @@ function SceneContent() {
       ]
     : DEFAULT_CAMERA_TARGET
 
+  const onPickFace = (faceId) => {
+    togglePanneau(faceId)
+    // reste en mode pick pour enchaîner, ou désactive après 1er clic ?
+    // On reste en mode jusqu’à clic « Terminer » dans le panel
+  }
+
   return (
     <>
       <color attach="background" args={[env.bg || '#0a0a0a']} />
       <ambientLight intensity={sunEnabled ? 0.28 : 0.55} />
       <hemisphereLight args={['#e8f0ff', '#3a3020', sunEnabled ? 0.35 : 0.45]} />
       <SunLight enabled={sunEnabled} intensity={sunIntensity} />
-      {/* Remplissage sans ombre si soleil off — géométrie toujours visible */}
       {!sunEnabled && (
         <directionalLight position={[-3, 5, -2]} intensity={0.45} color="#fff8ee" />
       )}
@@ -179,7 +225,6 @@ function SceneContent() {
       )}
 
       <Room env={env} />
-      {/* Sol d’ombres : les panneaux absents laissent passer la lumière */}
       {sunEnabled && <ShadowFloor />}
 
       {units.map((u) => (
@@ -188,6 +233,8 @@ function SceneContent() {
           unit={u}
           selected={u.id === activeUnitId}
           wireframe={wireframe}
+          pickMode={panneauPickMode}
+          onPickFace={onPickFace}
         />
       ))}
 
@@ -207,6 +254,8 @@ function SceneContent() {
         maxDistance={20}
         maxPolarAngle={Math.PI * 0.49}
         target={orbitTarget}
+        // en mode pick : on peut encore orbiter (panneau via clic face)
+        enabled
       />
     </>
   )
@@ -214,10 +263,11 @@ function SceneContent() {
 
 export default function Configurateur3D() {
   const environmentId = useActiveConfigStore((s) => s.environmentId)
+  const panneauPickMode = useActiveConfigStore((s) => s.panneauPickMode)
   const env = ENVIRONMENTS[environmentId] || ENVIRONMENTS.none
 
   return (
-    <div className="viewport-3d">
+    <div className={`viewport-3d${panneauPickMode ? ' pick-mode' : ''}`}>
       <Canvas
         shadows
         dpr={[1, 1.5]}
@@ -246,7 +296,9 @@ export default function Configurateur3D() {
         </Suspense>
       </Canvas>
       <div className="viewport-hint">
-        Orbit · molette zoom · clic droit pan · ombres soleil
+        {panneauPickMode
+          ? 'Cliquez une face du meuble pour ajouter / retirer un panneau'
+          : 'Orbit · molette zoom · clic droit pan · ombres soleil'}
       </div>
     </div>
   )

@@ -203,6 +203,8 @@ export function createConfigStore(opts = {}) {
     showPanneauSolid: true,
     epaisseurPanneau: Number(EPAISSEUR_PANNEAU),
     epaisseurPorte: Number(EPAISSEUR_PORTE),
+    /** Mode clic-face pour ajouter un panneau (gamification) */
+    panneauPickMode: false,
     contact: defaultContact(),
     notes: '',
     quoteRef: makeQuoteRef(),
@@ -406,6 +408,7 @@ export function createConfigStore(opts = {}) {
     setShowPanneauSolid: (showPanneauSolid) =>
       set({ showPanneauSolid, dirty: true }),
     setEpaisseurPanneau: (epaisseurPanneau) => {
+      // figé à 14 mm — ignore les valeurs hors liste
       const n = Number(epaisseurPanneau)
       if (!EPAISSEURS_PANNEAU.includes(n)) return
       set({ epaisseurPanneau: n, dirty: true })
@@ -415,6 +418,8 @@ export function createConfigStore(opts = {}) {
       if (!EPAISSEURS_PORTE.includes(n)) return
       set({ epaisseurPorte: n, dirty: true })
     },
+    setPanneauPickMode: (panneauPickMode) =>
+      set({ panneauPickMode: Boolean(panneauPickMode) }),
     setNotes: (notes) => set({ notes, dirty: true }),
     setContact: (patch) =>
       set((s) => ({ contact: { ...s.contact, ...patch }, dirty: true })),

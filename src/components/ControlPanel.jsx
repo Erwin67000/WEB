@@ -5,6 +5,7 @@ import {
   FINITIONS_OSSATURE_CLIENT,
   PANNEAU_COULEURS,
   EPAISSEUR_PANNEAU,
+  DEFAULT_PANNEAU_HEX,
 } from '../1_STRUCTURE/00_matrice/matrice_constante.js'
 import {
   MODULE_KINDS,
@@ -13,28 +14,12 @@ import {
 import { shelfZMm } from '../1_STRUCTURE/02_agencement/agencement.js'
 import { DIM_LIMITS } from '../3_INPUT/matrice_input.js'
 import { CLIENT_FIELDS } from '../3_INPUT/matrice_client.js'
-import {
-  EPAISSEURS_PANNEAU,
-  EPAISSEURS_PORTE,
-} from '../3_INPUT/master_input.js'
+import { FACE_PICK_DEFS } from '../1_STRUCTURE/02_agencement/FacePickPlanes.jsx'
 
-import { PANNEAU_DEFS } from '../1_STRUCTURE/00_matrice/matrice_panneau_grok.js'
-
-/** Labels UI — alignés sur les clés de PANNEAU_DEFS */
-const PANNEAU_LABELS = {
-  fond: 'Fond',
-  porte: 'Porte',
-  dessous: 'Dessous',
-  joue1: 'Joue 1',
-  joue2: 'Joue 2',
-}
-
-/** Dessus : exclusif (aucun | intérieur | extérieur) */
-const DESSUS_OPTIONS = [
-  { id: null, label: 'Aucun' },
-  { id: 'dessus_interieur', label: 'Dessus intérieur' },
-  { id: 'dessus_exterieur', label: 'Dessus extérieur' },
-]
+/** Labels courts pour chips des panneaux actifs */
+const PANNEAU_CHIP_LABELS = Object.fromEntries(
+  FACE_PICK_DEFS.map((f) => [f.id, f.label]),
+)
 
 /**
  * Rangée compacte : Label · [valeur] · unité, puis slider dessous.
@@ -100,11 +85,10 @@ export default function ControlPanel() {
   const sunEnabled = useActiveConfigStore((s) => s.sunEnabled)
   const sunIntensity = useActiveConfigStore((s) => s.sunIntensity)
   const wireframe = useActiveConfigStore((s) => s.wireframe)
-  const epaisseurPanneau = useActiveConfigStore((s) => s.epaisseurPanneau)
-  const epaisseurPorte = useActiveConfigStore((s) => s.epaisseurPorte)
   const notes = useActiveConfigStore((s) => s.notes)
   const quoteRef = useActiveConfigStore((s) => s.quoteRef)
   const contact = useActiveConfigStore((s) => s.contact)
+  const panneauPickMode = useActiveConfigStore((s) => s.panneauPickMode)
 
   const setActiveUnit = useActiveConfigStore((s) => s.setActiveUnit)
   const addUnit = useActiveConfigStore((s) => s.addUnit)
@@ -117,13 +101,11 @@ export default function ControlPanel() {
   const setModuleOpen = useActiveConfigStore((s) => s.setModuleOpen)
   const setModuleZ = useActiveConfigStore((s) => s.setModuleZ)
   const togglePanneau = useActiveConfigStore((s) => s.togglePanneau)
-  const setDessusVariant = useActiveConfigStore((s) => s.setDessusVariant)
   const setEnvironment = useActiveConfigStore((s) => s.setEnvironment)
   const setSun = useActiveConfigStore((s) => s.setSun)
   const setSunIntensity = useActiveConfigStore((s) => s.setSunIntensity)
   const setWireframe = useActiveConfigStore((s) => s.setWireframe)
-  const setEpaisseurPanneau = useActiveConfigStore((s) => s.setEpaisseurPanneau)
-  const setEpaisseurPorte = useActiveConfigStore((s) => s.setEpaisseurPorte)
+  const setPanneauPickMode = useActiveConfigStore((s) => s.setPanneauPickMode)
   const setNotes = useActiveConfigStore((s) => s.setNotes)
   const setContact = useActiveConfigStore((s) => s.setContact)
   const requestDevis = useActiveConfigStore((s) => s.requestDevis)
@@ -410,136 +392,106 @@ export default function ControlPanel() {
             <span className="chev">{openSections.panneaux ? '▾' : '▸'}</span>
           </button>
           {openSections.panneaux && (
-            <div className="section-body">
-              <p className="muted" style={{ marginBottom: '0.35rem' }}>
-                Couleur unique pour tous les panneaux de cette configuration
+            <div className="section-body panneaux-game">
+              <button
+                type="button"
+                className={`btn panneau-pick-btn${panneauPickMode ? ' active' : ''} primary`}
+                onClick={() => setPanneauPickMode(!panneauPickMode)}
+              >
+                {panneauPickMode
+                  ? '✓ Terminer (faces)'
+                  : '+ Ajouter un panneau'}
+              </button>
+              {panneauPickMode && (
+                <p className="pick-hint">
+                  Cliquez une <strong>face du meuble</strong> dans la vue 3D.
+                  Recliquez pour retirer.
+                </p>
+              )}
+
+              {(unit.panneaux || []).length > 0 ? (
+                <div className="panneau-chips">
+                  {(unit.panneaux || []).map((id) => (
+                    <button
+                      key={id}
+                      type="button"
+                      className="panneau-chip"
+                      title="Retirer"
+                      onClick={() => togglePanneau(id)}
+                    >
+                      {PANNEAU_CHIP_LABELS[id] || id}
+                      <span aria-hidden>×</span>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="muted">Aucun panneau</p>
+              )}
+
+              <p className="field-label" style={{ marginTop: '0.35rem' }}>
+                Couleur des panneaux
               </p>
               <div className="color-swatch-grid">
-                {Object.values(PANNEAU_COULEURS).map((c) => {
-                  const active =
-                    (unit.panneauCouleur || 'gris_cendre') === c.id
-                  return (
-                    <button
-                      key={c.id}
-                      type="button"
-                      className={`color-swatch-btn${active ? ' active' : ''}`}
-                      title={c.label}
-                      onClick={() =>
-                        updateUnit(unit.id, { panneauCouleur: c.id })
-                      }
-                    >
-                      <span
-                        className="color-swatch"
-                        style={{ background: c.color }}
-                      />
-                      <span className="color-swatch-label">{c.label}</span>
-                    </button>
-                  )
-                })}
-              </div>
-
-              <p className="muted" style={{ margin: '0.5rem 0 0.25rem' }}>
-                Épaisseurs (mm)
-              </p>
-              <label className="field">
-                <span className="field-label">Épaisseur panneau</span>
-                <select
-                  value={epaisseurPanneau}
-                  onChange={(e) => setEpaisseurPanneau(Number(e.target.value))}
-                >
-                  {EPAISSEURS_PANNEAU.map((v) => (
-                    <option key={v} value={v}>
-                      {v} mm
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="field">
-                <span className="field-label">Épaisseur porte</span>
-                <select
-                  value={epaisseurPorte}
-                  onChange={(e) => setEpaisseurPorte(Number(e.target.value))}
-                >
-                  {EPAISSEURS_PORTE.map((v) => (
-                    <option key={v} value={v}>
-                      {v} mm
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <p className="muted" style={{ margin: '0.65rem 0 0.3rem' }}>
-                Panneaux (aucun au départ)
-              </p>
-              <div className="check-grid">
-                {Object.entries(PANNEAU_LABELS).map(([id, label]) => {
-                  const defined = Boolean(PANNEAU_DEFS[id])
-                  const swatch = PANNEAU_DEFS[id]?.couleur
-                  return (
-                    <label
-                      key={id}
-                      className="check-item"
-                      title={defined ? label : `${label} — à venir`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={unit.panneaux.includes(id)}
-                        onChange={() => togglePanneau(id)}
-                        disabled={!defined}
-                      />
-                      {swatch && (
+                {Object.values(PANNEAU_COULEURS)
+                  .filter((c) => c.id !== 'surmesure')
+                  .map((c) => {
+                    const active =
+                      (unit.panneauCouleur || 'gris_cendre') === c.id
+                    return (
+                      <button
+                        key={c.id}
+                        type="button"
+                        className={`color-swatch-btn${active ? ' active' : ''}`}
+                        title={c.label}
+                        onClick={() =>
+                          updateUnit(unit.id, { panneauCouleur: c.id })
+                        }
+                      >
                         <span
-                          style={{
-                            width: 10,
-                            height: 10,
-                            borderRadius: 2,
-                            background: swatch,
-                            display: 'inline-block',
-                            flexShrink: 0,
-                          }}
+                          className="color-swatch"
+                          style={{ background: c.color }}
                         />
-                      )}
-                      {label}
-                      {!defined && <span className="muted"> …</span>}
-                    </label>
-                  )
-                })}
-              </div>
-
-              <p className="muted" style={{ margin: '0.65rem 0 0.3rem' }}>
-                Dessus (un seul, ou aucun)
-              </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                {DESSUS_OPTIONS.map((opt) => {
-                  const active = opt.id
-                    ? unit.panneaux.includes(opt.id)
-                    : !unit.panneaux.includes('dessus_interieur') &&
-                      !unit.panneaux.includes('dessus_exterieur')
-                  const swatch = opt.id ? PANNEAU_DEFS[opt.id]?.couleur : null
-                  return (
-                    <label key={opt.label} className="check-item">
-                      <input
-                        type="radio"
-                        name="dessus-variant"
-                        checked={active}
-                        onChange={() => setDessusVariant(opt.id)}
-                        disabled={opt.id ? !PANNEAU_DEFS[opt.id] : false}
-                      />
-                      {swatch && (
-                        <span
-                          style={{
-                            width: 10,
-                            height: 10,
-                            borderRadius: 2,
-                            background: swatch,
-                            display: 'inline-block',
-                          }}
-                        />
-                      )}
-                      {opt.label}
-                    </label>
-                  )
-                })}
+                        <span className="color-swatch-label">{c.label}</span>
+                      </button>
+                    )
+                  })}
+                <label
+                  className={`color-swatch-btn surmesure-btn${
+                    unit.panneauCouleur === 'surmesure' ? ' active' : ''
+                  }`}
+                  title="Sur mesure — spectre RVB"
+                >
+                  <span
+                    className="color-swatch"
+                    style={{
+                      background:
+                        unit.panneauCouleurHex || DEFAULT_PANNEAU_HEX,
+                      backgroundImage:
+                        unit.panneauCouleur === 'surmesure'
+                          ? 'none'
+                          : 'conic-gradient(red, yellow, lime, aqua, blue, magenta, red)',
+                    }}
+                  />
+                  <span className="color-swatch-label">Sur mesure</span>
+                  <input
+                    type="color"
+                    className="color-input-hidden"
+                    value={unit.panneauCouleurHex || DEFAULT_PANNEAU_HEX}
+                    onChange={(e) =>
+                      updateUnit(unit.id, {
+                        panneauCouleur: 'surmesure',
+                        panneauCouleurHex: e.target.value,
+                      })
+                    }
+                    onClick={() =>
+                      updateUnit(unit.id, {
+                        panneauCouleur: 'surmesure',
+                        panneauCouleurHex:
+                          unit.panneauCouleurHex || DEFAULT_PANNEAU_HEX,
+                      })
+                    }
+                  />
+                </label>
               </div>
             </div>
           )}
@@ -587,14 +539,6 @@ export default function ControlPanel() {
                   />
                 </label>
               )}
-              <label className="check-item">
-                <input
-                  type="checkbox"
-                  checked={wireframe}
-                  onChange={(e) => setWireframe(e.target.checked)}
-                />
-                Filaire
-              </label>
             </div>
           )}
         </section>

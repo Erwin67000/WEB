@@ -5,6 +5,7 @@ import {
   FINITIONS,
   PANNEAU_COULEURS,
   DEFAULT_PANNEAU_COULEUR,
+  resolvePanneauColor,
 } from '../00_matrice/matrice_constante.js'
 import { useActiveConfigStore } from '../../store/ConfigStoreContext.jsx'
 
@@ -99,6 +100,7 @@ export function PanneauView({
   dims,
   woodFinish = 'chene',
   panneauCouleur = DEFAULT_PANNEAU_COULEUR,
+  panneauCouleurHex,
 }) {
   const finish = FINITIONS[woodFinish] || FINITIONS.chene
   const showRectangles = useActiveConfigStore((s) => s.showPanneauRectangles)
@@ -116,8 +118,7 @@ export function PanneauView({
   )
 
   const { base, decale, tolerance, arriere } = data.rectangles
-  const palette =
-    PANNEAU_COULEURS[panneauCouleur] || PANNEAU_COULEURS[DEFAULT_PANNEAU_COULEUR]
+  const palette = resolvePanneauColor(panneauCouleur, panneauCouleurHex)
   const solidColor = palette.color
   const edgeColor = palette.edge || finish.edge
 
@@ -167,6 +168,7 @@ export function PanneauxMesh({
   panneaux = [],
   woodFinish = 'chene',
   panneauCouleur = DEFAULT_PANNEAU_COULEUR,
+  panneauCouleurHex,
 }) {
   if (!panneaux.length) return null
   return (
@@ -178,6 +180,7 @@ export function PanneauxMesh({
           dims={dims}
           woodFinish={woodFinish}
           panneauCouleur={panneauCouleur}
+          panneauCouleurHex={panneauCouleurHex}
         />
       ))}
     </group>
@@ -214,11 +217,12 @@ export function ModulesMesh({
   modules = [],
   woodFinish = 'chene',
   panneauCouleur = DEFAULT_PANNEAU_COULEUR,
+  panneauCouleurHex,
 }) {
   const finish = FINITIONS[woodFinish] || FINITIONS.chene
   const darker = finish.edge
   const shelfColor =
-    PANNEAU_COULEURS[panneauCouleur]?.color || finish.color
+    resolvePanneauColor(panneauCouleur, panneauCouleurHex).color || finish.color
 
   return (
     <group>
@@ -295,6 +299,7 @@ export default function AgencementView({
   panneaux = ['fond'],
   woodFinish = 'chene',
   panneauCouleur = DEFAULT_PANNEAU_COULEUR,
+  panneauCouleurHex,
 }) {
   return (
     <>
@@ -306,6 +311,7 @@ export default function AgencementView({
             panneaux={panneaux}
             woodFinish={woodFinish}
             panneauCouleur={panneauCouleur}
+            panneauCouleurHex={panneauCouleurHex}
           />
         </group>
       </group>
@@ -316,6 +322,7 @@ export default function AgencementView({
           modules={modules}
           woodFinish={woodFinish}
           panneauCouleur={panneauCouleur}
+          panneauCouleurHex={panneauCouleurHex}
         />
       </group>
     </>

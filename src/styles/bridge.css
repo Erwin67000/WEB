@@ -449,6 +449,94 @@ a.site-brand {
   font-variant-numeric: tabular-nums;
 }
 
+/* ——— Panneaux gamification ——— */
+.panneaux-game {
+  gap: 0.5rem !important;
+}
+
+.panneau-pick-btn {
+  width: 100%;
+  letter-spacing: 0.04em;
+}
+
+.panneau-pick-btn.active {
+  box-shadow: 0 0 0 2px rgba(201, 162, 39, 0.45);
+  animation: pick-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes pick-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 2px rgba(201, 162, 39, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(201, 162, 39, 0.2);
+  }
+}
+
+.pick-hint {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--gold, #c9a227);
+  line-height: 1.35;
+}
+
+.panneau-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.panneau-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.28rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--border, #2a2620);
+  background: var(--bg-elevated, #1a1610);
+  color: var(--text, #f5f0e6);
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+
+.panneau-chip:hover {
+  border-color: var(--gold, #c9a227);
+  color: var(--gold, #c9a227);
+}
+
+.panneau-chip span {
+  opacity: 0.7;
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+.surmesure-btn {
+  position: relative;
+  cursor: pointer;
+}
+
+.color-input-hidden {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+  border: none;
+  padding: 0;
+}
+
+.viewport-3d.pick-mode {
+  outline: 1px solid rgba(201, 162, 39, 0.35);
+  outline-offset: -1px;
+}
+
+.viewport-3d.pick-mode .viewport-hint {
+  color: var(--gold, #c9a227);
+  opacity: 1;
+}
+
 /* ——— Finitions ossature (pastille à droite) ——— */
 .finish-choice-list {
   display: flex;

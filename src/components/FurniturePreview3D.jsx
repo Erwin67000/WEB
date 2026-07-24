@@ -1,5 +1,5 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
-import { Canvas } from '@react-three/fiber'
+import { Canvas, useFrame } from '@react-three/fiber'
 import { OrbitControls, ContactShadows } from '@react-three/drei'
 import * as THREE from 'three'
 import OssatureView from '../1_STRUCTURE/01_meuble3D/OssatureView.jsx'
@@ -39,12 +39,24 @@ function getPreviewStore() {
 }
 
 /**
- * Unité meuble figée (catalogue) — pas de sélection / axes.
+ * Unité meuble figée (catalogue) — animation d’apparition légère.
  */
 function FrozenUnit({ unit }) {
   const dims = unit.dims
+  const groupRef = useRef()
+  const t0 = useRef(performance.now())
+
+  useFrame(() => {
+    const g = groupRef.current
+    if (!g) return
+    const t = Math.min(1, (performance.now() - t0.current) / 480)
+    const e = 1 - (1 - t) ** 3
+    g.scale.setScalar(0.9 + 0.1 * e)
+    g.position.y = (1 - e) * 0.04
+  })
+
   return (
-    <group>
+    <group ref={groupRef}>
       <OssatureView
         dims={dims}
         woodFinish={unit.woodFinish || BOIS_ATELIER_ID}
@@ -111,12 +123,12 @@ function PreviewScene({ unit, autoRotate = false }) {
         enableDamping
         dampingFactor={0.08}
         enablePan={false}
-        minDistance={maxDim * 1.2}
-        maxDistance={maxDim * 8}
+        minDistance={maxDim * 1.05}
+        maxDistance={maxDim * 7}
         maxPolarAngle={Math.PI * 0.49}
         target={target}
         autoRotate={autoRotate}
-        autoRotateSpeed={0.6}
+        autoRotateSpeed={0.45}
       />
     </>
   )
@@ -208,12 +220,19 @@ export default function FurniturePreview3D({
     [unitProp, catalogRow],
   )
 
-  // Vue par défaut tournée 180° autour de l’axe vertical (face avant)
+  /**
+   * Vue « étendue » boutique : meuble bien en grand dans le cadre,
+   * léger zoom-out (marge) pour ne rien couper.
+   * 180° autour de l’axe vertical (face avant).
+   */
   const cameraPos = useMemo(() => {
-    if (!unit) return [-1.8, 1.2, -2.2]
-    const m = Math.max(unit.dims.L, unit.dims.W, unit.dims.H) * SCALE
-    const d = Math.max(1.4, m * 3.2)
-    return [-d * 0.85, d * 0.55, -d]
+    if (!unit) return [-1.35, 0.95, -1.7]
+    const { L, W, H } = unit.dims
+    // demi-diagonale du volume (m) + marge ~18 %
+    const halfDiag =
+      Math.sqrt(L * L + W * W + H * H) * SCALE * 0.5
+    const d = Math.max(0.95, halfDiag * 2.55)
+    return [-d * 0.82, d * 0.52, -d * 0.95]
   }, [unit])
 
   if (!unit) {
@@ -240,7 +259,7 @@ export default function FurniturePreview3D({
             dpr={dpr}
             camera={{
               position: cameraPos,
-              fov: 40,
+              fov: 38,
               near: 0.01,
               far: 80,
             }}
