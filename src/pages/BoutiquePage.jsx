@@ -10,6 +10,7 @@ import {
   MATRICE_CATALOGUE_URL,
 } from '../data/catalog.js'
 import FurniturePreview3D from '../components/FurniturePreview3D.jsx'
+import { preloadCatalogGlbs } from '../components/CatalogGlbPreview.jsx'
 
 const PRICE_DISCLAIMER =
   'Prix indicatifs hors livraison.'
@@ -29,6 +30,8 @@ export default function BoutiquePage() {
         if (!cancelled) {
           setRows(data)
           setError(null)
+          // Précharge tous les GLB catalogue (géométrie figée, pas de recalcul)
+          preloadCatalogGlbs(data.map((r) => r.id))
         }
       })
       .catch((e) => {

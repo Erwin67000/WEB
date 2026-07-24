@@ -9,8 +9,9 @@
   "scripts": {
     "dev": "vite",
     "sync:catalogue": "node scripts/sync-catalogue.mjs",
+    "build:catalogue-glbs": "node scripts/generate-catalogue-glbs.mjs",
     "build:devis-template": "node scripts/build-devis-template.mjs",
-    "prebuild": "node scripts/sync-catalogue.mjs",
+    "prebuild": "node scripts/sync-catalogue.mjs && node scripts/generate-catalogue-glbs.mjs",
     "build": "vite build",
     "preview": "vite preview",
     "lint": "oxlint",

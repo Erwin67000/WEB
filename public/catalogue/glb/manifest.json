@@ -1,0 +1,101 @@
+{
+  "generatedAt": "2026-07-24T11:15:00.702Z",
+  "items": [
+    {
+      "id": "table-basse-petite",
+      "glb": "/catalogue/glb/table-basse-petite.glb"
+    },
+    {
+      "id": "table-basse-moyenne",
+      "glb": "/catalogue/glb/table-basse-moyenne.glb"
+    },
+    {
+      "id": "table-basse-grande",
+      "glb": "/catalogue/glb/table-basse-grande.glb"
+    },
+    {
+      "id": "etagere-grande",
+      "glb": "/catalogue/glb/etagere-grande.glb"
+    },
+    {
+      "id": "etagere-moyenne",
+      "glb": "/catalogue/glb/etagere-moyenne.glb"
+    },
+    {
+      "id": "bibliotheque-300",
+      "glb": "/catalogue/glb/bibliotheque-300.glb"
+    },
+    {
+      "id": "bureau-500",
+      "glb": "/catalogue/glb/bureau-500.glb"
+    },
+    {
+      "id": "bureau-800",
+      "glb": "/catalogue/glb/bureau-800.glb"
+    },
+    {
+      "id": "bureau-1200",
+      "glb": "/catalogue/glb/bureau-1200.glb"
+    },
+    {
+      "id": "banc-petit",
+      "glb": "/catalogue/glb/banc-petit.glb"
+    },
+    {
+      "id": "banc-moyen",
+      "glb": "/catalogue/glb/banc-moyen.glb"
+    },
+    {
+      "id": "banc-grand",
+      "glb": "/catalogue/glb/banc-grand.glb"
+    },
+    {
+      "id": "buffet-600",
+      "glb": "/catalogue/glb/buffet-600.glb"
+    },
+    {
+      "id": "console-300",
+      "glb": "/catalogue/glb/console-300.glb"
+    },
+    {
+      "id": "servante-moyenne",
+      "glb": "/catalogue/glb/servante-moyenne.glb"
+    },
+    {
+      "id": "servante-petite",
+      "glb": "/catalogue/glb/servante-petite.glb"
+    },
+    {
+      "id": "servante-grande",
+      "glb": "/catalogue/glb/servante-grande.glb"
+    },
+    {
+      "id": "meuble-cuisine-600",
+      "glb": "/catalogue/glb/meuble-cuisine-600.glb"
+    },
+    {
+      "id": "meuble-haut-cuisine-600",
+      "glb": "/catalogue/glb/meuble-haut-cuisine-600.glb"
+    },
+    {
+      "id": "dressing-1200",
+      "glb": "/catalogue/glb/dressing-1200.glb"
+    },
+    {
+      "id": "dressing-600",
+      "glb": "/catalogue/glb/dressing-600.glb"
+    },
+    {
+      "id": "cube-400",
+      "glb": "/catalogue/glb/cube-400.glb"
+    },
+    {
+      "id": "cube-1000",
+      "glb": "/catalogue/glb/cube-1000.glb"
+    },
+    {
+      "id": "cube-2000",
+      "glb": "/catalogue/glb/cube-2000.glb"
+    }
+  ]
+}

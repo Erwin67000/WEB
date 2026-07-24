@@ -1,3 +1,11 @@
+/**
+ * Preview 3D :
+ * — Boutique / page produit : GLB figé du catalogue (CatalogGlbPreview)
+ * — Fallback rare : pipeline calculé (si pas de productId / pas de GLB)
+ *
+ * Le configurateur complet reste dans 3Dconfigurateur.jsx
+ * (ouvert seulement via « Configurer »).
+ */
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { OrbitControls, ContactShadows } from '@react-three/drei'
@@ -15,10 +23,12 @@ import {
 } from '../1_STRUCTURE/00_matrice/matrice_constante.js'
 import { ConfigStoreProvider } from '../store/ConfigStoreContext.jsx'
 import { createConfigStore } from '../store/createConfigStore.js'
+import CatalogGlbPreview, {
+  catalogGlbUrl,
+} from './CatalogGlbPreview.jsx'
 
 const SCALE = 0.001
 
-/** Store figé pour le rendu panneau (épaisseurs / flags) hors session interactive. */
 const previewStoreCache = new Map()
 
 function getPreviewStore() {
@@ -38,9 +48,6 @@ function getPreviewStore() {
   return previewStoreCache.get(key)
 }
 
-/**
- * Unité meuble figée (catalogue) — animation d’apparition légère.
- */
 function FrozenUnit({ unit }) {
   const dims = unit.dims
   const groupRef = useRef()
@@ -89,7 +96,6 @@ function FrozenUnit({ unit }) {
 
 function PreviewScene({ unit, autoRotate = false }) {
   const maxDim = Math.max(unit.dims.L, unit.dims.W, unit.dims.H) * SCALE
-  // Origine fixe au coin (0,0,0) → viser le centre du volume
   const target = [
     (unit.dims.L * SCALE) / 2,
     (unit.dims.H * SCALE) / 2,
@@ -107,9 +113,7 @@ function PreviewScene({ unit, autoRotate = false }) {
         color="#fff5e6"
       />
       <directionalLight position={[-2, 2, -3]} intensity={0.35} />
-
       <FrozenUnit unit={unit} />
-
       <ContactShadows
         position={[0, 0.001, 0]}
         opacity={0.4}
@@ -117,7 +121,6 @@ function PreviewScene({ unit, autoRotate = false }) {
         blur={2.2}
         far={3}
       />
-
       <OrbitControls
         makeDefault
         enableDamping
@@ -134,17 +137,10 @@ function PreviewScene({ unit, autoRotate = false }) {
   )
 }
 
-/**
- * Construit une unité meuble depuis une ligne matrice_catalogue.
- * Accepte modules/panneaux déjà normalisés (array) ou specs string CSV.
- */
 export function unitFromCatalogRow(row) {
   if (!row) return null
   let modules = row.modules
-  if (!Array.isArray(modules)) {
-    // lazy parse if raw string slipped through
-    modules = []
-  }
+  if (!Array.isArray(modules)) modules = []
   let panneaux = row.panneaux
   if (!Array.isArray(panneaux)) panneaux = []
 
@@ -169,28 +165,73 @@ export function unitFromCatalogRow(row) {
 }
 
 /**
- * Mini / grand viewer 3D figé — orbit + zoom uniquement.
- *
  * @param {{
  *   unit?: object,
  *   catalogRow?: object,
- *   height?: number | string,
+ *   productId?: string,
+ *   height?: number|string,
  *   className?: string,
  *   hint?: boolean,
  *   autoRotate?: boolean,
- *   cameraDistance?: number,
+ *   eager?: boolean,
+ *   dpr?: number|[number,number],
+ *   forceLive?: boolean,
  * }} props
  */
 export default function FurniturePreview3D({
   unit: unitProp,
   catalogRow,
+  productId: productIdProp,
   height = 220,
   className = '',
   hint = true,
   autoRotate = false,
   dpr = [1, 1.25],
-  /** Si true, monte le canvas dès le premier rendu (page article). */
   eager = false,
+  /** Force le pipeline calculé (debug) */
+  forceLive = false,
+}) {
+  const productId = productIdProp || catalogRow?.id || unitProp?.id
+  const glbUrl = productId ? catalogGlbUrl(productId) : null
+
+  // Préférence : GLB catalogue (pas de recalcul)
+  if (glbUrl && !forceLive && !autoRotate) {
+    return (
+      <CatalogGlbPreview
+        productId={productId}
+        height={height}
+        className={className}
+        hint={hint}
+        eager={eager}
+        dpr={dpr}
+      />
+    )
+  }
+
+  // Fallback calculé (session custom / debug)
+  return (
+    <LiveGeometryPreview
+      unitProp={unitProp}
+      catalogRow={catalogRow}
+      height={height}
+      className={className}
+      hint={hint}
+      autoRotate={autoRotate}
+      dpr={dpr}
+      eager={eager}
+    />
+  )
+}
+
+function LiveGeometryPreview({
+  unitProp,
+  catalogRow,
+  height,
+  className,
+  hint,
+  autoRotate,
+  dpr,
+  eager,
 }) {
   const rootRef = useRef(null)
   const [visible, setVisible] = useState(eager)
@@ -220,17 +261,10 @@ export default function FurniturePreview3D({
     [unitProp, catalogRow],
   )
 
-  /**
-   * Vue « étendue » boutique : meuble bien en grand dans le cadre,
-   * léger zoom-out (marge) pour ne rien couper.
-   * 180° autour de l’axe vertical (face avant).
-   */
   const cameraPos = useMemo(() => {
     if (!unit) return [-1.35, 0.95, -1.7]
     const { L, W, H } = unit.dims
-    // demi-diagonale du volume (m) + marge ~18 %
-    const halfDiag =
-      Math.sqrt(L * L + W * W + H * H) * SCALE * 0.5
+    const halfDiag = Math.sqrt(L * L + W * W + H * H) * SCALE * 0.5
     const d = Math.max(0.95, halfDiag * 2.55)
     return [-d * 0.82, d * 0.52, -d * 0.95]
   }, [unit])
