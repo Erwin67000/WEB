@@ -90,10 +90,18 @@ function UnitGroup({ unit, selected, wireframe, pickMode, onPickFace }) {
 }
 
 /**
- * Scène GLB (ex. chambre) — chargée uniquement si env.glb est défini.
- * Sol / murs de secours si le GLB échoue : gérés par le Suspense parent.
+ * Scène GLB (SketchUp → glTF).
+ *
+ * Convention Philae (une fois pour toutes) :
+ * — Origine du GLB = origine du meuble 1 / configurateur (0,0,0)
+ * — X : contre le mur (même sens que longueur meuble)
+ * — Y SketchUp (mur → lit) : profondeur — en glTF Y-up, c’est souvent −Z Three
+ * — Z SketchUp (haut) → Y Three (export glTF standard)
+ *
+ * Aucun recentrage auto : la géométrie doit être modélisée à l’origine SketchUp.
+ * Ajustements fin via env.position / env.rotation / env.scale (mètres, radians).
  */
-function GlbScene({ url }) {
+function GlbScene({ url, position = [0, 0, 0], rotation = [0, 0, 0], scale = 1 }) {
   const { scene } = useGLTF(url)
   const root = useMemo(() => {
     const clone = scene.clone(true)
@@ -103,38 +111,28 @@ function GlbScene({ url }) {
         obj.receiveShadow = true
       }
     })
-    // Cadre approximatif : centre au sol autour de l’origine meuble
-    const box = new THREE.Box3().setFromObject(clone)
-    const size = new THREE.Vector3()
-    const center = new THREE.Vector3()
-    box.getSize(size)
-    box.getCenter(center)
-    clone.position.x -= center.x
-    clone.position.z -= center.z
-    clone.position.y -= box.min.y
-    // Si la scène est énorme / minuscule, normaliser autour de ~5 m de large
-    const maxXZ = Math.max(size.x, size.z, 0.001)
-    if (maxXZ > 12 || maxXZ < 1.5) {
-      const s = 5 / maxXZ
-      clone.scale.setScalar(s)
-      clone.position.y = 0
-    }
     return clone
   }, [scene])
 
-  return <primitive object={root} />
+  return (
+    <group position={position} rotation={rotation} scale={scale}>
+      <primitive object={root} />
+    </group>
+  )
 }
 
 function EnvironmentScene({ env }) {
-  if (!env || env.id === 'none') return null
-  if (env.glb) {
-    return (
-      <Suspense fallback={null}>
-        <GlbScene url={env.glb} />
-      </Suspense>
-    )
-  }
-  return null
+  if (!env || env.id === 'none' || !env.glb) return null
+  return (
+    <Suspense fallback={null}>
+      <GlbScene
+        url={env.glb}
+        position={env.position || [0, 0, 0]}
+        rotation={env.rotation || [0, 0, 0]}
+        scale={env.scale ?? 1}
+      />
+    </Suspense>
+  )
 }
 
 /** Sol invisible pour recevoir les ombres projetées (même sans pièce). */

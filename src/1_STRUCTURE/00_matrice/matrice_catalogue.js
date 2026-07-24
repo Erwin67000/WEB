@@ -165,7 +165,8 @@ export function parseMatriceCatalogue(text) {
     })
 
     const category = obj.category || ''
-    const tags = parseTagsField(obj.tags, obj.tag, category)
+    // Tags = uniquement la colonne tags (pas la category, qui s’affichait en #module etc.)
+    const tags = parseTagsField(obj.tags, obj.tag)
     const modulesSpec = obj.modules || ''
     const panneauxSpec = obj.panneaux || ''
 

@@ -12,8 +12,18 @@ export const MODULE_KINDS = {
 
 /**
  * Scènes 3D — départ : aucune.
- * chambre : GLB dans public/environnement/chambre/chambre.glb
- * (source atelier : 1_STRUCTURE/03_bibliotheque/environnement/chambre/)
+ *
+ * Convention SketchUp (référence pour toutes les scènes) :
+ *   origine = point d’insertion meuble 1 (configurateur)
+ *   +X = vers / contre le mur
+ *   +Y = du mur vers le lit (profondeur pièce)
+ *   +Z = haut
+ *
+ * Export glTF (Y-up) : Z SketchUp → Y Three, Y SketchUp → −Z Three (export standard).
+ * position / rotation / scale = réglages fin (mètres, radians Euler XYZ Three).
+ *
+ * Fichier : public/environnement/<id>/<id>.glb
+ * Source atelier : src/1_STRUCTURE/03_bibliotheque/environnement/
  */
 export const ENVIRONMENTS = {
   none: {
@@ -31,6 +41,10 @@ export const ENVIRONMENTS = {
     grid: false,
     room: false,
     glb: '/environnement/chambre/chambre.glb',
+    /** Origine GLB = origine meuble 1 — pas de décalage */
+    position: [0, 0, 0],
+    rotation: [0, 0, 0],
+    scale: 1,
   },
 }
 
