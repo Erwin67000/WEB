@@ -1,13 +1,12 @@
 /**
  * matrice_catalogue — lecture de la gamme boutique.
  *
- * Source de vérité (CSV) :
- *   01_structure/08_bibliotheque/models/boutique/matrice_catalogue.csv
+ * Source unique (CSV) :
+ *   public/catalogue/matrice_catalogue.csv
+ * Servi en dev/prod via :
+ *   /catalogue/matrice_catalogue.csv
  *
  * Une ligne = un modèle. La boutique boucle sur les lignes active=true.
- *
- * Servi en dev/prod via :
- *   /structure/08_bibliotheque/models/boutique/matrice_catalogue.csv
  */
 
 /** Colonnes documentées (schéma matrice). */
@@ -35,15 +34,10 @@ export const CATALOGUE_COLUMNS = [
   'sku',
 ]
 
-/** URL principale + secours (ancien nom). */
-export const MATRICE_CATALOGUE_URL =
-  '/structure/08_bibliotheque/models/boutique/matrice_catalogue.csv'
+/** URL unique du catalogue. */
+export const MATRICE_CATALOGUE_URL = '/catalogue/matrice_catalogue.csv'
 
-export const MATRICE_CATALOGUE_FALLBACKS = [
-  '/structure/08_bibliotheque/models/boutique/configurations.csv',
-  '/structure/08_bibliotheque/models/boutique/configurations.new.csv',
-  '/catalogue/matrice_catalogue.csv',
-]
+export const MATRICE_CATALOGUE_FALLBACKS = []
 
 /** Kinds de modules reconnus par l’agencement V5. */
 const MODULE_KINDS_OK = new Set(['shelf', 'drawer', 'door'])

@@ -10,30 +10,27 @@ export const MODULE_KINDS = {
   drawer: { id: 'drawer', label: 'Tiroir', icon: '▤' },
 }
 
+/**
+ * Scènes 3D — départ : aucune.
+ * chambre : GLB dans public/environnement/chambre/chambre.glb
+ * (source atelier : 1_STRUCTURE/03_bibliotheque/environnement/chambre/)
+ */
 export const ENVIRONMENTS = {
-  none: { id: 'none', label: 'Aucun', bg: '#0a0a0a', grid: true },
+  none: {
+    id: 'none',
+    label: 'Aucune scène',
+    bg: '#0a0a0a',
+    grid: true,
+    room: false,
+    glb: null,
+  },
   chambre: {
     id: 'chambre',
     label: 'Chambre',
-    bg: '#a8b5a8',
-    room: true,
-    walls: '#e8e0d5',
-    floor: '#d4c4a8',
-  },
-  salon: {
-    id: 'salon',
-    label: 'Salon',
-    bg: '#9aa8b0',
-    room: true,
-    walls: '#f0ebe3',
-    floor: '#c8b89a',
-  },
-  atelier: {
-    id: 'atelier',
-    label: 'Atelier',
-    bg: '#2a2a2a',
-    grid: true,
+    bg: '#1a1814',
+    grid: false,
     room: false,
+    glb: '/environnement/chambre/chambre.glb',
   },
 }
 

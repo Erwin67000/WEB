@@ -15,17 +15,24 @@ const PLANE_THICK = 4
  * Faces sélectionnables.
  * — fond / porte / joue1 / joue2 / dessous / dessus_exterieur
  */
+/**
+ * Aligné sur PANNEAU_DEFS (matrice_panneau_grok) :
+ * — fond  : face Y ≈ 0
+ * — porte : face Y = W (opposée)
+ * (était inversé dans le pick → corrigé)
+ */
 export const FACE_PICK_DEFS = [
   {
-    id: 'porte',
-    label: 'Porte (avant)',
-    // plan Y = 0 (avant)
+    id: 'fond',
+    label: 'Fond',
+    // plan Y = 0 (définition géométrique fond)
     center: (L, W, H) => [L / 2, -PAD, H / 2],
     size: (L, W, H) => [L * 0.9, PLANE_THICK, H * 0.9],
   },
   {
-    id: 'fond',
-    label: 'Fond (arrière)',
+    id: 'porte',
+    label: 'Porte',
+    // plan Y = W (face opposée)
     center: (L, W, H) => [L / 2, W + PAD, H / 2],
     size: (L, W, H) => [L * 0.9, PLANE_THICK, H * 0.9],
   },

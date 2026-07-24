@@ -1,10 +1,10 @@
-import { Suspense, useEffect, useRef } from 'react'
+import { Suspense, useEffect, useMemo, useRef } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import {
   OrbitControls,
   Grid,
   ContactShadows,
-  Environment as DreiEnv,
+  useGLTF,
 } from '@react-three/drei'
 import * as THREE from 'three'
 import OssatureView from '../1_STRUCTURE/01_meuble3D/OssatureView.jsx'
@@ -89,37 +89,52 @@ function UnitGroup({ unit, selected, wireframe, pickMode, onPickFace }) {
   )
 }
 
-function Room({ env }) {
-  if (!env?.room) return null
-  const s = 6
-  const h = 2.8
-  const wall = env.walls || '#e8e0d5'
-  const floor = env.floor || '#d4c4a8'
-  return (
-    <group>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
-        <planeGeometry args={[s, s]} />
-        <meshStandardMaterial color={floor} roughness={0.85} />
-      </mesh>
-      <mesh position={[0, h / 2, -s / 2]} receiveShadow>
-        <boxGeometry args={[s, h, 0.08]} />
-        <meshStandardMaterial color={wall} roughness={0.9} />
-      </mesh>
-      <mesh position={[-s / 2, h / 2, 0]} receiveShadow>
-        <boxGeometry args={[0.08, h, s]} />
-        <meshStandardMaterial color={wall} roughness={0.9} />
-      </mesh>
-      <mesh position={[s / 2, h / 2, 0]} receiveShadow>
-        <boxGeometry args={[0.08, h, s]} />
-        <meshStandardMaterial
-          color={wall}
-          roughness={0.95}
-          transparent
-          opacity={0.15}
-        />
-      </mesh>
-    </group>
-  )
+/**
+ * Scène GLB (ex. chambre) — chargée uniquement si env.glb est défini.
+ * Sol / murs de secours si le GLB échoue : gérés par le Suspense parent.
+ */
+function GlbScene({ url }) {
+  const { scene } = useGLTF(url)
+  const root = useMemo(() => {
+    const clone = scene.clone(true)
+    clone.traverse((obj) => {
+      if (obj.isMesh) {
+        obj.castShadow = true
+        obj.receiveShadow = true
+      }
+    })
+    // Cadre approximatif : centre au sol autour de l’origine meuble
+    const box = new THREE.Box3().setFromObject(clone)
+    const size = new THREE.Vector3()
+    const center = new THREE.Vector3()
+    box.getSize(size)
+    box.getCenter(center)
+    clone.position.x -= center.x
+    clone.position.z -= center.z
+    clone.position.y -= box.min.y
+    // Si la scène est énorme / minuscule, normaliser autour de ~5 m de large
+    const maxXZ = Math.max(size.x, size.z, 0.001)
+    if (maxXZ > 12 || maxXZ < 1.5) {
+      const s = 5 / maxXZ
+      clone.scale.setScalar(s)
+      clone.position.y = 0
+    }
+    return clone
+  }, [scene])
+
+  return <primitive object={root} />
+}
+
+function EnvironmentScene({ env }) {
+  if (!env || env.id === 'none') return null
+  if (env.glb) {
+    return (
+      <Suspense fallback={null}>
+        <GlbScene url={env.glb} />
+      </Suspense>
+    )
+  }
+  return null
 }
 
 /** Sol invisible pour recevoir les ombres projetées (même sans pièce). */
@@ -224,7 +239,7 @@ function SceneContent() {
         />
       )}
 
-      <Room env={env} />
+      <EnvironmentScene env={env} />
       {sunEnabled && <ShadowFloor />}
 
       {units.map((u) => (
@@ -296,9 +311,7 @@ function CameraFloorClamp({ pickMode }) {
 }
 
 export default function Configurateur3D() {
-  const environmentId = useActiveConfigStore((s) => s.environmentId)
   const panneauPickMode = useActiveConfigStore((s) => s.panneauPickMode)
-  const env = ENVIRONMENTS[environmentId] || ENVIRONMENTS.none
 
   return (
     <div className={`viewport-3d${panneauPickMode ? ' pick-mode' : ''}`}>
@@ -324,9 +337,6 @@ export default function Configurateur3D() {
       >
         <Suspense fallback={null}>
           <SceneContent />
-          {env.room && (
-            <DreiEnv preset="apartment" environmentIntensity={0.25} />
-          )}
         </Suspense>
       </Canvas>
       <div className="viewport-hint">
@@ -336,4 +346,13 @@ export default function Configurateur3D() {
       </div>
     </div>
   )
+}
+
+// Précharge la scène chambre si présente
+if (typeof window !== 'undefined') {
+  try {
+    useGLTF.preload('/environnement/chambre/chambre.glb')
+  } catch {
+    /* ignore */
+  }
 }
