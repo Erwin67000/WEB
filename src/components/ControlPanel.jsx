@@ -260,10 +260,6 @@ export default function ControlPanel() {
                   Supprimer
                 </button>
               </div>
-              <p className="muted" style={{ fontSize: '0.68rem' }}>
-                Jusqu’à 3 meubles · clic sur le nom actif pour renommer
-                {isPrimaryUnit ? ' · meuble 1 fixe' : ''}
-              </p>
             </div>
           )}
         </section>
@@ -383,7 +379,7 @@ export default function ControlPanel() {
               </div>
               {unit.modules.length === 0 && (
                 <p className="muted">
-                  Aucun module — tablette ou tiroir. La porte façade = panneau « Porte ».
+                  Aucun module.
                 </p>
               )}
               <ul className="mod-list">
