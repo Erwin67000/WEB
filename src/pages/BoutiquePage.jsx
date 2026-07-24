@@ -12,7 +12,7 @@ import {
 import FurniturePreview3D from '../components/FurniturePreview3D.jsx'
 
 const PRICE_DISCLAIMER =
-  'Prix indicatifs TTC issus de matrice_catalogue. Devis atelier sur demande.'
+  'Prix indicatifs hors livraison.'
 
 export default function BoutiquePage() {
   const navigate = useNavigate()
@@ -64,13 +64,10 @@ export default function BoutiquePage() {
   return (
     <div className="page page-boutique page-site page-full">
       <header className="page-head page-head-full">
-        <p className="section-kicker">Catalogue · matrice</p>
+        <p className="section-kicker">Catalogue</p>
         <h1 className="hero-title">Boutique</h1>
         <p className="hero-lead">
-          La gamme est pilotée par{' '}
-          <code className="mono-inline">matrice_catalogue.csv</code> — une
-          ligne par modèle. Ajoutez une table basse, une étagère, un banc… la
-          boutique se met à jour automatiquement.
+          Retrouvez ici les modèles préconfigurés.
         </p>
         <p className="price-disclaimer">{PRICE_DISCLAIMER}</p>
         <p className="hint page-pad-x" style={{ paddingLeft: 0 }}>
@@ -107,18 +104,6 @@ export default function BoutiquePage() {
         </span>
       </div>
 
-      {error && (
-        <p className="action-msg page-pad-x">
-          Erreur matrice catalogue : {error}
-          <br />
-          <span className="hint">
-            Vérifiez le fichier{' '}
-            <code>
-              01_structure/08_bibliotheque/models/boutique/matrice_catalogue.csv
-            </code>
-          </span>
-        </p>
-      )}
 
       {!loading && !error && visible.length === 0 && (
         <p className="hint page-pad-x">

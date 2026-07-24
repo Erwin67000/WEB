@@ -143,7 +143,7 @@ export default function AccueilPage() {
         <div className="home-section-inner">
           <p className="section-kicker">Concept Philae</p>
           <h2 className="section-title-lg">
-            Transformer<span className="gold">la conception du mobilier</span>
+            Transformer<span className="gold"> la conception du mobilier</span>
           </h2>
           <p className="section-body">
             Donner la priorité à la structure, et non aux panneaux. L'ossature est le squelette du meuble, elle définit le volume et la géométrie. Les panneaux deviennent des décisions conscientes, et non des contraintes.

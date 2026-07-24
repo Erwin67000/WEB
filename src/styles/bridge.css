@@ -449,6 +449,20 @@ a.site-brand {
   font-variant-numeric: tabular-nums;
 }
 
+/* ——— Chips meubles + renommage inline ——— */
+.unit-chip-input {
+  background: var(--bg-elevated, #1a1610);
+  border: 1px solid var(--gold, #c9a227);
+  border-radius: 999px;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.8rem;
+  color: var(--gold, #c9a227);
+  font-weight: 600;
+  min-width: 5rem;
+  max-width: 10rem;
+  outline: none;
+}
+
 /* ——— Panneaux gamification ——— */
 .panneaux-game {
   gap: 0.5rem !important;

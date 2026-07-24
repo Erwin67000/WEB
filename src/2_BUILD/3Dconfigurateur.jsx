@@ -1,5 +1,5 @@
 import { Suspense, useEffect, useRef } from 'react'
-import { Canvas, useFrame } from '@react-three/fiber'
+import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import {
   OrbitControls,
   Grid,
@@ -252,13 +252,47 @@ function SceneContent() {
         dampingFactor={0.08}
         minDistance={0.5}
         maxDistance={20}
-        maxPolarAngle={Math.PI * 0.49}
+        /* Mode ajout panneau : on peut passer sous z=0 pour cliquer le socle.
+           Sinon z=0 infranchissable (polar max ≈ horizon). */
+        maxPolarAngle={panneauPickMode ? Math.PI * 0.98 : Math.PI * 0.49}
+        minPolarAngle={0}
         target={orbitTarget}
-        // en mode pick : on peut encore orbiter (panneau via clic face)
         enabled
       />
+      <CameraFloorClamp pickMode={panneauPickMode} />
     </>
   )
+}
+
+/**
+ * En quittant le mode pick : si la caméra est sous l’horizon, on la relève
+ * pour rétablir z=0 infranchissable.
+ */
+function CameraFloorClamp({ pickMode }) {
+  const { camera, controls } = useThree()
+  const prevPick = useRef(pickMode)
+
+  useEffect(() => {
+    if (prevPick.current && !pickMode) {
+      // Sortie du mode pick : clamp polar ≤ horizon
+      const target = controls?.target || new THREE.Vector3(0, 0.4, 0)
+      const offset = camera.position.clone().sub(target)
+      const spherical = new THREE.Spherical().setFromVector3(offset)
+      const maxPhi = Math.PI * 0.49
+      if (spherical.phi > maxPhi) {
+        spherical.phi = maxPhi
+        offset.setFromSpherical(spherical)
+        camera.position.copy(target).add(offset)
+        camera.lookAt(target)
+        if (controls) {
+          controls.update?.()
+        }
+      }
+    }
+    prevPick.current = pickMode
+  }, [pickMode, camera, controls])
+
+  return null
 }
 
 export default function Configurateur3D() {

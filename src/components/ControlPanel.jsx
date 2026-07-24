@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useRef, useEffect } from 'react'
 import { useActiveConfigStore, useActiveConfigStoreApi } from '../store/ConfigStoreContext.jsx'
 import {
   FINITIONS_OSSATURE,
@@ -132,6 +132,9 @@ export default function ControlPanel() {
 
   const [flash, setFlash] = useState('')
   const [mobileOpen, setMobileOpen] = useState(false)
+  /** Chip en cours de renommage (id meuble) */
+  const [editingUnitId, setEditingUnitId] = useState(null)
+  const renameInputRef = useRef(null)
   /** Au départ : seule la section Dimensions est ouverte. */
   const [openSections, setOpenSections] = useState({
     meuble: false,
@@ -143,6 +146,13 @@ export default function ControlPanel() {
     devis: false,
   })
 
+  useEffect(() => {
+    if (editingUnitId && renameInputRef.current) {
+      renameInputRef.current.focus()
+      renameInputRef.current.select()
+    }
+  }, [editingUnitId])
+
   if (!unit) return null
 
   const toggle = (k) =>
@@ -150,8 +160,13 @@ export default function ControlPanel() {
 
   const notify = (msg) => {
     setFlash(msg)
-    setTimeout(() => setFlash(''), 3200)
+    setTimeout(() => setFlash(''), 4200)
   }
+
+  /** Index du meuble actif (0 = premier, non déplaçable) */
+  const activeUnitIndex = units.findIndex((u) => u.id === activeUnitId)
+  const isPrimaryUnit = activeUnitIndex <= 0
+  const canShowPosition = activeUnitIndex >= 1
 
   return (
     <aside className={`control-panel${mobileOpen ? ' mobile-open' : ''}`}>
@@ -177,19 +192,63 @@ export default function ControlPanel() {
           {openSections.meuble && (
             <div className="section-body">
               <div className="unit-list">
-                {units.map((u) => (
-                  <button
-                    key={u.id}
-                    type="button"
-                    className={`unit-chip ${u.id === activeUnitId ? 'active' : ''}`}
-                    onClick={() => setActiveUnit(u.id)}
-                  >
-                    {u.label}
-                  </button>
-                ))}
+                {units.map((u, idx) =>
+                  editingUnitId === u.id ? (
+                    <input
+                      key={u.id}
+                      ref={renameInputRef}
+                      className="unit-chip-input"
+                      type="text"
+                      value={u.label}
+                      maxLength={40}
+                      onChange={(e) =>
+                        updateUnit(u.id, { label: e.target.value })
+                      }
+                      onBlur={() => setEditingUnitId(null)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === 'Escape') {
+                          setEditingUnitId(null)
+                        }
+                      }}
+                    />
+                  ) : (
+                    <button
+                      key={u.id}
+                      type="button"
+                      className={`unit-chip ${u.id === activeUnitId ? 'active' : ''}`}
+                      title={
+                        u.id === activeUnitId
+                          ? 'Cliquer pour renommer'
+                          : 'Sélectionner'
+                      }
+                      onClick={() => {
+                        if (u.id === activeUnitId) {
+                          setEditingUnitId(u.id)
+                        } else {
+                          setActiveUnit(u.id)
+                          setEditingUnitId(null)
+                        }
+                      }}
+                    >
+                      {u.label || `Meuble ${idx + 1}`}
+                    </button>
+                  ),
+                )}
               </div>
               <div className="row-actions">
-                <button type="button" className="btn-sm" onClick={addUnit}>
+                <button
+                  type="button"
+                  className="btn-sm"
+                  onClick={() => {
+                    const result = addUnit()
+                    if (result && result.ok === false) {
+                      notify(
+                        result.reason ||
+                          'Veuillez nous contacter via notre formulaire pour tout projet d’envergure',
+                      )
+                    }
+                  }}
+                >
                   + Meuble
                 </button>
                 <button
@@ -201,14 +260,10 @@ export default function ControlPanel() {
                   Supprimer
                 </button>
               </div>
-              <label className="field">
-                <span className="field-label">Libellé</span>
-                <input
-                  type="text"
-                  value={unit.label}
-                  onChange={(e) => updateUnit(unit.id, { label: e.target.value })}
-                />
-              </label>
+              <p className="muted" style={{ fontSize: '0.68rem' }}>
+                Jusqu’à 3 meubles · clic sur le nom actif pour renommer
+                {isPrimaryUnit ? ' · meuble 1 fixe' : ''}
+              </p>
             </div>
           )}
         </section>
@@ -245,22 +300,26 @@ export default function ControlPanel() {
                 step={DIM_LIMITS.H.step}
                 onChange={(H) => updateDims(unit.id, { H })}
               />
-              <SliderDim
-                label="Pos. X"
-                value={unit.positionMm.x}
-                min={-5000}
-                max={5000}
-                step={10}
-                onChange={(x) => updatePosition(unit.id, { x })}
-              />
-              <SliderDim
-                label="Pos. Y"
-                value={unit.positionMm.y}
-                min={-5000}
-                max={5000}
-                step={10}
-                onChange={(y) => updatePosition(unit.id, { y })}
-              />
+              {canShowPosition && (
+                <>
+                  <SliderDim
+                    label="Pos. X"
+                    value={unit.positionMm.x}
+                    min={-5000}
+                    max={5000}
+                    step={10}
+                    onChange={(x) => updatePosition(unit.id, { x })}
+                  />
+                  <SliderDim
+                    label="Pos. Y"
+                    value={unit.positionMm.y}
+                    min={-5000}
+                    max={5000}
+                    step={10}
+                    onChange={(y) => updatePosition(unit.id, { y })}
+                  />
+                </>
+              )}
               <NumFieldInline
                 label="Rot. Z"
                 value={unit.rotationZ}

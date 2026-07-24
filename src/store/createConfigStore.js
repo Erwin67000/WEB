@@ -228,9 +228,19 @@ export function createConfigStore(opts = {}) {
 
     setActiveUnit: (id) => set({ activeUnitId: id, dirty: true }),
 
+    /** Max 3 meubles client. Retourne { ok, unit? } ou { ok: false, reason }. */
     addUnit: () => {
+      const MAX_UNITS = 3
+      if (get().units.length >= MAX_UNITS) {
+        return {
+          ok: false,
+          reason:
+            'Veuillez nous contacter via notre formulaire pour tout projet d’envergure',
+        }
+      }
       const n = get().units.length + 1
       const prev = get().getActiveUnit()
+      // Meuble 1 reste à l’origine ; suivants décalés en X
       const unit = defaultUnit({
         label: `Meuble ${n}`,
         positionMm: {
@@ -244,12 +254,20 @@ export function createConfigStore(opts = {}) {
         activeUnitId: unit.id,
         dirty: true,
       }))
+      return { ok: true, unit }
     },
 
     removeUnit: (id) =>
       set((s) => {
         if (s.units.length <= 1) return s
         const units = s.units.filter((u) => u.id !== id)
+        // Le premier restant redevient l’ancrage (non déplaçable)
+        if (units[0]) {
+          units[0] = {
+            ...units[0],
+            positionMm: { x: 0, y: 0, z: 0 },
+          }
+        }
         return {
           units,
           activeUnitId:
@@ -275,14 +293,27 @@ export function createConfigStore(opts = {}) {
       })),
 
     updatePosition: (id, positionMm) =>
-      set((s) => ({
-        units: s.units.map((u) =>
-          u.id === id
-            ? { ...u, positionMm: { ...u.positionMm, ...positionMm } }
-            : u,
-        ),
-        dirty: true,
-      })),
+      set((s) => {
+        // Premier meuble (index 0) : non déplaçable
+        if (s.units[0]?.id === id) {
+          return {
+            units: s.units.map((u) =>
+              u.id === id
+                ? { ...u, positionMm: { x: 0, y: 0, z: 0 } }
+                : u,
+            ),
+            dirty: true,
+          }
+        }
+        return {
+          units: s.units.map((u) =>
+            u.id === id
+              ? { ...u, positionMm: { ...u.positionMm, ...positionMm } }
+              : u,
+          ),
+          dirty: true,
+        }
+      }),
 
     addModule: (kind) => {
       const id = get().activeUnitId
