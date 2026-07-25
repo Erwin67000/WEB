@@ -30,7 +30,10 @@ export const TVA = 0.2
  *   longueur_m = 4 × (L + W + H) / 1000   (L,W,H en mm)
  *
  * Panneau : forfait par panneau + variable × surface (m²)
- * Tablette / tiroir : forfait + variable × surface (m²)
+ * Tablette : forfait + variable × surface L×W (m²)
+ * Tiroir : forfait + variable × volume L×W×H_tiroir (m³)
+ *   H_tiroir parmi 200 / 300 / 400 mm (défaut catalogue : 200 mm)
+ * Porte (module) : forfait + variable × façade L×H (m²)
  */
 export const PRIX = {
   /** Ossature bois 40×40 */
@@ -47,16 +50,23 @@ export const PRIX = {
   tabletteForfait: 50,
   tabletteParM2: 100,
 
-  /** Tiroir, attention j'ai changé les units en m3 de tiroir donc Longueur x Profodeur x hauteur_tiroir parmis 3 choix (20, 30 et 40cm) */
+  /**
+   * Tiroir : volume en m³ = L × W × H_tiroir (mm → /1e9)
+   * H_tiroir au choix : 200 | 300 | 400 mm
+   */
   tiroirForfait: 250,
-  tiroirParM3: 1000,   
+  tiroirParM3: 1000,
+  /** Hauteur tiroir par défaut (mm) si non précisée sur le module */
+  tiroirHauteurDefautMm: 200,
+  /** Hauteurs tiroir proposées (mm) */
+  tiroirHauteursMm: [200, 300, 400],
 
   /** Porte (module) */
   porteForfait: 250,
   porteParM2: 100,
 
   /** Pied (module) */
-  porteForfait: 100,
+  piedForfait: 100,
 
   /** Produit numérique modèle 3D (HT) — bouton client */
   modele3d: 45,

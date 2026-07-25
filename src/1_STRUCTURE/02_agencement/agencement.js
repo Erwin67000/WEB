@@ -345,13 +345,21 @@ export function moduleLayout(mod, { L, W, H }, moduleList = []) {
 }
 
 /**
- * Prix HT d’un module d’aménagement (forfait + variable surface).
- * Tablette : surface L×W ; tiroir / porte : surface façade L×H.
+ * Prix HT d’un module d’aménagement (forfait + variable).
+ * Tablette : surface L×W (m²)
+ * Tiroir : volume L×W×H_tiroir (m³) — H parmi 200/300/400 mm
+ * Porte : surface façade L×H (m²)
  */
 export function modulePriceHT(mod, dims) {
-  // Import local pour éviter cycle si matrice importe agencement un jour
-  // Constantes lues depuis matrice_constante via lazy require pattern inline
   return modulePriceBreakdown(mod, dims).total
+}
+
+/** Hauteur tiroir (mm) : module.hMm / heightMm, sinon défaut catalogue. */
+export function drawerHeightMm(mod) {
+  const raw = mod?.hMm ?? mod?.heightMm ?? PRIX.tiroirHauteurDefautMm
+  const n = Number(raw)
+  if (!Number.isFinite(n) || n <= 0) return PRIX.tiroirHauteurDefautMm
+  return n
 }
 
 /** Détail ligne devis pour un module. */
@@ -372,13 +380,17 @@ export function modulePriceBreakdown(mod, dims) {
     }
   }
   if (mod.kind === 'drawer') {
+    const hMm = drawerHeightMm(mod)
+    const volumeM3 = (dims.L * dims.W * hMm) / 1e9
     const forfait = PRIX.tiroirForfait
-    const variable = faceArea * PRIX.tiroirParM2
+    const variable = volumeM3 * PRIX.tiroirParM3
     return {
       kind: 'drawer',
       label: 'Tiroir',
       forfait,
-      surfaceM2: faceArea,
+      hMm,
+      volumeM3,
+      surfaceM2: volumeM3, // rétrocompat champs devis (volume en m³)
       variable,
       total: forfait + variable,
     }
@@ -393,6 +405,17 @@ export function modulePriceBreakdown(mod, dims) {
       surfaceM2: faceArea,
       variable,
       total: forfait + variable,
+    }
+  }
+  if (mod.kind === 'pied') {
+    const forfait = PRIX.piedForfait
+    return {
+      kind: 'pied',
+      label: 'Pied',
+      forfait,
+      surfaceM2: 0,
+      variable: 0,
+      total: forfait,
     }
   }
   return {
