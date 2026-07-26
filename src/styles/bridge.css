@@ -449,6 +449,24 @@ a.site-brand {
   font-variant-numeric: tabular-nums;
 }
 
+/* Dimensions figées (session boutique) */
+.dims-locked-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid var(--border, #2a2620);
+  border-radius: 4px;
+  background: rgba(201, 162, 39, 0.06);
+}
+
+.dims-locked-values {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--gold, #c9a227);
+  font-variant-numeric: tabular-nums;
+}
+
 /* ——— Chips meubles + renommage inline ——— */
 .unit-chip-input {
   background: var(--bg-elevated, #1a1610);

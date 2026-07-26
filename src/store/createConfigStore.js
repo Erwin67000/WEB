@@ -213,6 +213,11 @@ export function createConfigStore(opts = {}) {
     selection: null,
     /** id catalogue si session boutique */
     catalogProductId: null,
+    /**
+     * true = session boutique : L/W/H figés (personnalisation hors dimensions).
+     * false = configurateur libre.
+     */
+    dimsLocked: false,
     dirty: false,
 
     getActiveUnit: () => {
@@ -283,14 +288,17 @@ export function createConfigStore(opts = {}) {
       })),
 
     updateDims: (id, dims) =>
-      set((s) => ({
-        units: s.units.map((u) =>
-          u.id === id
-            ? { ...u, dims: { ...u.dims, ...clampDims(dims) } }
-            : u,
-        ),
-        dirty: true,
-      })),
+      set((s) => {
+        if (s.dimsLocked) return s
+        return {
+          units: s.units.map((u) =>
+            u.id === id
+              ? { ...u, dims: { ...u.dims, ...clampDims(dims) } }
+              : u,
+          ),
+          dirty: true,
+        }
+      }),
 
     updatePosition: (id, positionMm) =>
       set((s) => {
@@ -477,6 +485,8 @@ export function createConfigStore(opts = {}) {
         showPanneauRectangles: snap.showPanneauRectangles ?? false,
         showPanneauRectFaces: snap.showPanneauRectFaces ?? false,
         showPanneauSolid: snap.showPanneauSolid ?? true,
+        // Main configurateur : dimensions toujours libres après import boutique
+        dimsLocked: false,
         epaisseurPanneau: snap.epaisseurPanneau ?? Number(EPAISSEUR_PANNEAU),
         epaisseurPorte: snap.epaisseurPorte ?? Number(EPAISSEUR_PORTE),
         notes: snap.notes ?? '',
@@ -536,6 +546,8 @@ export function createConfigStore(opts = {}) {
         sunEnabled: false,
         sunIntensity: 2.5,
         wireframe: false,
+        // Boutique dédiée : dimensions du modèle figées
+        dimsLocked: true,
         showPanneauRectangles: false,
         showPanneauRectFaces: false,
         showPanneauSolid: true,

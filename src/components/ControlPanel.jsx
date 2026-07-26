@@ -89,6 +89,7 @@ export default function ControlPanel() {
   const quoteRef = useActiveConfigStore((s) => s.quoteRef)
   const contact = useActiveConfigStore((s) => s.contact)
   const panneauPickMode = useActiveConfigStore((s) => s.panneauPickMode)
+  const dimsLocked = useActiveConfigStore((s) => s.dimsLocked)
 
   const setActiveUnit = useActiveConfigStore((s) => s.setActiveUnit)
   const addUnit = useActiveConfigStore((s) => s.addUnit)
@@ -272,31 +273,52 @@ export default function ControlPanel() {
           </button>
           {openSections.dims && (
             <div className="section-body">
-              <SliderDim
-                label="Longueur (L)"
-                value={unit.dims.L}
-                min={DIM_LIMITS.L.min}
-                max={DIM_LIMITS.L.max}
-                step={DIM_LIMITS.L.step}
-                onChange={(L) => updateDims(unit.id, { L })}
-              />
-              <SliderDim
-                label="Profondeur (W)"
-                value={unit.dims.W}
-                min={DIM_LIMITS.W.min}
-                max={DIM_LIMITS.W.max}
-                step={DIM_LIMITS.W.step}
-                onChange={(W) => updateDims(unit.id, { W })}
-              />
-              <SliderDim
-                label="Hauteur (H)"
-                value={unit.dims.H}
-                min={DIM_LIMITS.H.min}
-                max={DIM_LIMITS.H.max}
-                step={DIM_LIMITS.H.step}
-                onChange={(H) => updateDims(unit.id, { H })}
-              />
-              {canShowPosition && (
+              {dimsLocked ? (
+                <div className="dims-locked-block">
+                  <p className="muted" style={{ margin: 0 }}>
+                    Dimensions du modèle boutique (figées)
+                  </p>
+                  <p className="dims-locked-values">
+                    <strong>
+                      {unit.dims.L} × {unit.dims.W} × {unit.dims.H}
+                    </strong>{' '}
+                    mm
+                    <span className="muted"> (L × P × H)</span>
+                  </p>
+                  <p className="muted" style={{ fontSize: '0.68rem', margin: 0 }}>
+                    Pour modifier L, P, H : utilisez le{' '}
+                    <strong>configurateur libre</strong>.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <SliderDim
+                    label="Longueur (L)"
+                    value={unit.dims.L}
+                    min={DIM_LIMITS.L.min}
+                    max={DIM_LIMITS.L.max}
+                    step={DIM_LIMITS.L.step}
+                    onChange={(L) => updateDims(unit.id, { L })}
+                  />
+                  <SliderDim
+                    label="Profondeur (W)"
+                    value={unit.dims.W}
+                    min={DIM_LIMITS.W.min}
+                    max={DIM_LIMITS.W.max}
+                    step={DIM_LIMITS.W.step}
+                    onChange={(W) => updateDims(unit.id, { W })}
+                  />
+                  <SliderDim
+                    label="Hauteur (H)"
+                    value={unit.dims.H}
+                    min={DIM_LIMITS.H.min}
+                    max={DIM_LIMITS.H.max}
+                    step={DIM_LIMITS.H.step}
+                    onChange={(H) => updateDims(unit.id, { H })}
+                  />
+                </>
+              )}
+              {canShowPosition && !dimsLocked && (
                 <>
                   <SliderDim
                     label="Pos. X"

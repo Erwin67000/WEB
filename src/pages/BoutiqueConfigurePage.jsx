@@ -114,7 +114,8 @@ export default function BoutiqueConfigurePage() {
               <span className="section-kicker">Session · matrice_catalogue</span>
               <strong>{row.name}</strong>
               <span className="hint">
-                Base CSV · le main n’est modifié qu’à la sauvegarde
+                Dimensions L×P×H figées · finitions &amp; aménagements libres ·
+                sauvegarde vers le main optionnelle
               </span>
             </div>
           </div>
