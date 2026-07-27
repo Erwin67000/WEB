@@ -28,6 +28,13 @@ function Shell() {
   )
   const isHomeStory = location.pathname === '/'
   const isConfigMode = isMainConfig || isBoutiqueSession
+  // Fond ivoire : Accueil, Boutique (+ fiche produit), Contact
+  // Noir : Configurateur, Concept, session boutique config
+  const isIvoryBg =
+    location.pathname === '/' ||
+    location.pathname === '/contact' ||
+    location.pathname === '/boutique' ||
+    /^\/boutique\/[^/]+$/.test(location.pathname)
 
   useEffect(() => {
     document.title = isBoutiqueSession
@@ -60,6 +67,16 @@ function Shell() {
       root?.classList.remove('story-mode-root')
     }
 
+    if (isIvoryBg) {
+      document.documentElement.classList.add('theme-ivory')
+      document.body.classList.add('theme-ivory')
+      root?.classList.add('theme-ivory')
+    } else {
+      document.documentElement.classList.remove('theme-ivory')
+      document.body.classList.remove('theme-ivory')
+      root?.classList.remove('theme-ivory')
+    }
+
     return () => {
       document.documentElement.classList.remove('config-lock')
       document.body.classList.remove('config-lock')
@@ -67,8 +84,11 @@ function Shell() {
       document.documentElement.classList.remove('story-mode')
       document.body.classList.remove('story-mode')
       root?.classList.remove('story-mode-root')
+      document.documentElement.classList.remove('theme-ivory')
+      document.body.classList.remove('theme-ivory')
+      root?.classList.remove('theme-ivory')
     }
-  }, [isConfigMode, isMainConfig, isBoutiqueSession, isHomeStory])
+  }, [isConfigMode, isMainConfig, isBoutiqueSession, isHomeStory, isIvoryBg])
 
   return (
     <ConfigStoreProvider store={useConfigStore}>
@@ -76,7 +96,7 @@ function Shell() {
       <div
         className={`site-root${isConfigMode ? ' is-config-mode' : ''}${
           isHomeStory ? ' is-story-mode' : ''
-        }`}
+        }${isIvoryBg ? ' theme-ivory' : ''}`}
       >
         {/* Header toujours visible (y compris configurateur) */}
         <SiteHeader />

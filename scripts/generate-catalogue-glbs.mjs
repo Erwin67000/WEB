@@ -117,9 +117,9 @@ function meshFromBuffers(positions, indices, color, name) {
 /**
  * Filaire exact (pas de dilatation géométrique) → fins cylindres centrés
  * sur le segment. Anti z-fighting côté viewer via polygonOffset sur les solides.
- * radiusMm très fin (~0.25 mm) pour rester collé à l’arête même en zoom fort.
+ * radiusMm un peu plus marqué pour les vignettes boutique (lisible au repos).
  */
-function tubesFromWire(wire, color, name, radiusMm = 0.28) {
+function tubesFromWire(wire, color, name, radiusMm = 0.62) {
   if (!wire || wire.length < 6) return null
   const group = new THREE.Group()
   group.name = name
@@ -180,7 +180,7 @@ function buildRowGroup(row) {
     root.add(
       meshFromBuffers(m.positions, m.indices, woodColor, `arete-${m.id}`),
     )
-    const lines = tubesFromWire(m.wire, edgeColor, `arete-wire-${m.id}`, 0.28)
+    const lines = tubesFromWire(m.wire, edgeColor, `arete-wire-${m.id}`, 0.65)
     if (lines) root.add(lines)
   }
 
@@ -203,7 +203,7 @@ function buildRowGroup(row) {
         buf.wire,
         edgeColor,
         `panneau-wire-${nom}`,
-        0.25,
+        0.55,
       )
       if (plines) root.add(plines)
     } catch (e) {
@@ -237,7 +237,7 @@ function buildRowGroup(row) {
     const edgeGroup = new THREE.Group()
     edgeGroup.position.copy(center)
     edgeGroup.name = `mod-wire-${mod.kind}-${mod.bayIndex}`
-    const r = 0.00028
+    const r = 0.00055
     const edgeMat = new THREE.MeshStandardMaterial({
       color: edgeColor,
       roughness: 0.4,

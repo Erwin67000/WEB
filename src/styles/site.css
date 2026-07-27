@@ -174,7 +174,91 @@
   min-height: 0;
   height: auto;
   overflow: visible;
-  background: #0a0a0a;
+  background: var(--bg, #0a0a0a);
+}
+
+/* ——— Thème ivoire : Accueil / Boutique / Contact ——— */
+html.theme-ivory,
+body.theme-ivory,
+#root.theme-ivory,
+.site-root.theme-ivory {
+  background: var(--ivory, #f5f0e6) !important;
+  color: #1a1610;
+}
+
+.site-root.theme-ivory .site-main,
+.site-root.theme-ivory .page-site,
+.site-root.theme-ivory .page {
+  background: var(--ivory, #f5f0e6) !important;
+  color: #1a1610;
+}
+
+.site-root.theme-ivory .hero-title,
+.site-root.theme-ivory h1,
+.site-root.theme-ivory h2,
+.site-root.theme-ivory h3,
+.site-root.theme-ivory .section-title-lg,
+.site-root.theme-ivory .product-name {
+  color: #12100c !important;
+}
+
+.site-root.theme-ivory .hero-lead,
+.site-root.theme-ivory .lead,
+.site-root.theme-ivory .muted,
+.site-root.theme-ivory .hint,
+.site-root.theme-ivory .price-disclaimer,
+.site-root.theme-ivory .product-desc,
+.site-root.theme-ivory .product-cat,
+.site-root.theme-ivory .strength-item p,
+.site-root.theme-ivory .path-step p {
+  color: #5a554c !important;
+}
+
+.site-root.theme-ivory .section-kicker {
+  color: var(--gold, #c9a227) !important;
+}
+
+.site-root.theme-ivory .product-card,
+.site-root.theme-ivory .path-step {
+  background: #fffef8 !important;
+  border-color: #ddd5c4 !important;
+}
+
+.site-root.theme-ivory .product-media,
+.site-root.theme-ivory .product-mini-3d {
+  background: #0a0a0a !important;
+}
+
+.site-root.theme-ivory .tag-chip {
+  background: #fffef8;
+  border-color: #d4cbb8;
+  color: #3a352c;
+}
+
+.site-root.theme-ivory .tag-chip.active {
+  background: rgba(201, 162, 39, 0.18);
+  border-color: var(--gold, #c9a227);
+  color: #1a1610;
+}
+
+.site-root.theme-ivory .home-strengths {
+  background: #f0ebe0 !important;
+  border-color: #ddd5c4 !important;
+}
+
+.site-root.theme-ivory .strength-item {
+  border-color: #ddd5c4;
+}
+
+/* Scène 3D accueil : reste sombre (contraste meuble) */
+.site-root.theme-ivory .home-story-stage,
+.site-root.theme-ivory .home-story-canvas {
+  background: #0a0a0a !important;
+}
+
+html.story-mode.theme-ivory,
+body.story-mode.theme-ivory {
+  background: var(--ivory, #f5f0e6) !important;
 }
 
 /* Bouton remonter en haut (accueil) */
