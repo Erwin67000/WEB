@@ -128,6 +128,7 @@
   align-items: flex-end;
   justify-content: flex-start;
   padding: clamp(1.25rem, 3vw, 2.75rem);
+  overflow: visible;
   background: linear-gradient(
     90deg,
     rgba(245, 240, 230, 0.94) 0%,
@@ -142,28 +143,24 @@
   padding: 0;
   background: transparent;
   border: none;
+  overflow: visible;
 }
 
-/* Apparition / remplacement du texte : roue antihoraire */
-@keyframes home-story-wheel-ccw {
-  0% {
-    opacity: 0;
-    transform: rotate(-100deg) translateY(1.25rem);
-    transform-origin: 0% 80%;
-  }
-  55% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 1;
-    transform: rotate(0deg) translateY(0);
-    transform-origin: 0% 80%;
-  }
-}
-
+/* Texte story : transform piloté par le scroll (courbe élancée antihoraire) */
 .home-story-copy-wheel {
-  animation: home-story-wheel-ccw 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+  position: relative;
+  min-height: 9.5rem;
+  overflow: visible;
+  /* place pour l’arc qui arrive de loin à gauche */
+  margin-left: 0;
+}
+
+.home-story-wheel-line {
+  /* pivot loin à gauche → arc allongé (courbe type grand rayon) */
+  transform-origin: -80% 140%;
   will-change: transform, opacity;
+  opacity: 0;
+  backface-visibility: hidden;
 }
 
 .home-story-kicker {
@@ -353,9 +350,7 @@ body.theme-ivory,
   color: #8a857a !important;
 }
 
-.site-root.theme-ivory .home-story-hint {
-  color: #3a352c !important;
-}
+
 
 html.story-mode.theme-ivory,
 body.story-mode.theme-ivory,
@@ -491,15 +486,6 @@ body.story-mode {
 
 .home-story-chapters li.done .home-story-chapter-btn {
   color: #8a857a;
-}
-
-.home-story-hint {
-  margin-top: 1.15rem;
-  font-size: 0.75rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: #6a655c;
-  pointer-events: none;
 }
 
 .path-steps-2 {

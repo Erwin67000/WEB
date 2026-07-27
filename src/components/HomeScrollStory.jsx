@@ -1038,6 +1038,9 @@ function StoryScene({ progressRef }) {
 /**
  * @param {{ mode?: 'fixed' | 'sticky', showExit?: boolean }} props
  */
+/** Animation texte pilotée par le scroll : ~3 viewports par étape */
+const TEXT_WHEEL_SCROLLS = 3
+
 export default function HomeScrollStory({
   mode = 'fixed',
   showExit = false,
@@ -1045,7 +1048,9 @@ export default function HomeScrollStory({
   const trackRef = useRef(null)
   const stageRef = useRef(null)
   const progressRef = useRef(0)
-  const [progress, setProgress] = useState(0)
+  const wheelKickerRef = useRef(null)
+  const wheelTitleRef = useRef(null)
+  const wheelTextRef = useRef(null)
   const [chapter, setChapter] = useState(0)
   const isFixed = mode === 'fixed'
 
@@ -1055,8 +1060,19 @@ export default function HomeScrollStory({
 
     let raf = 0
     let alive = true
-    let lastP = -1
     let lastCh = -1
+
+    const applyWheelLine = (node, t, stagger) => {
+      if (!node) return
+      // Courbe élancée antihoraire : pivot loin à gauche, grand arc
+      const u = easeInOut(clamp01((t - stagger) / (1 - stagger * 0.85)))
+      const rot = lerp(-155, 0, u) // deg, sens antihoraire depuis loin
+      const x = lerp(-42, 0, u) // vw — plus loin à gauche
+      const y = lerp(28, 0, u) // vh — plus bas, courbe allongée
+      const op = smoothstep(0.05, 0.45, u)
+      node.style.opacity = String(op)
+      node.style.transform = `rotate(${rot}deg) translate(${x}vw, ${y}vh)`
+    }
 
     const loop = () => {
       if (!alive) return
@@ -1068,7 +1084,6 @@ export default function HomeScrollStory({
       if (stage) {
         const rect = el.getBoundingClientRect()
         const vh = window.innerHeight || 1
-        // track entièrement au-dessus du bas de l’écran → fondu puis hide
         if (rect.bottom <= 0) {
           stage.style.opacity = '0'
           stage.style.visibility = 'hidden'
@@ -1085,18 +1100,27 @@ export default function HomeScrollStory({
         }
       }
 
-      if (Math.abs(p - lastP) > 0.002) {
-        lastP = p
-        setProgress(p)
-        const ch = Math.min(
-          STORY.length - 1,
-          Math.floor(p * STORY.length + 0.001),
-        )
-        if (ch !== lastCh) {
-          lastCh = ch
-          setChapter(ch)
-        }
+      const ch = Math.min(
+        STORY.length - 1,
+        Math.floor(p * STORY.length + 0.001),
+      )
+      if (ch !== lastCh) {
+        lastCh = ch
+        setChapter(ch)
       }
+
+      // Progression dans l’étape courante, en « pages » de scroll (vh)
+      const chapterStart = ch / STORY.length
+      const pIntoChapter = Math.max(0, p - chapterStart)
+      // p total 0→1 sur SCROLL_PAGES viewports → facteur
+      const scrollsIntoChapter = pIntoChapter * SCROLL_PAGES
+      const tWheel = clamp01(scrollsIntoChapter / TEXT_WHEEL_SCROLLS)
+
+      // 3 lignes : même courbe, léger décalage (kicker → titre → texte)
+      applyWheelLine(wheelKickerRef.current, tWheel, 0)
+      applyWheelLine(wheelTitleRef.current, tWheel, 0.08)
+      applyWheelLine(wheelTextRef.current, tWheel, 0.16)
+
       raf = requestAnimationFrame(loop)
     }
 
@@ -1121,7 +1145,6 @@ export default function HomeScrollStory({
     const vh = window.innerHeight || 1
     const total = Math.max(1, h - vh)
     const p = clamp01(i / STORY.length)
-    // léger offset pour bien entrer dans l’étape
     const y = docTop + p * total + 2
     window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' })
   }
@@ -1156,11 +1179,26 @@ export default function HomeScrollStory({
 
       <div className="home-story-overlay">
         <div className="home-story-copy">
-          {/* Texte principal : roue antihoraire à chaque changement d’étape */}
+          {/* Texte : roue antihoraire pilotée par ~3 scrolls par étape */}
           <div key={chapter} className="home-story-copy-wheel">
-            <p className="section-kicker home-story-kicker">{ch.kicker}</p>
-            <h2 className="home-story-title">{ch.title}</h2>
-            <p className="home-story-text">{ch.text}</p>
+            <p
+              ref={wheelKickerRef}
+              className="section-kicker home-story-kicker home-story-wheel-line"
+            >
+              {ch.kicker}
+            </p>
+            <h2
+              ref={wheelTitleRef}
+              className="home-story-title home-story-wheel-line"
+            >
+              {ch.title}
+            </h2>
+            <p
+              ref={wheelTextRef}
+              className="home-story-text home-story-wheel-line"
+            >
+              {ch.text}
+            </p>
           </div>
 
           {/* Timeline : kickers cliquables */}
@@ -1184,7 +1222,6 @@ export default function HomeScrollStory({
               </li>
             ))}
           </ol>
-          <p className="home-story-hint">Scroll · {STORY.length} étapes</p>
         </div>
       </div>
 
