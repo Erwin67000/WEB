@@ -138,10 +138,37 @@
 
 .home-story-copy {
   pointer-events: none;
-  max-width: min(28rem, 92vw);
+  max-width: min(34rem, 94vw);
   padding: 0;
   background: transparent;
   border: none;
+}
+
+/* Apparition / remplacement du texte : roue antihoraire */
+@keyframes home-story-wheel-ccw {
+  0% {
+    opacity: 0;
+    transform: rotate(-100deg) translateY(1.25rem);
+    transform-origin: 0% 80%;
+  }
+  55% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: rotate(0deg) translateY(0);
+    transform-origin: 0% 80%;
+  }
+}
+
+.home-story-copy-wheel {
+  animation: home-story-wheel-ccw 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: transform, opacity;
+}
+
+.home-story-kicker {
+  font-size: clamp(0.95rem, 1.6vw, 1.15rem) !important;
+  margin-bottom: 0.5rem !important;
 }
 
 /* Lien sortie (réactive les clics) */
@@ -314,21 +341,20 @@ body.theme-ivory,
   text-shadow: none;
 }
 
-.site-root.theme-ivory .home-story-chapters li {
+.site-root.theme-ivory .home-story-chapter-btn {
   color: #5a554c !important;
 }
 
-.site-root.theme-ivory .home-story-chapters li.active,
-.site-root.theme-ivory .home-story-chapters li.active span {
+.site-root.theme-ivory .home-story-chapters li.active .home-story-chapter-btn {
   color: var(--gold, #a67c22) !important;
+}
+
+.site-root.theme-ivory .home-story-chapters li.done .home-story-chapter-btn {
+  color: #8a857a !important;
 }
 
 .site-root.theme-ivory .home-story-hint {
   color: #3a352c !important;
-}
-
-.site-root.theme-ivory .home-story-progress {
-  background: rgba(26, 22, 16, 0.15);
 }
 
 html.story-mode.theme-ivory,
@@ -408,35 +434,20 @@ body.story-mode {
 
 .home-story-title {
   font-family: var(--philae-font-display, 'Stardos Stencil', system-ui, sans-serif);
-  font-size: clamp(1.55rem, 3.4vw, 2.5rem);
+  font-size: clamp(2rem, 4.2vw, 3.15rem);
   font-weight: 400;
   letter-spacing: 0.04em;
   color: #0a0a0a;
-  margin: 0.35rem 0 0.75rem;
-  line-height: 1.12;
+  margin: 0.35rem 0 0.85rem;
+  line-height: 1.1;
 }
 
 .home-story-text {
   color: #1a1610;
-  font-size: clamp(0.9rem, 1.35vw, 1.05rem);
+  font-size: clamp(1.1rem, 1.85vw, 1.35rem);
   line-height: 1.55;
-  max-width: 28rem;
-  margin: 0 0 1.1rem;
-}
-
-.home-story-progress {
-  height: 2px;
-  background: rgba(42, 38, 32, 0.9);
-  border-radius: 2px;
-  overflow: hidden;
-  margin-bottom: 1rem;
-  max-width: 14rem;
-}
-
-.home-story-progress-bar {
-  height: 100%;
-  background: var(--gold);
-  transition: width 0.08s linear;
+  max-width: 32rem;
+  margin: 0 0 1.35rem;
 }
 
 .home-story-chapters {
@@ -445,40 +456,50 @@ body.story-mode {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.35rem;
+  pointer-events: auto; /* clics sur kickers */
 }
 
 .home-story-chapters li {
-  font-size: 0.75rem;
-  letter-spacing: 0.04em;
+  margin: 0;
+  padding: 0;
+}
+
+.home-story-chapter-btn {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: transparent;
+  padding: 0.2rem 0;
+  cursor: pointer;
+  font-family: var(--philae-font-display, 'Stardos Stencil', system-ui, sans-serif);
+  font-size: clamp(0.85rem, 1.35vw, 1.05rem);
+  letter-spacing: 0.06em;
   color: #5a554c;
-  transition: color 0.25s;
+  transition: color 0.2s, transform 0.2s;
 }
 
-.home-story-chapters li span {
-  font-variant-numeric: tabular-nums;
-  margin-right: 0.35rem;
-  color: #4a453c;
+.home-story-chapter-btn:hover {
+  color: #0a0a0a;
+  transform: translateX(3px);
 }
 
-.home-story-chapters li.active {
-  color: var(--gold);
+.home-story-chapters li.active .home-story-chapter-btn {
+  color: var(--gold, #c9a227);
 }
 
-.home-story-chapters li.active span {
-  color: var(--gold);
-}
-
-.home-story-chapters li.done {
+.home-story-chapters li.done .home-story-chapter-btn {
   color: #8a857a;
 }
 
 .home-story-hint {
   margin-top: 1.15rem;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: #6a655c;
+  pointer-events: none;
 }
 
 .path-steps-2 {
@@ -511,7 +532,14 @@ body.story-mode {
     padding: 1rem 1rem 1.25rem;
   }
   .home-story-chapters {
-    display: none;
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+    gap: 0.35rem 0.75rem;
+    max-width: 100%;
+  }
+  .home-story-chapter-btn {
+    font-size: 0.78rem;
   }
   .path-steps-2 {
     grid-template-columns: 1fr;

@@ -74,37 +74,37 @@ const STORY = [
     id: 'one',
     kicker: '01 · Origine',
     title: 'L’intention',
-    text: 'Un point. Un trait. Une arête se dessine',
+    text: 'Deux points créent une dimension',
   },
   {
     id: 'assemble',
-    kicker: '02 · Sommet',
-    title: 'La configuration au sommet',
-    text: 'Deux arêtes rejoignent la première. La configuration du sommet forme l’angle signature.',
+    kicker: '02 · Formation',
+    title: 'L’arête',
+    text: 'Le sommet est la rencontre de 3 arêtes perpendiculaires entre elles',
   },
   {
     id: 'stretch',
-    kicker: '03 · Allongement',
-    title: 'Les trois arêtes s’allongent',
-    text: 'Les dimensions évoluent librement.',
+    kicker: '03 · Volume',
+    title: '3 arêtes → 3 dimensions',
+    text: 'Semblables entre elles',
   },
   {
     id: 'frame',
-    kicker: '04 · Volume',
+    kicker: '04 · Structure',
     title: '12 arêtes',
-    text: 'Le volume est révélé',
+    text: 'S’assemblent pour former l’ossature',
   },
   {
     id: 'shelves',
     kicker: '05 · Fonctions',
-    title: 'Intégration de fonctions',
-    text: 'Configuration unique pour respecter les besoins.',
+    title: 'Ajout de fonctionnalités',
+    text: 'Selon vos besoins',
   },
   {
     id: 'panels',
     kicker: '06 · Finitions',
     title: 'Panneaux',
-    text: 'Les panneaux habillent la structure, et lui donne du caractère',
+    text: 'Habillent la structure, et lui donne du caractère',
   },
 ]
 
@@ -1110,6 +1110,22 @@ export default function HomeScrollStory({
   const ch = STORY[chapter]
   const trackVh = SCROLL_PAGES * 100
 
+  /** Scroll au début de l’étape i (progression = i / N) */
+  const goToChapter = (i) => {
+    const el = trackRef.current
+    if (!el) return
+    const rect = el.getBoundingClientRect()
+    const scrollY = window.scrollY || document.documentElement.scrollTop || 0
+    const docTop = scrollY + rect.top
+    const h = el.offsetHeight || 0
+    const vh = window.innerHeight || 1
+    const total = Math.max(1, h - vh)
+    const p = clamp01(i / STORY.length)
+    // léger offset pour bien entrer dans l’étape
+    const y = docTop + p * total + 2
+    window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' })
+  }
+
   const stage = (
     <>
       <div className="home-story-canvas" aria-hidden>
@@ -1140,16 +1156,15 @@ export default function HomeScrollStory({
 
       <div className="home-story-overlay">
         <div className="home-story-copy">
-          <p className="section-kicker">{ch.kicker}</p>
-          <h2 className="home-story-title">{ch.title}</h2>
-          <p className="home-story-text">{ch.text}</p>
-          <div className="home-story-progress" aria-hidden>
-            <div
-              className="home-story-progress-bar"
-              style={{ width: `${Math.round(progress * 100)}%` }}
-            />
+          {/* Texte principal : roue antihoraire à chaque changement d’étape */}
+          <div key={chapter} className="home-story-copy-wheel">
+            <p className="section-kicker home-story-kicker">{ch.kicker}</p>
+            <h2 className="home-story-title">{ch.title}</h2>
+            <p className="home-story-text">{ch.text}</p>
           </div>
-          <ol className="home-story-chapters">
+
+          {/* Timeline : kickers cliquables */}
+          <ol className="home-story-chapters" aria-label="Étapes du récit">
             {STORY.map((s, i) => (
               <li
                 key={s.id}
@@ -1157,14 +1172,19 @@ export default function HomeScrollStory({
                   i === chapter ? 'active' : i < chapter ? 'done' : ''
                 }
               >
-                <span>{String(i + 1).padStart(2, '0')}</span>
-                {s.title}
+                <button
+                  type="button"
+                  className="home-story-chapter-btn"
+                  onClick={() => goToChapter(i)}
+                  aria-current={i === chapter ? 'step' : undefined}
+                  title={`Aller à : ${s.kicker}`}
+                >
+                  {s.kicker}
+                </button>
               </li>
             ))}
           </ol>
-          <p className="home-story-hint">
-            Scroll · {STORY.length} étapes · {Math.round(progress * 100)}%
-          </p>
+          <p className="home-story-hint">Scroll · {STORY.length} étapes</p>
         </div>
       </div>
 
