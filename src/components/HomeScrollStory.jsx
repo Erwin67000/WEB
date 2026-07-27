@@ -1,12 +1,13 @@
 /**
  * Scrollytelling Philae — page /histoire (mode fixed).
  *
- * 5 étapes :
- *  01  Une arête unique apparaît
- *  02  Les 2 autres s’emboîtent
- *  03  Le cadre s’ouvre (12 arêtes)
- *  04  Deux tablettes
- *  05  Plateau & socle (olive)
+ * 6 écrans de scroll :
+ *  01  Une arête en grand, légère rotation autour de Z
+ *  02  Dézoom + 2 arêtes en translation pure (emboîtement)
+ *  03  Étirement des 3 arêtes jusqu’à taille finale
+ *  04  Les 9 autres arêtes apparaissent en séquence
+ *  05  Deux tablettes (fonctions)
+ *  06  Plateau & socle olive (panneaux)
  */
 import { Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -34,38 +35,57 @@ const SCALE = 0.001
 const WOOD = FINITIONS.chene.color
 const PANEL = PANNEAU_COULEURS.olive.color
 const PANEL_EDGE = PANNEAU_COULEURS.olive.edge
-const SCROLL_PAGES = 5
+const SCROLL_PAGES = 6
+
+/** Les 9 arêtes hors coin d’origine X0/Y0/Z0 */
+const REST_EDGE_IDS = [
+  'X1',
+  'X2',
+  'Y1',
+  'Y2',
+  'Z1',
+  'Z2',
+  'X3',
+  'Y3',
+  'Z3',
+]
 
 const STORY = [
   {
     id: 'one',
     kicker: '01 · Origine',
-    title: 'Une arête',
-    text: 'Tout commence par un profil. Une seule pièce usinée — la grammaire du meuble Philae.',
+    title: 'L’arête parfaite',
+    text: 'Bois massif coupé selon l’angle signature PHILAE.',
   },
   {
     id: 'assemble',
-    kicker: '02 · Signature',
-    title: 'L’emboîtement',
-    text: 'Deux arêtes rejoignent la première. X, Y et Z se croisent au sommet — l’angle signature.',
+    kicker: '02 · Sommet',
+    title: 'La configuration au sommet',
+    text: 'L’assemblage de trois arêtes forme un sommet.',
+  },
+  {
+    id: 'stretch',
+    kicker: '03 · Étirement',
+    title: 'Le volume s’étire',
+    text: 'Les trois arêtes grandissent jusqu’à leur longueur finale.',
   },
   {
     id: 'frame',
-    kicker: '03 · Volume',
-    title: 'Le cadre s’ouvre',
-    text: 'Les douze arêtes dessinent le meuble : 600 × 400 × 800 mm. L’ossature définit l’espace avant toute surface.',
+    kicker: '04 · Ossature',
+    title: '12 arêtes',
+    text: 'Les neuf autres arêtes complètent l’ossature et ferment le volume.',
   },
   {
     id: 'shelves',
-    kicker: '04 · Fonctions',
-    title: 'Les tablettes s’installent',
-    text: 'Deux tablettes se glissent dans le cadre. Libre, modulable, sans caisson opaque.',
+    kicker: '05 · Fonctions',
+    title: 'Les fonctions sont ajoutées',
+    text: 'Configuration unique pour respecter les besoins.',
   },
   {
     id: 'panels',
-    kicker: '05 · Finitions',
-    title: 'Plateau & socle',
-    text: 'Les panneaux olive complètent le volume — dessus, dessous, et plus si vous le voulez.',
+    kicker: '06 · Finitions',
+    title: 'Panneaux',
+    text: 'Les panneaux complètent le volume.',
   },
 ]
 
@@ -129,9 +149,6 @@ function useBufferGeo(positions, indices) {
 function AreteSolid({ meshData, color }) {
   const { size, gl } = useThree()
   const lineMatRef = useRef(null)
-  const solidMatRef = useRef(null)
-  const basicLineRef = useRef(null)
-  const fatLineRef = useRef(null)
 
   const geo = useBufferGeo(meshData.positions, meshData.indices)
 
@@ -170,25 +187,12 @@ function AreteSolid({ meshData, color }) {
     [geo, edgeBasic, edgeFat],
   )
 
-  // Expose materials for opacity control from parent useFrame via userData
-  useEffect(() => {
-    if (solidMatRef.current) solidMatRef.current.userData.storyMat = true
-  }, [])
-
   if (!geo) return null
 
   return (
-    <group
-      userData={{
-        solidMatRef,
-        basicLineRef,
-        fatLineRef,
-        lineMatRef,
-      }}
-    >
+    <group>
       <mesh geometry={geo} renderOrder={0}>
         <meshStandardMaterial
-          ref={solidMatRef}
           color={color}
           roughness={0.5}
           metalness={0.06}
@@ -201,7 +205,7 @@ function AreteSolid({ meshData, color }) {
         />
       </mesh>
       {edgeBasic && (
-        <lineSegments geometry={edgeBasic} renderOrder={2} ref={basicLineRef}>
+        <lineSegments geometry={edgeBasic} renderOrder={2}>
           <lineBasicMaterial
             color={ARETE_EDGE_COLOR}
             depthTest
@@ -215,7 +219,7 @@ function AreteSolid({ meshData, color }) {
         </lineSegments>
       )}
       {edgeFat && (
-        <lineSegments2 geometry={edgeFat} renderOrder={3} ref={fatLineRef}>
+        <lineSegments2 geometry={edgeFat} renderOrder={3}>
           <lineMaterial
             ref={lineMatRef}
             color={ARETE_EDGE_COLOR}
@@ -238,7 +242,7 @@ function AreteSolid({ meshData, color }) {
 function setGroupOpacity(group, opacity) {
   if (!group) return
   const o = clamp01(opacity)
-  group.visible = o > 0.02
+  group.visible = o > 0.015
   group.traverse((obj) => {
     if (obj.isMesh && obj.material) {
       obj.material.transparent = true
@@ -249,7 +253,6 @@ function setGroupOpacity(group, opacity) {
       obj.material.transparent = true
       obj.material.opacity = o
     }
-    // LineSegments2
     if (obj.isLine2 || obj.type === 'LineSegments2') {
       if (obj.material) {
         obj.material.transparent = true
@@ -326,167 +329,200 @@ function PanneauSolid({ nom, dims }) {
 }
 
 function StoryWorld({ progressRef }) {
-  const primaryGroups = useRef({})
-  const secondaryGroup = useRef()
+  const primaryRefs = useRef({})
+  const stretchGroup = useRef()
+  const restRefs = useRef({})
   const shelvesGroup = useRef()
   const panelsGroup = useRef()
 
   const finalDims = { L: 600, W: 400, H: 800 }
-  const startDims = { L: 200, W: 200, H: 200 }
-
-  const ossStart = useMemo(() => buildOssature(startDims), [])
+  // Géométrie finale : on scale 200/final → 1 pour l’étirement
   const ossEnd = useMemo(() => buildOssature(finalDims), [])
-  // 2 tablettes (pas 3)
   const shelves = useMemo(
     () => [0, 1].map((i) => createModule('shelf', i)),
     [],
   )
+
   const primaryMeshes = useMemo(
     () =>
-      ossStart.meshes.filter(
+      ossEnd.meshes.filter(
         (m) => m.id === 'X0' || m.id === 'Y0' || m.id === 'Z0',
       ),
-    [ossStart],
+    [ossEnd],
   )
-  const fullMeshes = ossEnd.meshes
+  const restMeshes = useMemo(
+    () => ossEnd.meshes.filter((m) => REST_EDGE_IDS.includes(m.id)),
+    [ossEnd],
+  )
 
   useFrame(({ camera }) => {
     const p = progressRef.current ?? 0
+    // 6 écrans égaux
+    const S = 1 / SCROLL_PAGES
 
-    // 5 phases
-    // 01 : une arête apparaît
-    const pAppear = phase(p, 0.0, 0.16)
-    // 02 : les 2 autres s’emboîtent
-    const pJoin = phase(p, 0.14, 0.34)
-    // 03 : cadre 12 arêtes
-    const pFrame = phase(p, 0.32, 0.54)
-    // 04 : 2 tablettes
-    const pShelves = phase(p, 0.5, 0.72)
-    // 05 : panneaux
-    const pPanels = phase(p, 0.7, 0.96)
+    // 01 — une arête (grand plan, spin Z)
+    const pSolo = phase(p, 0.0, S * 0.92)
+    // 02 — dézoom + 2 arêtes en translation (1 écran)
+    const pJoin = phase(p, S * 0.95, S * 2)
+    // 03 — étirement des 3 arêtes (1 écran)
+    const pStretch = phase(p, S * 2, S * 3)
+    // 04 — 9 arêtes séquentielles (1 écran)
+    const pRest = phase(p, S * 3, S * 4)
+    // 05 — tablettes
+    const pShelves = phase(p, S * 4, S * 5)
+    // 06 — panneaux
+    const pPanels = phase(p, S * 5, 0.99)
 
-    // Arête unique (X0) : apparaît en place, légère rotation résiduelle
-    const spinSolo = (1 - pAppear) * Math.PI * 0.85
-    const flySolo = (1 - pAppear) * 80
+    // ——— Échelle des 3 arêtes d’origine (coin) ———
+    // Départ : taille « 200 mm » relative au final
+    const sL = lerp(200 / 600, 1, pStretch) // X
+    const sH = lerp(200 / 800, 1, pStretch) // Z SketchUp → Y Three après rot
+    const sW = lerp(200 / 400, 1, pStretch) // Y SketchUp → Z Three
+    if (stretchGroup.current) {
+      stretchGroup.current.scale.set(sL, sH, sW)
+    }
 
-    // Y0 / Z0 : volent jusqu’à l’emboîtement
-    const spinJoin = (1 - pJoin) * Math.PI * 1.6
-    const flyJoin = (1 - pJoin) * 220
+    // Offsets de translation (en mm SketchUp) pour Y0 / Z0 — pure translation
+    // Distance d’approche proportionnelle à la taille courante (~200 au join)
+    const approach = 280
+    const tJoin = 1 - pJoin // 1 = loin, 0 = en place
+    // Y0 arrive le long de Y (profondeur)
+    const y0off = [0, approach * tJoin, 0]
+    // Z0 arrive le long de Z (hauteur)
+    const z0off = [0, 0, approach * tJoin]
 
-    const setPrim = (id, pos, rot) => {
-      const g = primaryGroups.current[id]
+    // X0 : spin léger autour de Z (axe vertical SketchUp) pendant le solo,
+    // s’arrête à l’emboîtement
+    const spinZ = (1 - pSolo) * 0.55 + (1 - pJoin) * 0.08
+
+    const setPrim = (id, posMm, rot = [0, 0, 0]) => {
+      const g = primaryRefs.current[id]
       if (!g) return
-      g.position.set(pos[0], pos[1], pos[2])
+      g.position.set(posMm[0], posMm[1], posMm[2])
       g.rotation.set(rot[0], rot[1], rot[2])
     }
 
-    // X0 : déjà là dès l’étape 1
-    setPrim(
-      'X0',
-      [0, -flySolo * 0.15, flySolo * 0.1],
-      [0, spinSolo * 0.25, spinSolo * 0.1],
-    )
-    setGroupOpacity(primaryGroups.current.X0, pAppear)
+    // X0 toujours en place, tourne sur Z au début
+    setPrim('X0', [0, 0, 0], [0, 0, spinZ])
+    setGroupOpacity(primaryRefs.current.X0, Math.max(pSolo, 0.02))
 
-    // Y0 & Z0 : arrivent à l’étape 2
-    setPrim(
-      'Y0',
-      [flyJoin * 0.55, 0, -flyJoin],
-      [spinJoin * 0.35, 0, -spinJoin],
-    )
-    setPrim(
-      'Z0',
-      [-flyJoin * 0.35, flyJoin, 0],
-      [-spinJoin, spinJoin * 0.2, 0],
-    )
-    setGroupOpacity(primaryGroups.current.Y0, pJoin)
-    setGroupOpacity(primaryGroups.current.Z0, pJoin)
+    // Y0 / Z0 : translation pure, pas de rotation
+    setPrim('Y0', y0off, [0, 0, 0])
+    setPrim('Z0', z0off, [0, 0, 0])
+    setGroupOpacity(primaryRefs.current.Y0, pJoin)
+    setGroupOpacity(primaryRefs.current.Z0, pJoin)
 
-    // Cadre complet (fade-in + scale 200→final)
-    if (secondaryGroup.current) {
-      const sx = lerp(200 / 600, 1, pFrame)
-      const sy = lerp(200 / 800, 1, pFrame)
-      const sz = lerp(200 / 400, 1, pFrame)
-      secondaryGroup.current.scale.set(sx, sy, sz)
-      setGroupOpacity(secondaryGroup.current, pFrame)
-    }
-
-    // Masquer les 3 primaires quand le cadre complet est presque opaque
-    const primVis = pFrame < 0.92
-    for (const id of ['X0', 'Y0', 'Z0']) {
-      const g = primaryGroups.current[id]
-      if (!g) continue
-      if (!primVis) {
-        g.visible = false
-      }
-    }
+    // 9 arêtes restantes — séquentiel sur pRest
+    REST_EDGE_IDS.forEach((id, i) => {
+      const g = restRefs.current[id]
+      if (!g) return
+      // chaque arête occupe ~1/9 de la phase, avec léger overlap
+      const slot = 1 / REST_EDGE_IDS.length
+      const start = i * slot * 0.85
+      const end = start + slot * 1.15
+      const o = smoothstep(start, end, pRest)
+      setGroupOpacity(g, o)
+    })
 
     // 2 tablettes
     if (shelvesGroup.current) {
       shelvesGroup.current.visible = pShelves > 0.02
       shelvesGroup.current.traverse((o) => {
-        if (o.isMesh && o.material && o.userData.shelfIndex != null) {
-          const i = o.userData.shelfIndex
-          const oShelf = clamp01((pShelves - i * 0.28) / 0.5)
-          o.material.transparent = true
-          o.material.opacity = oShelf
-          o.material.depthWrite = oShelf > 0.9
-          o.visible = oShelf > 0.02
-        }
-        if (o.isLineSegments && o.material && o.userData.shelfIndex != null) {
-          const i = o.userData.shelfIndex
-          const oShelf = clamp01((pShelves - i * 0.28) / 0.5)
-          o.material.transparent = true
-          o.material.opacity = oShelf
-          o.visible = oShelf > 0.02
-        }
+        if (!o.material || o.userData.shelfIndex == null) return
+        const i = o.userData.shelfIndex
+        const oShelf = clamp01((pShelves - i * 0.28) / 0.5)
+        o.material.transparent = true
+        o.material.opacity = oShelf
+        if (o.isMesh) o.material.depthWrite = oShelf > 0.9
+        o.visible = oShelf > 0.02
       })
     }
 
-    // Panneaux olive (dessus puis dessous)
+    // Panneaux olive
     if (panelsGroup.current) {
       panelsGroup.current.visible = pPanels > 0.02
       panelsGroup.current.children.forEach((child, groupIdx) => {
         const oP =
           groupIdx === 0
-            ? smoothstep(0.7, 0.86, p)
-            : smoothstep(0.82, 0.96, p)
+            ? smoothstep(S * 5, S * 5 + S * 0.55, p)
+            : smoothstep(S * 5 + S * 0.35, S * 6 - 0.02, p)
         setGroupOpacity(child, oP)
       })
     }
 
-    // Caméra suit le volume
-    const L = lerp(200, 600, pFrame)
-    const W = lerp(200, 400, pFrame)
-    const H = lerp(200, 800, pFrame)
+    // ——— Caméra ———
+    // Dimensions courantes (pour cadrage)
+    const L = lerp(200, 600, pStretch)
+    const W = lerp(200, 400, pStretch)
+    const H = lerp(200, 800, pStretch)
     const tx = (L * SCALE) / 2
     const ty = (H * SCALE) / 2
     const tz = -(W * SCALE) / 2
-    // Plus proche au début (1 arête), s’éloigne pour le volume
-    const baseDist =
-      Math.max(0.85, Math.sqrt(L * L + W * W + H * H) * SCALE * 1.15) * 1.1
-    const dist = lerp(baseDist * 0.72, baseDist * 1.05, pFrame)
-    const ang = -0.85 + p * 1.05
-    camera.position.lerp(
-      new THREE.Vector3(
-        tx + Math.cos(ang) * dist,
-        ty + dist * 0.38,
-        tz + Math.sin(ang) * dist,
-      ),
-      0.14,
+
+    // Solo : très proche, centré sur l’arête X0 (~100 mm)
+    const soloTarget = new THREE.Vector3(
+      100 * SCALE,
+      40 * SCALE,
+      -40 * SCALE,
     )
-    camera.lookAt(tx, ty, tz)
+    const finalTarget = new THREE.Vector3(tx, ty, tz)
+
+    // Dézoom pendant le join (écran 2)
+    const zoomOut = phase(p, S * 0.9, S * 2)
+    const look = soloTarget.clone().lerp(finalTarget, Math.max(zoomOut, pStretch))
+
+    const soloDist = 0.42
+    const joinedDist = 0.95
+    const finalDist =
+      Math.max(1.05, Math.sqrt(L * L + W * W + H * H) * SCALE * 1.22) * 1.05
+
+    const dist = lerp(
+      lerp(soloDist, joinedDist, zoomOut),
+      finalDist,
+      pStretch,
+    )
+
+    // Angle caméra : stable au début, s’ouvre doucement ensuite
+    const ang = -0.95 + pJoin * 0.25 + pStretch * 0.55 + pRest * 0.25
+
+    const camGoal = new THREE.Vector3(
+      look.x + Math.cos(ang) * dist,
+      look.y + dist * (0.28 + pStretch * 0.12),
+      look.z + Math.sin(ang) * dist,
+    )
+    camera.position.lerp(camGoal, 0.12)
+    camera.lookAt(look)
   })
 
   return (
     <group>
-      {/* 3 arêtes primaires (200 mm) — étapes 01–02 */}
+      {/*
+        Coin d’origine (X0 Y0 Z0) — géométrie finale scalée 200→full.
+        scale du stretchGroup : (sL, sH, sW) dans l’espace Three du parent rot.
+      */}
+      <group ref={stretchGroup} scale={[200 / 600, 200 / 800, 200 / 400]}>
+        <group scale={[SCALE, SCALE, SCALE]} rotation={[-Math.PI / 2, 0, 0]}>
+          {primaryMeshes.map((m) => (
+            <group
+              key={`p-${m.id}`}
+              ref={(el) => {
+                if (el) primaryRefs.current[m.id] = el
+              }}
+              visible={false}
+            >
+              <AreteSolid meshData={m} color={WOOD} />
+            </group>
+          ))}
+        </group>
+      </group>
+
+      {/* 9 arêtes restantes — taille finale, fade séquentiel */}
       <group scale={[SCALE, SCALE, SCALE]} rotation={[-Math.PI / 2, 0, 0]}>
-        {primaryMeshes.map((m) => (
+        {restMeshes.map((m) => (
           <group
-            key={`p-${m.id}`}
+            key={`r-${m.id}`}
             ref={(el) => {
-              if (el) primaryGroups.current[m.id] = el
+              if (el) restRefs.current[m.id] = el
             }}
             visible={false}
           >
@@ -495,42 +531,25 @@ function StoryWorld({ progressRef }) {
         ))}
       </group>
 
-      {/* Cadre complet — étape 03 */}
-      <group
-        ref={secondaryGroup}
-        scale={[200 / 600, 200 / 800, 200 / 400]}
-        visible={false}
-      >
-        <group scale={[SCALE, SCALE, SCALE]} rotation={[-Math.PI / 2, 0, 0]}>
-          {fullMeshes.map((m) => (
-            <AreteSolid key={`f-${m.id}`} meshData={m} color={WOOD} />
-          ))}
-        </group>
-      </group>
-
-      {/* 2 tablettes olive — étape 04 */}
+      {/* 2 tablettes olive */}
       <group ref={shelvesGroup} visible={false}>
         {shelves.map((mod, i) => {
           const layout = moduleLayout(mod, finalDims, shelves)
           const sx = layout.size[0] * SCALE
           const sy = layout.size[2] * SCALE
           const sz = layout.size[1] * SCALE
-          // Wire box edges (ligne style configurateur)
           const hx = sx / 2
           const hy = sy / 2
           const hz = sz / 2
           const wire = new Float32Array([
-            // bottom
             -hx, -hy, -hz, hx, -hy, -hz,
             hx, -hy, -hz, hx, -hy, hz,
             hx, -hy, hz, -hx, -hy, hz,
             -hx, -hy, hz, -hx, -hy, -hz,
-            // top
             -hx, hy, -hz, hx, hy, -hz,
             hx, hy, -hz, hx, hy, hz,
             hx, hy, hz, -hx, hy, hz,
             -hx, hy, hz, -hx, hy, -hz,
-            // verticals
             -hx, -hy, -hz, -hx, hy, -hz,
             hx, -hy, -hz, hx, hy, -hz,
             hx, -hy, hz, hx, hy, hz,
@@ -580,7 +599,7 @@ function StoryWorld({ progressRef }) {
         })}
       </group>
 
-      {/* Plateau & socle olive — étape 05 */}
+      {/* Plateau & socle olive */}
       <group
         ref={panelsGroup}
         scale={[SCALE, SCALE, SCALE]}
