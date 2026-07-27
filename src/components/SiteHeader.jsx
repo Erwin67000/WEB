@@ -20,31 +20,30 @@ export default function SiteHeader() {
     /\/boutique\/[^/]+\/configurer$/.test(location.pathname)
   const isHome = location.pathname === '/'
 
+  // Compact uniquement sur l’accueil, après début du scroll
+  // Configurateur / boutique / concept / contact = toujours la version grande
   const [compact, setCompact] = useState(false)
 
   useEffect(() => {
-    const onScroll = () => {
-      // Config : pas de scroll page → header compact par défaut
-      if (isConfig) {
-        setCompact(true)
-        return
-      }
-      setCompact(window.scrollY > COMPACT_AFTER)
+    if (!isHome) {
+      setCompact(false)
+      return
     }
+    const onScroll = () => setCompact(window.scrollY > COMPACT_AFTER)
     onScroll()
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
-  }, [isConfig, location.pathname])
+  }, [isHome, location.pathname])
 
-  // Expose la hauteur courante pour le stage scrollytelling
+  // Hauteur pour le stage scrollytelling (accueil)
   useEffect(() => {
-    const h = compact ? '52px' : '72px'
+    const h = isHome && compact ? '52px' : '72px'
     document.documentElement.style.setProperty('--header-current-h', h)
-  }, [compact])
+  }, [compact, isHome])
 
   return (
     <header
-      className={`site-header${compact ? ' is-compact' : ''}${
+      className={`site-header${isHome && compact ? ' is-compact' : ''}${
         isConfig ? ' is-config' : ''
       }${isHome ? ' is-home' : ''}`}
     >
