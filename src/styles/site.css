@@ -1,14 +1,14 @@
-/* ——— Scrollytelling /histoire (plein écran, fixed stage) ——— */
+/* ——— Scrollytelling accueil (fixed stage + header site) ——— */
 
 /*
-  mode fixed (page /histoire) — le plus fiable :
-  - .home-story-stage  = position:fixed, 100vw×100vh (ne quitte JAMAIS l’écran)
-  - .home-story-track  = hauteur 4×100vh, invisible, crée la course de scroll
-  La progression suit le scroll du document sur le track.
+  - .home-story-stage  = position:fixed sous le bandeau
+  - .home-story-track  = course de scroll (~14 viewports)
+  - en fin de track : stage s’efface → footer visible
 */
-.page-histoire {
+.page-histoire,
+.page-accueil.page-histoire {
   margin: 0;
-  padding: 0;
+  padding: 0 !important;
   width: 100%;
   min-height: 100vh;
   background: #0a0a0a;
@@ -25,17 +25,28 @@
   background: #0a0a0a;
 }
 
-/* Scène figée au viewport */
+/* Scène figée sous le header (z-index < header) */
 .home-story--fixed .home-story-stage {
   position: fixed;
-  inset: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  top: 0;
   width: 100vw;
   height: 100vh;
   height: 100dvh;
-  z-index: 10;
+  z-index: 5;
   overflow: hidden;
   background: #0a0a0a;
-  pointer-events: none; /* molette → document */
+  pointer-events: none;
+  transition: opacity 0.2s linear;
+}
+
+/* Avec bandeau de navigation : scène sous le header */
+.home-story--with-header .home-story-stage {
+  top: var(--header-h, 72px);
+  height: calc(100vh - var(--header-h, 72px));
+  height: calc(100dvh - var(--header-h, 72px));
 }
 
 /* Track invisible — ~14 viewports de scroll */
@@ -45,6 +56,13 @@
   min-height: 1400vh;
   pointer-events: none;
   z-index: 0;
+}
+
+/* Footer au-dessus du stage une fois le récit passé (stage opacity 0) */
+.site-root.is-story-mode .site-footer {
+  position: relative;
+  z-index: 20;
+  background: var(--bg, #0a0a0a);
 }
 
 /* Mode sticky (legacy) */
@@ -147,12 +165,18 @@
   background: rgba(10, 10, 10, 0.7);
 }
 
-/* Shell page /histoire : pas de chrome, scroll document libre */
+/* Accueil scrollytelling : header + footer + scroll document */
 .site-root.is-story-mode {
   min-height: 0;
   height: auto;
   overflow: visible;
   background: #0a0a0a;
+}
+
+.site-root.is-story-mode .site-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
 }
 
 .site-main.is-story {
@@ -1090,16 +1114,27 @@ body.config-lock {
   font-family: var(--philae-font-mono);
 }
 
-/* Accueil */
-.page-accueil {
+/* Accueil = scrollytelling (padding géré par page-histoire) */
+.page-accueil:not(.page-histoire) {
   width: 100%;
   box-sizing: border-box;
   padding: 2.5rem clamp(1rem, 3vw, 2.5rem) 3rem;
   overflow: visible !important;
 }
 
-.page-accueil .hero {
+.page-accueil .hero,
+.page-concept .concept-hero {
   max-width: 48rem;
+}
+
+.page-concept .concept-hero {
+  margin: 2rem 0 2.5rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.page-concept .hero-title-sm {
+  font-size: clamp(1.75rem, 4vw, 2.75rem);
 }
 
 .page-concept,

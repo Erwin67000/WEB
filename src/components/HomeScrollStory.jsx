@@ -669,10 +669,14 @@ function StoryScene({ progressRef }) {
 }
 
 /**
- * @param {{ mode?: 'fixed' | 'sticky' }} props
+ * @param {{ mode?: 'fixed' | 'sticky', showExit?: boolean }} props
  */
-export default function HomeScrollStory({ mode = 'fixed' }) {
+export default function HomeScrollStory({
+  mode = 'fixed',
+  showExit = false,
+}) {
   const trackRef = useRef(null)
+  const stageRef = useRef(null)
   const progressRef = useRef(0)
   const [progress, setProgress] = useState(0)
   const [chapter, setChapter] = useState(0)
@@ -691,6 +695,28 @@ export default function HomeScrollStory({ mode = 'fixed' }) {
       if (!alive) return
       const p = getTrackProgress(el)
       progressRef.current = p
+
+      // Libérer l’écran une fois le track passé → footer visible
+      const stage = stageRef.current
+      if (stage) {
+        const rect = el.getBoundingClientRect()
+        const vh = window.innerHeight || 1
+        // track entièrement au-dessus du bas de l’écran → fondu puis hide
+        if (rect.bottom <= 0) {
+          stage.style.opacity = '0'
+          stage.style.visibility = 'hidden'
+          stage.style.pointerEvents = 'none'
+        } else if (rect.bottom < vh * 0.35) {
+          const o = clamp01(rect.bottom / (vh * 0.35))
+          stage.style.opacity = String(o)
+          stage.style.visibility = 'visible'
+          stage.style.pointerEvents = 'none'
+        } else {
+          stage.style.opacity = '1'
+          stage.style.visibility = 'visible'
+          stage.style.pointerEvents = 'none'
+        }
+      }
 
       if (Math.abs(p - lastP) > 0.002) {
         lastP = p
@@ -775,9 +801,9 @@ export default function HomeScrollStory({ mode = 'fixed' }) {
         </div>
       </div>
 
-      {isFixed && (
-        <Link to="/" className="home-story-exit">
-          ← Accueil
+      {showExit && (
+        <Link to="/concept" className="home-story-exit">
+          Le concept →
         </Link>
       )}
     </>
@@ -786,10 +812,12 @@ export default function HomeScrollStory({ mode = 'fixed' }) {
   if (isFixed) {
     return (
       <div
-        className="home-story home-story--fixed"
+        className="home-story home-story--fixed home-story--with-header"
         aria-label="Assemblage du meuble Philae"
       >
-        <div className="home-story-stage">{stage}</div>
+        <div ref={stageRef} className="home-story-stage">
+          {stage}
+        </div>
         <div
           ref={trackRef}
           className="home-story-track"

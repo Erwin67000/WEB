@@ -1,9 +1,14 @@
 import { useEffect } from 'react'
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from 'react-router-dom'
 import SiteHeader from './components/SiteHeader.jsx'
 import SiteFooter from './components/SiteFooter.jsx'
 import AccueilPage from './pages/AccueilPage.jsx'
-import HistoirePage from './pages/HistoirePage.jsx'
 import BoutiquePage from './pages/BoutiquePage.jsx'
 import ArticlePage from './pages/ArticlePage.jsx'
 import BoutiqueConfigurePage from './pages/BoutiqueConfigurePage.jsx'
@@ -19,22 +24,19 @@ function Shell() {
   const isBoutiqueSession = /\/boutique\/[^/]+\/configurer$/.test(
     location.pathname,
   )
-  const isHistoire = location.pathname === '/histoire'
+  const isHomeStory = location.pathname === '/'
   const isConfigMode = isMainConfig || isBoutiqueSession
-  // Plein écran sans header / footer
-  const isChromeLess = isConfigMode || isHistoire
 
   useEffect(() => {
-    document.title = isHistoire
-      ? 'Philae — Histoire'
-      : isBoutiqueSession
-        ? 'Philae — Configurer (boutique)'
-        : isMainConfig
-          ? 'Philae — Configurateur'
+    document.title = isBoutiqueSession
+      ? 'Philae — Configurer (boutique)'
+      : isMainConfig
+        ? 'Philae — Configurateur'
+        : isHomeStory
+          ? 'Philae — Mobilier géométrique'
           : 'Philae — Mobilier géométrique'
 
     const root = document.getElementById('root')
-    // config-lock bloque le scroll document — on ne l’applique PAS à /histoire
     if (isConfigMode) {
       document.documentElement.classList.add('config-lock')
       document.body.classList.add('config-lock')
@@ -45,7 +47,8 @@ function Shell() {
       root?.classList.remove('config-lock-root')
     }
 
-    if (isHistoire) {
+    // Accueil scrollytelling : scroll document libre + header/footer
+    if (isHomeStory) {
       document.documentElement.classList.add('story-mode')
       document.body.classList.add('story-mode')
       root?.classList.add('story-mode-root')
@@ -63,24 +66,25 @@ function Shell() {
       document.body.classList.remove('story-mode')
       root?.classList.remove('story-mode-root')
     }
-  }, [isConfigMode, isMainConfig, isBoutiqueSession, isHistoire])
+  }, [isConfigMode, isMainConfig, isBoutiqueSession, isHomeStory])
 
   return (
     <ConfigStoreProvider store={useConfigStore}>
       <div
         className={`site-root${isConfigMode ? ' is-config-mode' : ''}${
-          isHistoire ? ' is-story-mode' : ''
+          isHomeStory ? ' is-story-mode' : ''
         }`}
       >
-        {!isChromeLess && <SiteHeader />}
+        {!isConfigMode && <SiteHeader />}
         <div
           className={`site-main${
-            isConfigMode ? ' is-config' : isHistoire ? ' is-story' : ' is-full'
+            isConfigMode ? ' is-config' : isHomeStory ? ' is-story' : ' is-full'
           }`}
         >
           <Routes>
             <Route path="/" element={<AccueilPage />} />
-            <Route path="/histoire" element={<HistoirePage />} />
+            {/* Ancienne route histoire → accueil */}
+            <Route path="/histoire" element={<Navigate to="/" replace />} />
             <Route path="/boutique" element={<BoutiquePage />} />
             <Route path="/boutique/:productId" element={<ArticlePage />} />
             <Route
@@ -93,7 +97,7 @@ function Shell() {
             <Route path="/atelier" element={<ConceptPage />} />
           </Routes>
         </div>
-        {!isChromeLess && <SiteFooter />}
+        {!isConfigMode && <SiteFooter />}
       </div>
     </ConfigStoreProvider>
   )
