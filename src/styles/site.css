@@ -169,29 +169,12 @@
   background: rgba(10, 10, 10, 0.7);
 }
 
-/* Accueil scrollytelling : header FIXE (toujours visible + cliquable) */
+/* Accueil scrollytelling */
 .site-root.is-story-mode {
   min-height: 0;
   height: auto;
   overflow: visible;
   background: #0a0a0a;
-}
-
-.site-root.is-story-mode .site-header,
-.site-header.is-home {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  width: 100%;
-  z-index: 50;
-  /* au-dessus de la scène 3D (z-index 5) */
-}
-
-/* Compense le header fixe dans le flux document */
-.site-root.is-story-mode .site-main.is-story {
-  padding-top: var(--header-current-h, 72px);
-  transition: padding-top 0.28s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* Bouton remonter en haut (accueil) */
@@ -237,7 +220,6 @@
   width: 100%;
   min-height: 0;
   overflow: visible;
-  /* padding-top géré par .site-root.is-story-mode .site-main.is-story */
   margin: 0;
 }
 
@@ -407,9 +389,12 @@ body {
   overflow: visible;
 }
 
+/* Header TOUJOURS visible en haut (toutes pages) */
 .site-header {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 50;
   width: 100%;
   flex-shrink: 0;
@@ -420,6 +405,15 @@ body {
     background 0.28s cubic-bezier(0.22, 1, 0.36, 1),
     box-shadow 0.28s cubic-bezier(0.22, 1, 0.36, 1);
 }
+
+/* Compense le header fixe dans le flux (toutes pages) */
+.site-main.is-full,
+.site-main.is-story {
+  padding-top: var(--header-current-h, 72px);
+  box-sizing: border-box;
+  transition: padding-top 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 
 .site-header.is-compact {
   background: rgba(10, 10, 10, 0.98);
@@ -572,7 +566,6 @@ body {
   width: 100%;
   max-width: none;
   margin: 0;
-  padding: 0;
   min-height: 0;
   box-sizing: border-box;
 }
@@ -580,6 +573,7 @@ body {
 .site-main.is-full {
   width: 100%;
   flex: 1;
+  /* padding-top déjà défini plus haut pour le header fixe */
 }
 
 /* Scroll vertical libre sauf page configurateur */
@@ -593,6 +587,8 @@ body {
   height: 100dvh;
   max-height: 100dvh;
   overflow: hidden;
+  padding-top: 72px; /* grand header fixe */
+  box-sizing: border-box;
 }
 
 .site-main:not(.is-config) {
