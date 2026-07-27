@@ -14,7 +14,6 @@
 import { Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Canvas, useFrame, useThree, extend } from '@react-three/fiber'
-import { Html } from '@react-three/drei'
 import * as THREE from 'three'
 import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js'
 import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeometry.js'
@@ -376,10 +375,10 @@ function buildDashedPositions(a, b, dashMm = 10, gapMm = 7) {
 }
 
 /**
- * Révélation croquis arête X + cote « 1ÈRE DIMENSION ».
+ * Révélation croquis arête X.
  * API : sketchApiRef.current.set({ pointA, dim, sketch, sketchW, dimFade })
  *  - pointA : premier point (origine)
- *  - dim    : 2e point + ligne pointillée + flèche + libellé (même temps)
+ *  - dim    : 2e point + ligne pointillée (sans flèche ni libellé)
  *  - dimFade: disparaît au début de l’assemblage 3 arêtes
  */
 function SketchRevealX({ sketchApiRef, unitL = UNIT_MM }) {
@@ -387,17 +386,15 @@ function SketchRevealX({ sketchApiRef, unitL = UNIT_MM }) {
   const pointAMat = useRef(null)
   const pointBMat = useRef(null)
   const dashMat = useRef(null)
-  const arrowMat = useRef(null)
   const sketchMatRef = useRef(null)
-  const labelRef = useRef(null)
   const dimGroupRef = useRef(null)
 
   const points = useMemo(() => calcAreteX(unitL), [unitL])
   const a0 = points[0] // (0,0,0)
   const a6 = points[6] // (L,0,0)
 
-  // Croix / point marqueur (petite croix 3 axes)
-  const makeCrossGeo = (cx, cy, cz, s = 10) => {
+  // Croix / point marqueur (légèrement plus petite)
+  const makeCrossGeo = (cx, cy, cz, s = 7) => {
     const g = new LineSegmentsGeometry()
     g.setPositions([
       cx - s, cy, cz, cx + s, cy, cz,
@@ -408,11 +405,11 @@ function SketchRevealX({ sketchApiRef, unitL = UNIT_MM }) {
   }
 
   const crossAGeo = useMemo(
-    () => makeCrossGeo(a0[0], a0[1], a0[2], 12),
+    () => makeCrossGeo(a0[0], a0[1], a0[2], 7.5),
     [a0],
   )
   const crossBGeo = useMemo(
-    () => makeCrossGeo(a6[0], a6[1], a6[2], 12),
+    () => makeCrossGeo(a6[0], a6[1], a6[2], 7.5),
     [a6],
   )
 
@@ -421,22 +418,6 @@ function SketchRevealX({ sketchApiRef, unitL = UNIT_MM }) {
     g.setPositions(buildDashedPositions(a0, a6, 11, 8))
     return g
   }, [a0, a6])
-
-  // Flèche le long de +X, centrée sur la cote
-  const arrowGeo = useMemo(() => {
-    const mid = unitL * 0.5
-    const tip = mid + 22
-    const base = mid + 6
-    const w = 7
-    const g = new LineSegmentsGeometry()
-    // tige + pointe
-    g.setPositions([
-      mid - 22, 0, 0, tip, 0, 0,
-      tip, 0, 0, base, w, 0,
-      tip, 0, 0, base, -w, 0,
-    ])
-    return g
-  }, [unitL])
 
   const sketchGeo = useMemo(() => {
     const arr = []
@@ -460,7 +441,7 @@ function SketchRevealX({ sketchApiRef, unitL = UNIT_MM }) {
   const resH = Math.max(1, size.height * dpr)
 
   useLayoutEffect(() => {
-    for (const r of [pointAMat, pointBMat, dashMat, arrowMat, sketchMatRef]) {
+    for (const r of [pointAMat, pointBMat, dashMat, sketchMatRef]) {
       if (r.current?.resolution) r.current.resolution.set(resW, resH)
     }
   }, [resW, resH])
@@ -498,17 +479,6 @@ function SketchRevealX({ sketchApiRef, unitL = UNIT_MM }) {
             dashMat.current.resolution.set(resW, resH)
           }
         }
-        if (arrowMat.current) {
-          arrowMat.current.opacity = d
-          arrowMat.current.visible = d > 0.02
-          if (arrowMat.current.resolution) {
-            arrowMat.current.resolution.set(resW, resH)
-          }
-        }
-        if (labelRef.current) {
-          labelRef.current.style.opacity = String(d)
-          labelRef.current.style.visibility = d > 0.02 ? 'visible' : 'hidden'
-        }
         if (dimGroupRef.current) {
           dimGroupRef.current.visible = d > 0.02 || a > 0.02
         }
@@ -533,26 +503,10 @@ function SketchRevealX({ sketchApiRef, unitL = UNIT_MM }) {
       crossAGeo.dispose()
       crossBGeo.dispose()
       dashGeo.dispose()
-      arrowGeo.dispose()
       sketchGeo.dispose()
     },
-    [crossAGeo, crossBGeo, dashGeo, arrowGeo, sketchGeo],
+    [crossAGeo, crossBGeo, dashGeo, sketchGeo],
   )
-
-  const labelStyle = {
-    fontFamily: "'Stardos Stencil', system-ui, sans-serif",
-    fontSize: '13px',
-    fontWeight: 400,
-    letterSpacing: '0.14em',
-    textTransform: 'uppercase',
-    color: SKETCH_COLOR,
-    whiteSpace: 'nowrap',
-    pointerEvents: 'none',
-    userSelect: 'none',
-    textShadow: '0 1px 8px rgba(0,0,0,0.85)',
-    opacity: 0,
-    transition: 'opacity 0.15s linear',
-  }
 
   return (
     <group>
@@ -561,7 +515,7 @@ function SketchRevealX({ sketchApiRef, unitL = UNIT_MM }) {
         <lineMaterial
           ref={pointAMat}
           color={SKETCH_COLOR}
-          linewidth={3.2}
+          linewidth={2.6}
           transparent
           opacity={0}
           depthTest
@@ -570,13 +524,13 @@ function SketchRevealX({ sketchApiRef, unitL = UNIT_MM }) {
         />
       </lineSegments2>
 
-      {/* Cote : point B + pointillés + flèche + libellé */}
+      {/* Point B + pointillés (sans flèche ni libellé) */}
       <group ref={dimGroupRef} visible={false}>
         <lineSegments2 geometry={crossBGeo} renderOrder={6}>
           <lineMaterial
             ref={pointBMat}
             color={SKETCH_COLOR}
-            linewidth={3.2}
+            linewidth={2.6}
             transparent
             opacity={0}
             depthTest
@@ -588,7 +542,7 @@ function SketchRevealX({ sketchApiRef, unitL = UNIT_MM }) {
           <lineMaterial
             ref={dashMat}
             color={SKETCH_COLOR}
-            linewidth={2.4}
+            linewidth={2.2}
             transparent
             opacity={0}
             depthTest
@@ -596,28 +550,6 @@ function SketchRevealX({ sketchApiRef, unitL = UNIT_MM }) {
             resolution={[resW, resH]}
           />
         </lineSegments2>
-        <lineSegments2 geometry={arrowGeo} renderOrder={6}>
-          <lineMaterial
-            ref={arrowMat}
-            color={SKETCH_COLOR}
-            linewidth={2.8}
-            transparent
-            opacity={0}
-            depthTest
-            depthWrite={false}
-            resolution={[resW, resH]}
-          />
-        </lineSegments2>
-        <Html
-          position={[unitL * 0.5, 28, 36]}
-          center
-          style={{ pointerEvents: 'none' }}
-          zIndexRange={[20, 0]}
-        >
-          <div ref={labelRef} style={labelStyle}>
-            1ÈRE DIMENSION
-          </div>
-        </Html>
       </group>
 
       {/* ligne_arete croquis */}
@@ -751,14 +683,14 @@ function StoryWorld({ progressRef }) {
     // Sous-étapes du dessin (01)
     // 1) premier point origine
     const pPointA = smoothstep(0.0, 0.1, tDraw)
-    // 2) même temps : 2e point + ligne pointillée + flèche + « 1ÈRE DIMENSION »
+    // 2) 2e point + ligne pointillée
     const pDim = smoothstep(0.1, 0.28, tDraw)
     // 3) ligne_arete croquis
     const pSketch = smoothstep(0.28, 0.52, tDraw)
-    // 4) traits configurateur + faces
+    // 4) traits configurateur + faces (encore translucides)
     const pClean = smoothstep(0.48, 0.7, tDraw)
     const pFaces = smoothstep(0.6, 0.88, tDraw)
-    // Croquis s’efface quand le solide prend le relais
+    // Croquis s’efface quand le solide / traits prennent le relais
     const sketchFade = 1 - smoothstep(0.6, 0.8, tDraw)
 
     // Cote dimension : disparaît dès le début de l’assemblage 3 arêtes
@@ -797,28 +729,40 @@ function StoryWorld({ progressRef }) {
       g.rotation.set(0, 0, 0)
     }
 
+    // Rotation vue : entre 02 et 03 → +90° ; entre 03 et 04 → +45°
+    // Pendant la rotation 90°, les 3 arêtes passent de translucides → opaque final
+    const rot90T = phase(p, PH * 1.75, PH * 2.2)
+    const rot90 = rot90T * (Math.PI / 2)
+    const rot45 = phase(p, PH * 2.75, PH * 3.25) * (Math.PI / 4)
+    if (spinGroup.current) {
+      spinGroup.current.rotation.y = rot90 + rot45
+    }
+
+    // Solides translucides pour laisser lire la géométrie, puis opaque à rot90
+    const GHOST = 0.28
+    const solidOp = lerp(GHOST, 1, rot90T)
+
     setPrim('X0', [0, 0, 0])
-    // Faces + contours configurateur pour X0
+    // Faces X0 : apparaissent avec pFaces, restent ghost jusqu’à rot90
     setAretePartsOpacity(
       primaryRefs.current.X0,
-      pFaces,
-      pClean,
+      pFaces * solidOp,
+      Math.max(pClean, pFaces * 0.85),
     )
 
     setPrim('Y0', y0off)
     setPrim('Z0', z0off)
-    setGroupOpacity(primaryRefs.current.Y0, pJoin)
-    setGroupOpacity(primaryRefs.current.Z0, pJoin)
-
-    // Rotation vue autour de l’axe Z SketchUp (vertical après rot parent)
-    // Entre 02 et 03 : +90° ; entre 03 et 04 : +45°
-    const rot90 = phase(p, PH * 1.75, PH * 2.2) * (Math.PI / 2)
-    const rot45 = phase(p, PH * 2.75, PH * 3.25) * (Math.PI / 4)
-    if (spinGroup.current) {
-      // rotation.y dans l’espace parent = axe vertical scène
-      // (groupe enfants a déjà -PI/2 sur X → Z SketchUp ≈ Y world)
-      spinGroup.current.rotation.y = rot90 + rot45
-    }
+    // Y0 / Z0 : lignes nettes + faces ghost → opaque à la rotation 90°
+    setAretePartsOpacity(
+      primaryRefs.current.Y0,
+      pJoin * solidOp,
+      pJoin,
+    )
+    setAretePartsOpacity(
+      primaryRefs.current.Z0,
+      pJoin * solidOp,
+      pJoin,
+    )
 
     // 9 arêtes
     REST_EDGE_IDS.forEach((id, i) => {
@@ -1038,8 +982,14 @@ function StoryScene({ progressRef }) {
 /**
  * @param {{ mode?: 'fixed' | 'sticky', showExit?: boolean }} props
  */
-/** Fondu d’apparition du texte : ~3 viewports par étape */
-const TEXT_FADE_SCROLLS = 3
+/**
+ * Fondu texte :
+ * - entrée rapide (~1 scroll)
+ * - reste bien visible au milieu de l’étape
+ * - sortie seulement sur le dernier demi-scroll
+ */
+const TEXT_FADE_IN_SCROLLS = 1.0
+const TEXT_FADE_OUT_SCROLLS = 0.55
 
 export default function HomeScrollStory({
   mode = 'fixed',
@@ -1095,19 +1045,18 @@ export default function HomeScrollStory({
         setChapter(ch)
       }
 
-      // Fondu simple sur ~3 scrolls en entrée d’étape
+      // Fondu : visible plus longtemps au centre de l’étape
       const chapterStart = ch / STORY.length
       const chapterEnd = (ch + 1) / STORY.length
       const scrollsInto = Math.max(0, p - chapterStart) * SCROLL_PAGES
-      const scrollsLeft =
-        Math.max(0, chapterEnd - p) * SCROLL_PAGES
+      const scrollsLeft = Math.max(0, chapterEnd - p) * SCROLL_PAGES
 
-      // Entrée : 0 → 1 sur TEXT_FADE_SCROLLS
-      const fadeIn = easeInOut(clamp01(scrollsInto / TEXT_FADE_SCROLLS))
-      // Sortie légère en fin d’étape (dernier scroll) pour le suivant
+      const fadeIn = easeInOut(
+        clamp01(scrollsInto / TEXT_FADE_IN_SCROLLS),
+      )
       const fadeOut =
         ch < STORY.length - 1
-          ? easeInOut(clamp01(scrollsLeft / 0.85))
+          ? easeInOut(clamp01(scrollsLeft / TEXT_FADE_OUT_SCROLLS))
           : 1
       const op = Math.min(fadeIn, fadeOut)
 
