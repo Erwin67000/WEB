@@ -114,11 +114,11 @@ export const face_arete = [
   [0, 1, 4],
   [4, 1, 5],
   [0, 2, 1],
-  [1, 2, 3],
-  [6, 7, 10],
-  [10, 7, 11],
-  [6, 7, 10],
-  [10, 7, 11],
+  [3, 2, 1],
+  [6, 7, 9],
+  [9, 10, 6],
+  [6, 8, 7],
+  [7, 8, 9],
 ]
 
 /** Symétrie d'un nuage de points selon un axe et une dimension. */
