@@ -362,15 +362,20 @@ export default function ControlPanel() {
                   />
                 </>
               )}
-              <NumFieldInline
-                label="Rot. Z"
-                value={unit.rotationZ}
-                min={-180}
-                max={180}
-                step={5}
-                unit="°"
-                onChange={(rotationZ) => updateUnit(unit.id, { rotationZ })}
-              />
+              {!dimsLocked && (
+                <NumField
+                  inline
+                  label="Rot. Z"
+                  value={unit.rotationZ}
+                  min={-180}
+                  max={180}
+                  step={5}
+                  unit="°"
+                  onChange={(rotationZ) =>
+                    updateUnit(unit.id, { rotationZ })
+                  }
+                />
+              )}
 
               <p className="field-label" style={{ marginTop: '0.35rem' }}>
                 Finition ossature
