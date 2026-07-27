@@ -93,6 +93,8 @@ export const ligne_arete = [
   [4, 5],
   [10, 11],
   [8, 9],
+  [0,1],
+  [6,7],
 ]
 
 /** 12 triangles par arête (indices dans les 12 points). */
@@ -109,6 +111,10 @@ export const face_arete = [
   [8, 3, 9],
   [4, 5, 10],
   [10, 5, 11],
+  [0, 1, 4],
+  [4, 1, 5],
+  [6, 7, 10],
+  [10, 7, 11],
 ]
 
 /** Symétrie d'un nuage de points selon un axe et une dimension. */
