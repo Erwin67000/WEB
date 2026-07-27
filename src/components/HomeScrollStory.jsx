@@ -1,6 +1,13 @@
 /**
- * Scrollytelling accueil — pleine largeur, 4 viewports de scroll.
- * Progression liée à window.scrollY ; molette OK même au-dessus du canvas.
+ * Scrollytelling accueil — pleine largeur, 4 pages de scroll.
+ *
+ * Structure :
+ *   section.home-story (hauteur 4×100vh)
+ *     div.home-story-sticky (position:sticky, 100vh) → canvas + texte
+ *     div.home-story-scroll-space (3×100vh) → crée la course de scroll
+ *
+ * Progression : formule sticky classique via getBoundingClientRect,
+ * mise à jour en boucle rAF (indépendante des events scroll / conteneur).
  */
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
@@ -20,7 +27,9 @@ import {
 const SCALE = 0.001
 const WOOD = FINITIONS.chene.color
 const PANEL = PANNEAU_COULEURS[DEFAULT_PANNEAU_COULEUR]?.color || '#d4d0c8'
-const STORY_VH = 4
+
+/** Nombre de « pages » de scroll pour le récit */
+const SCROLL_PAGES = 4
 
 const STORY = [
   {
@@ -69,16 +78,19 @@ function phase(p, start, end) {
 
 /**
  * Progression 0→1 pendant que la section sticky est « scrollee ».
- * Conteneur = N × 100vh ; sticky = 100vh → plage scrollable = (N-1)×vh.
+ * Formule classique scrollytelling :
+ *   p = -rect.top / (sectionHeight - viewportHeight)
+ * Fonctionne avec le scroll window (et tout conteneur si rect change).
  */
-function computeScrollProgress(sectionEl) {
+function getSectionProgress(sectionEl) {
   if (!sectionEl) return 0
   const rect = sectionEl.getBoundingClientRect()
-  const total = sectionEl.offsetHeight - window.innerHeight
+  const vh = window.innerHeight || 1
+  const h = sectionEl.offsetHeight || 0
+  const total = h - vh
   if (total <= 1) return 0
-  // rect.top = 0 au début du sticky pin ; devient négatif en progressant
-  const scrolled = -rect.top
-  return clamp01(scrolled / total)
+  // rect.top = 0 au début du pin sticky ; négatif ensuite
+  return clamp01(-rect.top / total)
 }
 
 function useBufferGeo(positions, indices) {
@@ -109,7 +121,7 @@ function useBufferGeo(positions, indices) {
   }, [positions, indices])
 }
 
-function AreteSolid({ meshData, color, opacity = 1 }) {
+function AreteSolid({ meshData, color }) {
   const geo = useBufferGeo(meshData.positions, meshData.indices)
   useEffect(() => () => geo?.dispose(), [geo])
   if (!geo) return null
@@ -120,9 +132,8 @@ function AreteSolid({ meshData, color, opacity = 1 }) {
         roughness={0.5}
         metalness={0.06}
         side={THREE.DoubleSide}
-        transparent={opacity < 0.999}
-        opacity={opacity}
-        depthWrite={opacity > 0.95}
+        transparent
+        opacity={1}
         polygonOffset
         polygonOffsetFactor={1}
         polygonOffsetUnits={1}
@@ -194,15 +205,15 @@ function StoryWorld({ progressRef }) {
   useFrame(({ camera }) => {
     const p = progressRef.current ?? 0
 
-    // 4 phases égales sur le scroll
-    const p1 = phase(p, 0.0, 0.25)
-    const p2 = phase(p, 0.22, 0.5)
-    const p3 = phase(p, 0.48, 0.74)
-    const p4 = phase(p, 0.72, 0.98)
+    // 4 phases égales
+    const p1 = phase(p, 0.0, 0.25) // emboîtement
+    const p2 = phase(p, 0.2, 0.5) // cadre 12
+    const p3 = phase(p, 0.48, 0.74) // tablettes
+    const p4 = phase(p, 0.72, 0.98) // panneaux
 
-    // Spin uniquement tant que l’emboîtement n’est pas fini (lié au scroll, pas au temps)
-    const spin = (1 - p1) * Math.PI * 2.4
-    const fly = (1 - p1) * 220
+    // Rotation / vol UNIQUEMENT selon le scroll (p1), jamais le temps
+    const spin = (1 - p1) * Math.PI * 2.2
+    const fly = (1 - p1) * 200
 
     const setPrim = (id, pos, rot) => {
       const g = primaryGroups.current[id]
@@ -215,13 +226,13 @@ function StoryWorld({ progressRef }) {
     setPrim('Y0', [fly * 0.55, 0, -fly], [spin * 0.4, 0, -spin])
     setPrim('Z0', [-fly * 0.35, fly, 0], [-spin, spin * 0.25, 0])
 
-    // Cadre complet (scale morph)
+    // Cadre complet
     if (secondaryGroup.current) {
       const sx = lerp(200 / 600, 1, p2)
       const sy = lerp(200 / 800, 1, p2)
       const sz = lerp(200 / 400, 1, p2)
       secondaryGroup.current.scale.set(sx, sy, sz)
-      secondaryGroup.current.visible = p2 > 0.04
+      secondaryGroup.current.visible = p2 > 0.03
       secondaryGroup.current.traverse((o) => {
         if (o.isMesh && o.material) {
           o.material.transparent = true
@@ -231,8 +242,7 @@ function StoryWorld({ progressRef }) {
       })
     }
 
-    // Masquer les 3 arêtes 200 mm quand le cadre final est dominant
-    const primVis = p2 < 0.88
+    const primVis = p2 < 0.9
     for (const id of ['X0', 'Y0', 'Z0']) {
       const g = primaryGroups.current[id]
       if (g) g.visible = primVis
@@ -276,12 +286,16 @@ function StoryWorld({ progressRef }) {
     const ty = (H * SCALE) / 2
     const tz = -(W * SCALE) / 2
     const dist =
-      Math.max(1.15, Math.sqrt(L * L + W * W + H * H) * SCALE * 1.2) * 1.05
-    const ang = -1.0 + p * 1.05
-    const cx = tx + Math.cos(ang) * dist
-    const cy = ty + dist * 0.38
-    const cz = tz + Math.sin(ang) * dist
-    camera.position.lerp(new THREE.Vector3(cx, cy, cz), 0.14)
+      Math.max(1.15, Math.sqrt(L * L + W * W + H * H) * SCALE * 1.2) * 1.08
+    const ang = -1.0 + p * 1.1
+    camera.position.lerp(
+      new THREE.Vector3(
+        tx + Math.cos(ang) * dist,
+        ty + dist * 0.4,
+        tz + Math.sin(ang) * dist,
+      ),
+      0.15,
+    )
     camera.lookAt(tx, ty, tz)
   })
 
@@ -355,7 +369,7 @@ function StoryScene({ progressRef }) {
   return (
     <>
       <color attach="background" args={['#0a0a0a']} />
-      <ambientLight intensity={0.48} />
+      <ambientLight intensity={0.5} />
       <hemisphereLight args={['#e8f0ff', '#2a2010', 0.42]} />
       <directionalLight position={[4, 6, 3]} intensity={1.4} color="#fff5e6" />
       <directionalLight position={[-3, 2, -4]} intensity={0.35} />
@@ -375,65 +389,55 @@ export default function HomeScrollStory() {
     if (!el) return
 
     let raf = 0
-    const update = () => {
-      const p = computeScrollProgress(el)
+    let alive = true
+    let lastP = -1
+    let lastCh = -1
+
+    // Boucle rAF continue : lit la position à chaque frame.
+    // Indépendant des events scroll (window ou conteneur interne).
+    const loop = () => {
+      if (!alive) return
+      const p = getSectionProgress(el)
       progressRef.current = p
-      // UI React (texte / barre) — throttle via rAF déjà
-      setProgress((prev) => (Math.abs(prev - p) > 0.002 ? p : prev))
-      const ch = Math.min(
-        STORY.length - 1,
-        Math.floor(p * STORY.length + 0.001),
-      )
-      setChapter((prev) => (prev !== ch ? ch : prev))
-    }
 
-    const onScrollOrResize = () => {
-      cancelAnimationFrame(raf)
-      raf = requestAnimationFrame(update)
-    }
-
-    update()
-    window.addEventListener('scroll', onScrollOrResize, { passive: true })
-    window.addEventListener('resize', onScrollOrResize)
-
-    // Molette au-dessus du canvas : forcer le scroll document
-    // (WebGL capture souvent le wheel et bloque le % de progression)
-    const onWheel = (e) => {
-      // Ne pas bloquer si l’utilisateur est sur un lien/bouton de l’overlay
-      if (e.target.closest?.('a, button, input, textarea, select')) return
-      // Si le navigateur ne scrolle pas (canvas), propager manuellement
-      if (Math.abs(e.deltaY) > 0) {
-        const before = window.scrollY
-        // laisse le défaut d’abord ; si rien n’a bougé, scrollBy
-        requestAnimationFrame(() => {
-          if (window.scrollY === before) {
-            window.scrollBy({ top: e.deltaY, left: 0, behavior: 'auto' })
-          }
-        })
+      if (Math.abs(p - lastP) > 0.002) {
+        lastP = p
+        setProgress(p)
+        const ch = Math.min(
+          STORY.length - 1,
+          Math.floor(p * STORY.length + 0.001),
+        )
+        if (ch !== lastCh) {
+          lastCh = ch
+          setChapter(ch)
+        }
       }
+      raf = requestAnimationFrame(loop)
     }
-    el.addEventListener('wheel', onWheel, { passive: true })
+
+    raf = requestAnimationFrame(loop)
 
     return () => {
-      window.removeEventListener('scroll', onScrollOrResize)
-      window.removeEventListener('resize', onScrollOrResize)
-      el.removeEventListener('wheel', onWheel)
+      alive = false
       cancelAnimationFrame(raf)
     }
   }, [])
 
   const ch = STORY[chapter]
+  // Spacer = (SCROLL_PAGES - 1) viewports sous le sticky 1 viewport
+  // Total section height = SCROLL_PAGES * 100vh (aussi en CSS)
+  const spacerVh = (SCROLL_PAGES - 1) * 100
 
   return (
     <section
       ref={sectionRef}
       className="home-story"
-      style={{ height: `${STORY_VH * 100}vh` }}
       aria-label="Assemblage du meuble Philae"
+      style={{ height: `${SCROLL_PAGES * 100}vh` }}
     >
+      {/* Zone épinglée : 1 écran, pleine largeur */}
       <div className="home-story-sticky">
-        {/* Canvas : pointer-events none → le scroll page marche partout */}
-        <div className="home-story-canvas">
+        <div className="home-story-canvas" aria-hidden>
           <Canvas
             dpr={[1, 1.5]}
             camera={{
@@ -448,8 +452,11 @@ export default function HomeScrollStory() {
               alpha: false,
             }}
             style={{ pointerEvents: 'none' }}
-            eventSource={sectionRef}
-            eventPrefix="client"
+            onCreated={({ gl }) => {
+              // Canvas ne capture jamais la molette
+              gl.domElement.style.pointerEvents = 'none'
+              gl.domElement.style.touchAction = 'pan-y'
+            }}
           >
             <Suspense fallback={null}>
               <StoryScene progressRef={progressRef} />
@@ -487,6 +494,16 @@ export default function HomeScrollStory() {
           </div>
         </div>
       </div>
+
+      {/*
+        Spacer EXPLICITE : crée la hauteur de scroll sous le sticky.
+        Sans ça, un seul enfant sticky 100vh → section ≈ 100vh → % = 0.
+      */}
+      <div
+        className="home-story-scroll-space"
+        style={{ height: `${spacerVh}vh` }}
+        aria-hidden
+      />
     </section>
   )
 }

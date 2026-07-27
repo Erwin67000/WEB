@@ -4,29 +4,54 @@
   padding-bottom: clamp(2rem, 5vw, 3.5rem);
 }
 
+/*
+  Structure scrollytelling :
+  - .home-story = track de scroll (hauteur = SCROLL_PAGES × 100vh)
+  - .home-story-sticky = écran figé (position:sticky ; top:0)
+  - .home-story-scroll-space = spacer qui crée la distance de scroll
+  Aucun ancêtre ne doit avoir overflow:auto/hidden (casse le sticky).
+*/
 .home-story {
   position: relative;
+  display: block;
   width: 100vw;
-  max-width: 100%;
+  max-width: 100vw;
   margin: 0;
   margin-left: calc(50% - 50vw);
-  /* hauteur : 4 × viewport (inline aussi) */
+  margin-right: calc(50% - 50vw);
+  padding: 0;
+  /* 4 viewports : 1 sticky + 3 de course */
+  height: 400vh;
   min-height: 400vh;
+  box-sizing: border-box;
+  background: #0a0a0a;
+  /* overflow visible obligatoire pour sticky */
+  overflow: visible;
 }
 
 .home-story-sticky {
+  position: -webkit-sticky;
   position: sticky;
   top: 0;
   left: 0;
   width: 100%;
   height: 100vh;
   height: 100dvh;
+  max-height: 100dvh;
   overflow: hidden;
   background: #0a0a0a;
   border-bottom: 1px solid var(--border);
   z-index: 2;
-  /* laisser passer la molette vers le document */
+  /* La molette traverse vers le document (scroll window) */
   pointer-events: none;
+}
+
+.home-story-scroll-space {
+  display: block;
+  width: 100%;
+  pointer-events: none;
+  /* hauteur fixée aussi en JS ; fallback 300vh */
+  min-height: 300vh;
 }
 
 .home-story-canvas {
@@ -42,6 +67,7 @@
   display: block;
   width: 100% !important;
   height: 100% !important;
+  pointer-events: none !important;
 }
 
 /* Texte en overlay sur la 3D (pleine largeur) */
@@ -49,7 +75,7 @@
   position: absolute;
   inset: 0;
   z-index: 3;
-  pointer-events: none; /* scroll libre sur toute la largeur */
+  pointer-events: none;
   display: flex;
   align-items: flex-end;
   justify-content: flex-start;
@@ -63,7 +89,7 @@
 }
 
 .home-story-copy {
-  pointer-events: none; /* pas de capture molette */
+  pointer-events: none;
   max-width: min(28rem, 92vw);
   padding: 0;
   background: transparent;
@@ -190,8 +216,9 @@ body {
   width: 100%;
   margin: 0;
   overflow-x: hidden;
-  /* Pages site : scroll document libre */
+  overflow-y: auto; /* scroll = document (window), pas un conteneur interne */
   min-height: 100%;
+  height: auto; /* ne pas figer à 100% : laisse le document grandir */
 }
 
 #root {
@@ -199,6 +226,8 @@ body {
   margin: 0;
   min-height: 100%;
   min-height: 100dvh;
+  height: auto;
+  overflow: visible;
 }
 
 .site-root {
@@ -209,6 +238,7 @@ body {
   flex-direction: column;
   background: var(--bg);
   color: var(--text);
+  overflow: visible;
 }
 
 .site-header {
@@ -971,15 +1001,27 @@ body.config-lock {
   font-family: var(--philae-font-mono);
 }
 
-/* Accueil full width content */
+/* Accueil : pas de padding haut (scrollytelling plein écran dès le top) */
 .page-accueil {
   width: 100%;
   box-sizing: border-box;
-  padding: 2.5rem clamp(1rem, 3vw, 2.5rem) 3rem;
+  padding: 0 0 3rem;
+  overflow: visible !important;
+}
+
+.page-accueil .hero,
+.page-accueil .home-section,
+.page-accueil .home-strengths,
+.page-accueil .home-quote {
+  padding-left: clamp(1rem, 3vw, 2.5rem);
+  padding-right: clamp(1rem, 3vw, 2.5rem);
 }
 
 .page-accueil .hero {
   max-width: 48rem;
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
 }
 
 .page-concept,

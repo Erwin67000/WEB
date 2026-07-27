@@ -28,11 +28,19 @@
   box-sizing: border-box;
 }
 
+/* height:auto sur le site public pour que le scroll soit sur window.
+   Le mode configurateur force height:100% via .config-lock. */
 html,
-body,
-#root {
-  height: 100%;
+body {
   margin: 0;
+  min-height: 100%;
+  height: auto;
+}
+
+#root {
+  margin: 0;
+  min-height: 100%;
+  height: auto;
 }
 
 body {

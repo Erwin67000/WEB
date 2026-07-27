@@ -31,11 +31,13 @@
   --philae-font-mono: ui-monospace, 'Cascadia Code', Consolas, monospace;
 }
 
-/* Pages site : fond sombre (pas le thème clair d’origine du root) */
+/* Pages site : fond sombre (pas le thème clair d’origine du root)
+   IMPORTANT : pas d’overflow ici — overflow ≠ visible casse position:sticky
+   et peut créer un scroll interne (window.scrollY reste à 0). */
 .page-site {
   background: var(--bg) !important;
   color: var(--text) !important;
-  overflow-y: auto;
+  overflow: visible;
 }
 
 .page-site .hero-title,
