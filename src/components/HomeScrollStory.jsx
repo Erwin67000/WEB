@@ -73,38 +73,38 @@ const STORY = [
   {
     id: 'one',
     kicker: '01 · Origine',
-    title: 'L’arête se dessine',
-    text: 'Du sommet naît la longueur 200 mm. Les lignes d’arête se tracent, puis le volume de bois apparaît.',
+    title: 'L’intention',
+    text: 'Un point. Un trait. Une arête se dessine',
   },
   {
     id: 'assemble',
     kicker: '02 · Sommet',
     title: 'La configuration au sommet',
-    text: 'Deux arêtes rejoignent la première. X, Y et Z forment l’angle signature.',
+    text: 'Deux arêtes rejoignent la première. La configuration du sommet forme l’angle signature.',
   },
   {
     id: 'stretch',
     kicker: '03 · Allongement',
     title: 'Les trois arêtes s’allongent',
-    text: 'X → 600 mm, Y → 400 mm, Z → 800 mm. Chaque arête grandit dans sa direction.',
+    text: 'Les dimensions évoluent librement.',
   },
   {
     id: 'frame',
     kicker: '04 · Volume',
     title: '12 arêtes',
-    text: 'Les neuf autres arêtes complètent l’ossature et ferment le volume.',
+    text: 'Le volume est révélé',
   },
   {
     id: 'shelves',
     kicker: '05 · Fonctions',
-    title: 'Les fonctions sont ajoutées',
+    title: 'Intégration de fonctions',
     text: 'Configuration unique pour respecter les besoins.',
   },
   {
     id: 'panels',
     kicker: '06 · Finitions',
     title: 'Panneaux',
-    text: 'Les panneaux complètent le volume.',
+    text: 'Les panneaux habillent la structure, et lui donne du caractère',
   },
 ]
 
