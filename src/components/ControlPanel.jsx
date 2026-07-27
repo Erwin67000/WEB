@@ -363,8 +363,7 @@ export default function ControlPanel() {
                 </>
               )}
               {!dimsLocked && (
-                <NumField
-                  inline
+                <NumFieldInline
                   label="Rot. Z"
                   value={unit.rotationZ}
                   min={-180}
