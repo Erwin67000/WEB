@@ -38,11 +38,11 @@
   pointer-events: none; /* molette → document */
 }
 
-/* Track invisible — ~12 viewports de scroll */
+/* Track invisible — ~14 viewports de scroll */
 .home-story--fixed .home-story-track {
   position: relative;
   width: 100%;
-  min-height: 1200vh;
+  min-height: 1400vh;
   pointer-events: none;
   z-index: 0;
 }
@@ -53,8 +53,8 @@
   max-width: 100vw;
   margin-left: calc(50% - 50vw);
   margin-right: calc(50% - 50vw);
-  height: 1200vh;
-  min-height: 1200vh;
+  height: 1400vh;
+  min-height: 1400vh;
   overflow: visible;
 }
 

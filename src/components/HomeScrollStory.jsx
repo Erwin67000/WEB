@@ -1,14 +1,15 @@
 /**
  * Scrollytelling Philae — page /histoire (mode fixed).
  *
- * ~12 viewports de scroll (6 phases × ~2 écrans) pour des animations plus douces.
+ * ~14 viewports de scroll (7 phases) :
+ *  01  Une arête 200 mm
+ *  02  Sommet : 2 arêtes 200 mm en translation
+ *  03  Allongement des 3 arêtes → 600 / 400 / 800 (paramétrique L·W·H)
+ *  04  Volume : les 9 autres arêtes en séquence
+ *  05  Deux tablettes
+ *  06  Panneaux olive
  *
- *  01  Une arête 200 mm, légère rotation autour de Z
- *  02  Dézoom + 2 arêtes 200 mm en translation pure (sommet)
- *  03  Allongement paramétrique L/W/H (géométrie reconstruite, pas de scale)
- *  04  Les 9 autres arêtes apparaissent en séquence
- *  05  Deux tablettes (fonctions)
- *  06  Plateau & socle olive (panneaux)
+ * Note : l’allongement reconstruit les points via buildGeometrie (pas de scale).
  */
 import { Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -40,14 +41,15 @@ const SCALE = 0.001
 const WOOD = FINITIONS.chene.color
 const PANEL = PANNEAU_COULEURS.olive.color
 const PANEL_EDGE = PANNEAU_COULEURS.olive.edge
-/** Longueur totale du track ≈ 12 viewports (animations mieux définies) */
-const SCROLL_PAGES = 12
-/** 6 phases narratives, chacune ≈ 2 viewports */
+/** ~2+ viewports par phase narrative (6 phases → ~14 écrans) */
+const SCROLL_PAGES = 14
+/** Aligné sur STORY.length */
 const N_PHASES = 6
 const UNIT_MM = 200
 const FINAL_L = 600
 const FINAL_W = 400
 const FINAL_H = 800
+const PRIMARY_IDS = ['X0', 'Y0', 'Z0']
 
 /** Les 9 arêtes hors coin d’origine X0/Y0/Z0 */
 const REST_EDGE_IDS = [
@@ -77,13 +79,13 @@ const STORY = [
   },
   {
     id: 'stretch',
-    kicker: '03 · Étirement',
-    title: 'Le volume s’étire',
-    text: 'Les trois arêtes s’allongent de 200 mm jusqu’à 600 × 400 × 800 mm.',
+    kicker: '03 · Allongement',
+    title: 'Les trois arêtes s’allongent',
+    text: 'X → 600 mm, Y → 400 mm, Z → 800 mm. Chaque arête grandit dans sa direction, sans déformer le profil.',
   },
   {
     id: 'frame',
-    kicker: '04 · Ossature',
+    kicker: '04 · Volume',
     title: '12 arêtes',
     text: 'Les neuf autres arêtes complètent l’ossature et ferment le volume.',
   },
@@ -141,18 +143,52 @@ function meshDataForArete(id, L, W, H) {
 }
 
 /**
- * Arête solide + ligne_arete.
- * Si `live` : les buffers sont mis à jour en place quand meshData change
- * (même topologie, positions recalculées via L/W/H).
+ * Met à jour en place les buffers d’un groupe arête (solide + fils).
+ * Topologie fixe → même longueur de buffers, positions recalculées.
  */
-function AreteSolid({ meshData, color, live = false }) {
+function applyAreteMeshData(group, meshData) {
+  if (!group || !meshData?.positions) return
+  group.traverse((obj) => {
+    if (obj.isMesh && obj.geometry?.getAttribute?.('position')) {
+      const pos = obj.geometry.getAttribute('position')
+      if (pos.array.length === meshData.positions.length) {
+        pos.array.set(meshData.positions)
+        pos.needsUpdate = true
+        obj.geometry.computeVertexNormals()
+        obj.geometry.computeBoundingSphere?.()
+      }
+    }
+    // LineSegments basique (pas LineSegments2)
+    if (
+      obj.isLineSegments &&
+      obj.type !== 'LineSegments2' &&
+      meshData.wire &&
+      obj.geometry?.getAttribute?.('position')
+    ) {
+      const wpos = obj.geometry.getAttribute('position')
+      if (wpos.array.length === meshData.wire.length) {
+        wpos.array.set(meshData.wire)
+        wpos.needsUpdate = true
+        obj.geometry.computeBoundingSphere?.()
+      }
+    }
+    // Contours épais
+    if (
+      (obj.isLine2 || obj.type === 'LineSegments2') &&
+      meshData.wire &&
+      obj.geometry?.setPositions
+    ) {
+      obj.geometry.setPositions(Array.from(meshData.wire))
+    }
+  })
+}
+
+/** Arête solide + ligne_arete (comme le configurateur). */
+function AreteSolid({ meshData, color }) {
   const { size, gl } = useThree()
   const lineMatRef = useRef(null)
-  const solidGeoRef = useRef(null)
-  const edgeBasicRef = useRef(null)
-  const edgeFatRef = useRef(null)
 
-  // Géométries stables (topologie fixe)
+  // Rebuild complet quand meshData de départ change (montage)
   const solidGeo = useMemo(() => {
     if (!meshData?.positions) return null
     const g = new THREE.BufferGeometry()
@@ -162,9 +198,8 @@ function AreteSolid({ meshData, color, live = false }) {
     )
     g.setIndex(new THREE.BufferAttribute(meshData.indices.slice(), 1))
     g.computeVertexNormals()
-    solidGeoRef.current = g
     return g
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps -- init once
+  }, [meshData])
 
   const edgeBasic = useMemo(() => {
     if (!meshData?.wire) return null
@@ -173,66 +208,15 @@ function AreteSolid({ meshData, color, live = false }) {
       'position',
       new THREE.BufferAttribute(meshData.wire.slice(), 3),
     )
-    edgeBasicRef.current = g
     return g
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [meshData])
 
   const edgeFat = useMemo(() => {
     if (!meshData?.wire) return null
     const g = new LineSegmentsGeometry()
     g.setPositions(Array.from(meshData.wire))
-    edgeFatRef.current = g
     return g
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Mise à jour live des positions (allongement paramétrique)
-  useLayoutEffect(() => {
-    if (!meshData) return
-    const sg = solidGeoRef.current
-    if (sg) {
-      const pos = sg.getAttribute('position')
-      if (pos && pos.array.length === meshData.positions.length) {
-        pos.array.set(meshData.positions)
-        pos.needsUpdate = true
-        sg.computeVertexNormals()
-        sg.computeBoundingSphere()
-      }
-    }
-    const eb = edgeBasicRef.current
-    if (eb && meshData.wire) {
-      const wpos = eb.getAttribute('position')
-      if (wpos && wpos.array.length === meshData.wire.length) {
-        wpos.array.set(meshData.wire)
-        wpos.needsUpdate = true
-        eb.computeBoundingSphere()
-      }
-    }
-    const ef = edgeFatRef.current
-    if (ef && meshData.wire) {
-      ef.setPositions(Array.from(meshData.wire))
-    }
-  }, [meshData, live])
-
-  // Init non-live : rebuild si meshData change d’identité
-  useLayoutEffect(() => {
-    if (live || !meshData || !solidGeoRef.current) return
-    const pos = solidGeoRef.current.getAttribute('position')
-    if (pos && pos.array.length === meshData.positions.length) {
-      pos.array.set(meshData.positions)
-      pos.needsUpdate = true
-      solidGeoRef.current.computeVertexNormals()
-    }
-    if (edgeBasicRef.current && meshData.wire) {
-      const wpos = edgeBasicRef.current.getAttribute('position')
-      if (wpos) {
-        wpos.array.set(meshData.wire)
-        wpos.needsUpdate = true
-      }
-    }
-    if (edgeFatRef.current && meshData.wire) {
-      edgeFatRef.current.setPositions(Array.from(meshData.wire))
-    }
-  }, [meshData, live])
+  }, [meshData])
 
   const dpr = gl.getPixelRatio?.() || 1
   const resW = Math.max(1, size.width * dpr)
@@ -401,75 +385,61 @@ function StoryWorld({ progressRef }) {
 
   const finalDims = { L: FINAL_L, W: FINAL_W, H: FINAL_H }
 
-  // Dims courantes du coin (paramétriques — pas de scale non-uniforme)
-  const [cornerDims, setCornerDims] = useState({
-    L: UNIT_MM,
-    W: UNIT_MM,
-    H: UNIT_MM,
-  })
-  const cornerKeyRef = useRef(`${UNIT_MM}|${UNIT_MM}|${UNIT_MM}`)
+  // Géométrie initiale 200 mm (buffers mis à jour en place pendant l’allongement)
+  const primaryMeshes = useMemo(() => {
+    return PRIMARY_IDS.map((id) =>
+      meshDataForArete(id, UNIT_MM, UNIT_MM, UNIT_MM),
+    ).filter(Boolean)
+  }, [])
 
-  // Cadre final pour les 9 arêtes restantes
+  // Cadre final pour les 9 arêtes restantes (apparaissent seulement après allongement)
   const ossEnd = useMemo(() => buildOssature(finalDims), [])
+  const restMeshes = useMemo(
+    () => ossEnd.meshes.filter((m) => REST_EDGE_IDS.includes(m.id)),
+    [ossEnd],
+  )
   const shelves = useMemo(
     () => [0, 1].map((i) => createModule('shelf', i)),
     [],
   )
 
-  // 3 arêtes d’origine : géométrie reconstruite à chaque L/W/H
-  const primaryMeshes = useMemo(() => {
-    const { L, W, H } = cornerDims
-    return ['X0', 'Y0', 'Z0']
-      .map((id) => meshDataForArete(id, L, W, H))
-      .filter(Boolean)
-  }, [cornerDims.L, cornerDims.W, cornerDims.H])
-
-  const restMeshes = useMemo(
-    () => ossEnd.meshes.filter((m) => REST_EDGE_IDS.includes(m.id)),
-    [ossEnd],
-  )
-
   useFrame(({ camera }) => {
     const p = progressRef.current ?? 0
-    // 6 phases narratives, chacune ≈ 2 viewports sur un track de 12
+    // 6 phases : solo | join | stretch | rest | shelves | panels
     const PH = 1 / N_PHASES
 
-    // 01 — une arête 200 mm (grand plan, spin Z) · ~2 écrans
+    // 01 — une arête 200 mm
     const pSolo = phase(p, 0.0, PH * 0.95)
-    // 02 — dézoom + 2 arêtes 200 mm en translation · ~2 écrans
+    // 02 — 2 arêtes 200 mm en translation + dézoom
     const pJoin = phase(p, PH * 0.88, PH * 2)
-    // 03 — allongement paramétrique L/W/H · ~2 écrans
+    // 03 — ALLONGEMENT des 3 arêtes (L/W/H) — étape dédiée AVANT le volume
     const pStretch = phase(p, PH * 2, PH * 3)
-    // 04 — 9 arêtes séquentielles · ~2 écrans
+    // 04 — 9 arêtes séquentielles (volume / ossature complète)
     const pRest = phase(p, PH * 3, PH * 4)
-    // 05 — tablettes · ~2 écrans
+    // 05 — tablettes
     const pShelves = phase(p, PH * 4, PH * 5)
-    // 06 — panneaux · ~2 écrans
+    // 06 — panneaux
     const pPanels = phase(p, PH * 5, 0.995)
 
-    // ——— Dims paramétriques (allongement le long de chaque axe) ———
-    // X0 s’allonge avec L, Y0 avec W, Z0 avec H — profils non déformés
+    // ——— Dims paramétriques pendant l’étape 03 uniquement ———
+    // X0 ↔ L (→ 600), Y0 ↔ W (→ 400), Z0 ↔ H (→ 800)
     const L = lerp(UNIT_MM, FINAL_L, pStretch)
     const W = lerp(UNIT_MM, FINAL_W, pStretch)
     const H = lerp(UNIT_MM, FINAL_H, pStretch)
 
-    // Quantize 1 mm → rebuild géométrie sans flood de setState
-    const qL = Math.round(L)
-    const qW = Math.round(W)
-    const qH = Math.round(H)
-    const key = `${qL}|${qW}|${qH}`
-    if (key !== cornerKeyRef.current) {
-      cornerKeyRef.current = key
-      setCornerDims({ L: qL, W: qW, H: qH })
+    // Mise à jour IMPÉRATIVE des buffers (fiable, chaque frame)
+    for (const id of PRIMARY_IDS) {
+      const data = meshDataForArete(id, L, W, H)
+      applyAreteMeshData(primaryRefs.current[id], data)
     }
 
-    // Offsets translation (mm SketchUp) — pure translation, à 200 mm
+    // Offsets translation (mm) — pure translation à 200 mm (avant allongement)
     const approach = 320
-    const tJoin = 1 - pJoin // 1 = loin, 0 = en place
+    const tJoin = 1 - pJoin
     const y0off = [0, approach * tJoin, 0]
     const z0off = [0, 0, approach * tJoin]
 
-    // X0 : spin léger autour de Z pendant le solo, s’arrête à l’emboîtement
+    // Spin Z sur X0 pendant le solo, stop à l’emboîtement
     const spinZ = (1 - pSolo) * 0.55 * (1 - pJoin * 0.85)
 
     const setPrim = (id, posMm, rot = [0, 0, 0]) => {
@@ -479,17 +449,15 @@ function StoryWorld({ progressRef }) {
       g.rotation.set(rot[0], rot[1], rot[2])
     }
 
-    // X0 en place dès le début
     setPrim('X0', [0, 0, 0], [0, 0, spinZ])
     setGroupOpacity(primaryRefs.current.X0, Math.max(pSolo, 0.02))
 
-    // Y0 / Z0 : translation pure, pas de rotation
     setPrim('Y0', y0off, [0, 0, 0])
     setPrim('Z0', z0off, [0, 0, 0])
     setGroupOpacity(primaryRefs.current.Y0, pJoin)
     setGroupOpacity(primaryRefs.current.Z0, pJoin)
 
-    // 9 arêtes restantes — séquentiel (taille finale)
+    // 9 arêtes — seulement après allongement (pStretch ≈ 1)
     REST_EDGE_IDS.forEach((id, i) => {
       const g = restRefs.current[id]
       if (!g) return
@@ -569,8 +537,8 @@ function StoryWorld({ progressRef }) {
   return (
     <group>
       {/*
-        Coin X0/Y0/Z0 — géométrie reconstruite via L/W/H (calcAreteX/Y/Z).
-        Pas de scale non-uniforme : le profil reste correct.
+        Coin X0/Y0/Z0 — montés à 200 mm, allongés chaque frame via
+        applyAreteMeshData(L,W,H) pendant l’étape 03.
       */}
       <group scale={[SCALE, SCALE, SCALE]} rotation={[-Math.PI / 2, 0, 0]}>
         {primaryMeshes.map((m) => (
@@ -581,12 +549,12 @@ function StoryWorld({ progressRef }) {
             }}
             visible={false}
           >
-            <AreteSolid meshData={m} color={WOOD} live />
+            <AreteSolid meshData={m} color={WOOD} />
           </group>
         ))}
       </group>
 
-      {/* 9 arêtes restantes — taille finale, fade séquentiel */}
+      {/* 9 arêtes restantes — taille finale, après l’allongement */}
       <group scale={[SCALE, SCALE, SCALE]} rotation={[-Math.PI / 2, 0, 0]}>
         {restMeshes.map((m) => (
           <group
