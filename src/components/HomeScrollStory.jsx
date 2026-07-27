@@ -1038,8 +1038,8 @@ function StoryScene({ progressRef }) {
 /**
  * @param {{ mode?: 'fixed' | 'sticky', showExit?: boolean }} props
  */
-/** Animation texte pilotée par le scroll : ~3 viewports par étape */
-const TEXT_WHEEL_SCROLLS = 3
+/** Fondu d’apparition du texte : ~3 viewports par étape */
+const TEXT_FADE_SCROLLS = 3
 
 export default function HomeScrollStory({
   mode = 'fixed',
@@ -1048,9 +1048,7 @@ export default function HomeScrollStory({
   const trackRef = useRef(null)
   const stageRef = useRef(null)
   const progressRef = useRef(0)
-  const wheelKickerRef = useRef(null)
-  const wheelTitleRef = useRef(null)
-  const wheelTextRef = useRef(null)
+  const copyRef = useRef(null)
   const [chapter, setChapter] = useState(0)
   const isFixed = mode === 'fixed'
 
@@ -1061,18 +1059,6 @@ export default function HomeScrollStory({
     let raf = 0
     let alive = true
     let lastCh = -1
-
-    const applyWheelLine = (node, t, stagger) => {
-      if (!node) return
-      // Courbe élancée antihoraire : pivot loin à gauche, grand arc
-      const u = easeInOut(clamp01((t - stagger) / (1 - stagger * 0.85)))
-      const rot = lerp(-155, 0, u) // deg, sens antihoraire depuis loin
-      const x = lerp(-42, 0, u) // vw — plus loin à gauche
-      const y = lerp(28, 0, u) // vh — plus bas, courbe allongée
-      const op = smoothstep(0.05, 0.45, u)
-      node.style.opacity = String(op)
-      node.style.transform = `rotate(${rot}deg) translate(${x}vw, ${y}vh)`
-    }
 
     const loop = () => {
       if (!alive) return
@@ -1109,17 +1095,25 @@ export default function HomeScrollStory({
         setChapter(ch)
       }
 
-      // Progression dans l’étape courante, en « pages » de scroll (vh)
+      // Fondu simple sur ~3 scrolls en entrée d’étape
       const chapterStart = ch / STORY.length
-      const pIntoChapter = Math.max(0, p - chapterStart)
-      // p total 0→1 sur SCROLL_PAGES viewports → facteur
-      const scrollsIntoChapter = pIntoChapter * SCROLL_PAGES
-      const tWheel = clamp01(scrollsIntoChapter / TEXT_WHEEL_SCROLLS)
+      const chapterEnd = (ch + 1) / STORY.length
+      const scrollsInto = Math.max(0, p - chapterStart) * SCROLL_PAGES
+      const scrollsLeft =
+        Math.max(0, chapterEnd - p) * SCROLL_PAGES
 
-      // 3 lignes : même courbe, léger décalage (kicker → titre → texte)
-      applyWheelLine(wheelKickerRef.current, tWheel, 0)
-      applyWheelLine(wheelTitleRef.current, tWheel, 0.08)
-      applyWheelLine(wheelTextRef.current, tWheel, 0.16)
+      // Entrée : 0 → 1 sur TEXT_FADE_SCROLLS
+      const fadeIn = easeInOut(clamp01(scrollsInto / TEXT_FADE_SCROLLS))
+      // Sortie légère en fin d’étape (dernier scroll) pour le suivant
+      const fadeOut =
+        ch < STORY.length - 1
+          ? easeInOut(clamp01(scrollsLeft / 0.85))
+          : 1
+      const op = Math.min(fadeIn, fadeOut)
+
+      if (copyRef.current) {
+        copyRef.current.style.opacity = String(op)
+      }
 
       raf = requestAnimationFrame(loop)
     }
@@ -1178,50 +1172,37 @@ export default function HomeScrollStory({
       </div>
 
       <div className="home-story-overlay">
-        <div className="home-story-copy">
-          {/* Texte : roue antihoraire pilotée par ~3 scrolls par étape */}
-          <div key={chapter} className="home-story-copy-wheel">
-            <p
-              ref={wheelKickerRef}
-              className="section-kicker home-story-kicker home-story-wheel-line"
+        {/* Timeline gauche, milieu vertical */}
+        <ol className="home-story-chapters" aria-label="Étapes du récit">
+          {STORY.map((s, i) => (
+            <li
+              key={s.id}
+              className={
+                i === chapter ? 'active' : i < chapter ? 'done' : ''
+              }
             >
-              {ch.kicker}
-            </p>
-            <h2
-              ref={wheelTitleRef}
-              className="home-story-title home-story-wheel-line"
-            >
-              {ch.title}
-            </h2>
-            <p
-              ref={wheelTextRef}
-              className="home-story-text home-story-wheel-line"
-            >
-              {ch.text}
-            </p>
-          </div>
-
-          {/* Timeline : kickers cliquables */}
-          <ol className="home-story-chapters" aria-label="Étapes du récit">
-            {STORY.map((s, i) => (
-              <li
-                key={s.id}
-                className={
-                  i === chapter ? 'active' : i < chapter ? 'done' : ''
-                }
+              <button
+                type="button"
+                className="home-story-chapter-btn"
+                onClick={() => goToChapter(i)}
+                aria-current={i === chapter ? 'step' : undefined}
+                title={`Aller à : ${s.kicker}`}
               >
-                <button
-                  type="button"
-                  className="home-story-chapter-btn"
-                  onClick={() => goToChapter(i)}
-                  aria-current={i === chapter ? 'step' : undefined}
-                  title={`Aller à : ${s.kicker}`}
-                >
-                  {s.kicker}
-                </button>
-              </li>
-            ))}
-          </ol>
+                {s.kicker}
+              </button>
+            </li>
+          ))}
+        </ol>
+
+        {/* Texte bas centre : fondu simple */}
+        <div
+          key={chapter}
+          ref={copyRef}
+          className="home-story-copy"
+        >
+          <p className="section-kicker home-story-kicker">{ch.kicker}</p>
+          <h2 className="home-story-title">{ch.title}</h2>
+          <p className="home-story-text">{ch.text}</p>
         </div>
       </div>
 

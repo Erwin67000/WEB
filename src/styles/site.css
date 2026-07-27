@@ -118,54 +118,60 @@
   pointer-events: none !important;
 }
 
-/* Texte en overlay sur la 3D (fond ivoire → contraste sombre) */
+/* Overlay story : timeline gauche + texte bas centre */
 .home-story-overlay {
   position: absolute;
   inset: 0;
   z-index: 3;
   pointer-events: none;
-  display: flex;
-  align-items: flex-end;
-  justify-content: flex-start;
-  padding: clamp(1.25rem, 3vw, 2.75rem);
+  display: block;
+  padding: 0;
   overflow: visible;
   background: linear-gradient(
-    90deg,
-    rgba(245, 240, 230, 0.94) 0%,
-    rgba(245, 240, 230, 0.55) 42%,
-    transparent 72%
+    180deg,
+    transparent 0%,
+    transparent 55%,
+    rgba(245, 240, 230, 0.55) 78%,
+    rgba(245, 240, 230, 0.92) 100%
   );
 }
 
+/* Timeline : milieu vertical, bord gauche */
+.home-story-chapters {
+  position: absolute;
+  left: clamp(1rem, 3vw, 2.25rem);
+  top: 50%;
+  transform: translateY(-50%);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  pointer-events: auto;
+  z-index: 4;
+}
+
+/* Texte bas centre */
 .home-story-copy {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(1.5rem, 4.5vh, 3rem);
+  transform: translateX(-50%);
+  width: min(42rem, 90vw);
+  text-align: center;
   pointer-events: none;
-  max-width: min(34rem, 94vw);
   padding: 0;
   background: transparent;
   border: none;
-  overflow: visible;
-}
-
-/* Texte story : transform piloté par le scroll (courbe élancée antihoraire) */
-.home-story-copy-wheel {
-  position: relative;
-  min-height: 9.5rem;
-  overflow: visible;
-  /* place pour l’arc qui arrive de loin à gauche */
-  margin-left: 0;
-}
-
-.home-story-wheel-line {
-  /* pivot loin à gauche → arc allongé (courbe type grand rayon) */
-  transform-origin: -80% 140%;
-  will-change: transform, opacity;
-  opacity: 0;
-  backface-visibility: hidden;
+  will-change: opacity;
+  opacity: 0; /* piloté par le scroll (fondu ~3 vh) */
 }
 
 .home-story-kicker {
-  font-size: clamp(0.95rem, 1.6vw, 1.15rem) !important;
-  margin-bottom: 0.5rem !important;
+  font-size: clamp(1.05rem, 1.9vw, 1.35rem) !important;
+  margin: 0 0 0.55rem !important;
+  text-align: center;
 }
 
 /* Lien sortie (réactive les clics) */
@@ -359,11 +365,11 @@ body.theme-ivory.story-mode {
   background: var(--ivory, #f5f0e6) !important;
 }
 
-/* Bouton remonter en haut (accueil) */
+/* Bouton remonter en haut (accueil) — +5px vers l’intérieur */
 .back-to-top {
   position: fixed;
-  right: clamp(1rem, 3vw, 1.75rem);
-  bottom: clamp(1.25rem, 3vw, 2rem);
+  right: calc(clamp(1rem, 3vw, 1.75rem) + 5px);
+  bottom: calc(clamp(1.25rem, 3vw, 2rem) + 5px);
   z-index: 45;
   display: inline-flex;
   align-items: center;
@@ -429,30 +435,22 @@ body.story-mode {
 
 .home-story-title {
   font-family: var(--philae-font-display, 'Stardos Stencil', system-ui, sans-serif);
-  font-size: clamp(2rem, 4.2vw, 3.15rem);
+  font-size: clamp(2.15rem, 4.6vw, 3.4rem);
   font-weight: 400;
   letter-spacing: 0.04em;
   color: #0a0a0a;
-  margin: 0.35rem 0 0.85rem;
+  margin: 0.25rem 0 0.75rem;
   line-height: 1.1;
+  text-align: center;
 }
 
 .home-story-text {
   color: #1a1610;
-  font-size: clamp(1.1rem, 1.85vw, 1.35rem);
+  font-size: clamp(1.15rem, 2vw, 1.45rem);
   line-height: 1.55;
-  max-width: 32rem;
-  margin: 0 0 1.35rem;
-}
-
-.home-story-chapters {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  pointer-events: auto; /* clics sur kickers */
+  max-width: 38rem;
+  margin: 0 auto;
+  text-align: center;
 }
 
 .home-story-chapters li {
@@ -466,10 +464,10 @@ body.story-mode {
   text-align: left;
   border: none;
   background: transparent;
-  padding: 0.2rem 0;
+  padding: 0.28rem 0;
   cursor: pointer;
   font-family: var(--philae-font-display, 'Stardos Stencil', system-ui, sans-serif);
-  font-size: clamp(0.85rem, 1.35vw, 1.05rem);
+  font-size: clamp(0.9rem, 1.4vw, 1.1rem);
   letter-spacing: 0.06em;
   color: #5a554c;
   transition: color 0.2s, transform 0.2s;
@@ -508,24 +506,27 @@ body.story-mode {
 
 @media (max-width: 900px) {
   .home-story-overlay {
-    align-items: flex-end;
     background: linear-gradient(
       0deg,
       rgba(245, 240, 230, 0.96) 0%,
-      rgba(245, 240, 230, 0.6) 45%,
-      transparent 75%
+      rgba(245, 240, 230, 0.55) 40%,
+      transparent 70%
     );
-    padding: 1rem 1rem 1.25rem;
   }
   .home-story-chapters {
-    display: flex;
-    flex-wrap: wrap;
-    flex-direction: row;
-    gap: 0.35rem 0.75rem;
-    max-width: 100%;
+    top: auto;
+    bottom: clamp(9.5rem, 28vh, 12rem);
+    transform: none;
+    left: 1rem;
+    flex-direction: column;
+    gap: 0.25rem;
   }
   .home-story-chapter-btn {
     font-size: 0.78rem;
+  }
+  .home-story-copy {
+    bottom: 1rem;
+    width: min(36rem, 92vw);
   }
   .path-steps-2 {
     grid-template-columns: 1fr;
