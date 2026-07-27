@@ -14,6 +14,7 @@
 import { Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Canvas, useFrame, useThree, extend } from '@react-three/fiber'
+import { Html } from '@react-three/drei'
 import * as THREE from 'three'
 import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js'
 import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeometry.js'
@@ -347,36 +348,95 @@ function setAretePartsOpacity(group, solidOp, lineOp) {
   })
 }
 
+/** Petits segments pointillés entre 2 points (mm). */
+function buildDashedPositions(a, b, dashMm = 10, gapMm = 7) {
+  const dx = b[0] - a[0]
+  const dy = b[1] - a[1]
+  const dz = b[2] - a[2]
+  const len = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1
+  const ux = dx / len
+  const uy = dy / len
+  const uz = dz / len
+  const step = dashMm + gapMm
+  const out = []
+  let d = 0
+  while (d < len) {
+    const d1 = Math.min(d + dashMm, len)
+    out.push(
+      a[0] + ux * d,
+      a[1] + uy * d,
+      a[2] + uz * d,
+      a[0] + ux * d1,
+      a[1] + uy * d1,
+      a[2] + uz * d1,
+    )
+    d += step
+  }
+  return out
+}
+
 /**
- * Révélation croquis de l’arête X (mm SketchUp).
- * API : sketchApiRef.current.set({ cross, len, sketch, sketchW, fade })
+ * Révélation croquis arête X + cote « 1ÈRE DIMENSION ».
+ * API : sketchApiRef.current.set({ pointA, dim, sketch, sketchW, dimFade })
+ *  - pointA : premier point (origine)
+ *  - dim    : 2e point + ligne pointillée + flèche + libellé (même temps)
+ *  - dimFade: disparaît au début de l’assemblage 3 arêtes
  */
 function SketchRevealX({ sketchApiRef, unitL = UNIT_MM }) {
   const { size, gl } = useThree()
-  const crossMatRef = useRef(null)
-  const lenMatRef = useRef(null)
+  const pointAMat = useRef(null)
+  const pointBMat = useRef(null)
+  const dashMat = useRef(null)
+  const arrowMat = useRef(null)
   const sketchMatRef = useRef(null)
+  const labelRef = useRef(null)
+  const dimGroupRef = useRef(null)
 
   const points = useMemo(() => calcAreteX(unitL), [unitL])
-  const a0 = points[0]
-  const a6 = points[6]
+  const a0 = points[0] // (0,0,0)
+  const a6 = points[6] // (L,0,0)
 
-  const crossGeo = useMemo(() => {
-    const s = 18
+  // Croix / point marqueur (petite croix 3 axes)
+  const makeCrossGeo = (cx, cy, cz, s = 10) => {
     const g = new LineSegmentsGeometry()
     g.setPositions([
-      -s, 0, 0, s, 0, 0,
-      0, -s, 0, 0, s, 0,
-      0, 0, -s, 0, 0, s,
+      cx - s, cy, cz, cx + s, cy, cz,
+      cx, cy - s, cz, cx, cy + s, cz,
+      cx, cy, cz - s, cx, cy, cz + s,
     ])
     return g
-  }, [])
+  }
 
-  const lenGeo = useMemo(() => {
+  const crossAGeo = useMemo(
+    () => makeCrossGeo(a0[0], a0[1], a0[2], 12),
+    [a0],
+  )
+  const crossBGeo = useMemo(
+    () => makeCrossGeo(a6[0], a6[1], a6[2], 12),
+    [a6],
+  )
+
+  const dashGeo = useMemo(() => {
     const g = new LineSegmentsGeometry()
-    g.setPositions([a0[0], a0[1], a0[2], a6[0], a6[1], a6[2]])
+    g.setPositions(buildDashedPositions(a0, a6, 11, 8))
     return g
   }, [a0, a6])
+
+  // Flèche le long de +X, centrée sur la cote
+  const arrowGeo = useMemo(() => {
+    const mid = unitL * 0.5
+    const tip = mid + 22
+    const base = mid + 6
+    const w = 7
+    const g = new LineSegmentsGeometry()
+    // tige + pointe
+    g.setPositions([
+      mid - 22, 0, 0, tip, 0, 0,
+      tip, 0, 0, base, w, 0,
+      tip, 0, 0, base, -w, 0,
+    ])
+    return g
+  }, [unitL])
 
   const sketchGeo = useMemo(() => {
     const arr = []
@@ -400,41 +460,63 @@ function SketchRevealX({ sketchApiRef, unitL = UNIT_MM }) {
   const resH = Math.max(1, size.height * dpr)
 
   useLayoutEffect(() => {
-    for (const r of [crossMatRef, lenMatRef, sketchMatRef]) {
+    for (const r of [pointAMat, pointBMat, dashMat, arrowMat, sketchMatRef]) {
       if (r.current?.resolution) r.current.resolution.set(resW, resH)
     }
   }, [resW, resH])
 
   useEffect(() => {
     sketchApiRef.current = {
-      set({ cross = 0, len = 0, sketch = 0, sketchW = SKETCH_WIDTH, fade = 1 }) {
-        const f = clamp01(fade)
-        if (crossMatRef.current) {
-          crossMatRef.current.opacity = clamp01(cross) * f
-          crossMatRef.current.visible = cross * f > 0.02
-        }
-        // Longueur : on recolle le point d’arrivée
-        const t = clamp01(len)
-        lenGeo.setPositions([
-          a0[0],
-          a0[1],
-          a0[2],
-          a0[0] + (a6[0] - a0[0]) * t,
-          a0[1] + (a6[1] - a0[1]) * t,
-          a0[2] + (a6[2] - a0[2]) * t,
-        ])
-        if (lenMatRef.current) {
-          lenMatRef.current.opacity = (t > 0.01 ? 1 : 0) * f * (1 - sketch * 0.15)
-          lenMatRef.current.linewidth = lerp(5.5, sketchW, sketch)
-          lenMatRef.current.visible = t > 0.01 && f > 0.02
-          if (lenMatRef.current.resolution) {
-            lenMatRef.current.resolution.set(resW, resH)
+      set({
+        pointA = 0,
+        dim = 0,
+        sketch = 0,
+        sketchW = SKETCH_WIDTH,
+        dimFade = 1,
+      }) {
+        const d = clamp01(dim) * clamp01(dimFade)
+        const a = clamp01(pointA) * clamp01(dimFade)
+
+        if (pointAMat.current) {
+          pointAMat.current.opacity = a
+          pointAMat.current.visible = a > 0.02
+          if (pointAMat.current.resolution) {
+            pointAMat.current.resolution.set(resW, resH)
           }
         }
+        if (pointBMat.current) {
+          pointBMat.current.opacity = d
+          pointBMat.current.visible = d > 0.02
+          if (pointBMat.current.resolution) {
+            pointBMat.current.resolution.set(resW, resH)
+          }
+        }
+        if (dashMat.current) {
+          dashMat.current.opacity = d
+          dashMat.current.visible = d > 0.02
+          if (dashMat.current.resolution) {
+            dashMat.current.resolution.set(resW, resH)
+          }
+        }
+        if (arrowMat.current) {
+          arrowMat.current.opacity = d
+          arrowMat.current.visible = d > 0.02
+          if (arrowMat.current.resolution) {
+            arrowMat.current.resolution.set(resW, resH)
+          }
+        }
+        if (labelRef.current) {
+          labelRef.current.style.opacity = String(d)
+          labelRef.current.style.visibility = d > 0.02 ? 'visible' : 'hidden'
+        }
+        if (dimGroupRef.current) {
+          dimGroupRef.current.visible = d > 0.02 || a > 0.02
+        }
+
         if (sketchMatRef.current) {
-          sketchMatRef.current.opacity = clamp01(sketch) * f
+          sketchMatRef.current.opacity = clamp01(sketch)
           sketchMatRef.current.linewidth = sketchW
-          sketchMatRef.current.visible = sketch * f > 0.02
+          sketchMatRef.current.visible = sketch > 0.02
           if (sketchMatRef.current.resolution) {
             sketchMatRef.current.resolution.set(resW, resH)
           }
@@ -444,24 +526,42 @@ function SketchRevealX({ sketchApiRef, unitL = UNIT_MM }) {
     return () => {
       sketchApiRef.current = null
     }
-  }, [sketchApiRef, lenGeo, a0, a6, resW, resH])
+  }, [sketchApiRef, resW, resH])
 
   useEffect(
     () => () => {
-      crossGeo.dispose()
-      lenGeo.dispose()
+      crossAGeo.dispose()
+      crossBGeo.dispose()
+      dashGeo.dispose()
+      arrowGeo.dispose()
       sketchGeo.dispose()
     },
-    [crossGeo, lenGeo, sketchGeo],
+    [crossAGeo, crossBGeo, dashGeo, arrowGeo, sketchGeo],
   )
+
+  const labelStyle = {
+    fontFamily: "'Stardos Stencil', system-ui, sans-serif",
+    fontSize: '13px',
+    fontWeight: 400,
+    letterSpacing: '0.14em',
+    textTransform: 'uppercase',
+    color: SKETCH_COLOR,
+    whiteSpace: 'nowrap',
+    pointerEvents: 'none',
+    userSelect: 'none',
+    textShadow: '0 1px 8px rgba(0,0,0,0.85)',
+    opacity: 0,
+    transition: 'opacity 0.15s linear',
+  }
 
   return (
     <group>
-      <lineSegments2 geometry={crossGeo} renderOrder={5}>
+      {/* Point A — origine */}
+      <lineSegments2 geometry={crossAGeo} renderOrder={6}>
         <lineMaterial
-          ref={crossMatRef}
+          ref={pointAMat}
           color={SKETCH_COLOR}
-          linewidth={3.8}
+          linewidth={3.2}
           transparent
           opacity={0}
           depthTest
@@ -469,19 +569,59 @@ function SketchRevealX({ sketchApiRef, unitL = UNIT_MM }) {
           resolution={[resW, resH]}
         />
       </lineSegments2>
-      <lineSegments2 geometry={lenGeo} renderOrder={5}>
-        <lineMaterial
-          ref={lenMatRef}
-          color={SKETCH_COLOR}
-          linewidth={5.5}
-          transparent
-          opacity={0}
-          depthTest
-          depthWrite={false}
-          resolution={[resW, resH]}
-        />
-      </lineSegments2>
-      <lineSegments2 geometry={sketchGeo} renderOrder={5}>
+
+      {/* Cote : point B + pointillés + flèche + libellé */}
+      <group ref={dimGroupRef} visible={false}>
+        <lineSegments2 geometry={crossBGeo} renderOrder={6}>
+          <lineMaterial
+            ref={pointBMat}
+            color={SKETCH_COLOR}
+            linewidth={3.2}
+            transparent
+            opacity={0}
+            depthTest
+            depthWrite={false}
+            resolution={[resW, resH]}
+          />
+        </lineSegments2>
+        <lineSegments2 geometry={dashGeo} renderOrder={5}>
+          <lineMaterial
+            ref={dashMat}
+            color={SKETCH_COLOR}
+            linewidth={2.4}
+            transparent
+            opacity={0}
+            depthTest
+            depthWrite={false}
+            resolution={[resW, resH]}
+          />
+        </lineSegments2>
+        <lineSegments2 geometry={arrowGeo} renderOrder={6}>
+          <lineMaterial
+            ref={arrowMat}
+            color={SKETCH_COLOR}
+            linewidth={2.8}
+            transparent
+            opacity={0}
+            depthTest
+            depthWrite={false}
+            resolution={[resW, resH]}
+          />
+        </lineSegments2>
+        <Html
+          position={[unitL * 0.5, 28, 36]}
+          center
+          style={{ pointerEvents: 'none' }}
+          zIndexRange={[20, 0]}
+        >
+          <div ref={labelRef} style={labelStyle}>
+            1ÈRE DIMENSION
+          </div>
+        </Html>
+      </group>
+
+      {/* ligne_arete croquis */}
+      <lineSegments2 geometry={sketchGeo} renderOrder={4}>
         <lineMaterial
           ref={sketchMatRef}
           color={SKETCH_COLOR}
@@ -609,23 +749,29 @@ function StoryWorld({ progressRef }) {
     const tDraw = smoothstep(0, PH * 0.9, p)
 
     // Sous-étapes du dessin (01)
-    const pCross = smoothstep(0.0, 0.12, tDraw) // croix (0,0,0)
-    const pLen = smoothstep(0.1, 0.34, tDraw) // ligne longueur 200
-    const pSketch = smoothstep(0.3, 0.55, tDraw) // ligne_arete croquis
-    const pClean = smoothstep(0.5, 0.72, tDraw) // traits configurateur
-    const pFaces = smoothstep(0.62, 0.88, tDraw) // faces arête X
-    // fondu du croquis quand le clean/faces prennent le relais
-    const sketchFade = 1 - smoothstep(0.62, 0.82, tDraw)
+    // 1) premier point origine
+    const pPointA = smoothstep(0.0, 0.1, tDraw)
+    // 2) même temps : 2e point + ligne pointillée + flèche + « 1ÈRE DIMENSION »
+    const pDim = smoothstep(0.1, 0.28, tDraw)
+    // 3) ligne_arete croquis
+    const pSketch = smoothstep(0.28, 0.52, tDraw)
+    // 4) traits configurateur + faces
+    const pClean = smoothstep(0.48, 0.7, tDraw)
+    const pFaces = smoothstep(0.6, 0.88, tDraw)
+    // Croquis s’efface quand le solide prend le relais
+    const sketchFade = 1 - smoothstep(0.6, 0.8, tDraw)
 
-    // Largeur croquis : grossier → épaisseur configurateur
+    // Cote dimension : disparaît dès le début de l’assemblage 3 arêtes
+    const dimFade = 1 - smoothstep(0.02, 0.35, pJoin)
+
     const sketchW = lerp(SKETCH_WIDTH * 1.35, ARETE_EDGE_WIDTH, pClean)
 
     sketchApiRef.current?.set({
-      cross: pCross * sketchFade,
-      len: pLen,
+      pointA: Math.max(pPointA, pDim),
+      dim: pDim,
       sketch: pSketch * sketchFade,
       sketchW,
-      fade: 1,
+      dimFade,
     })
 
     // ——— Dims (allongement phase 03) ———
@@ -725,13 +871,15 @@ function StoryWorld({ progressRef }) {
     )
     const finalTarget = new THREE.Vector3(tx, ty, tz)
 
-    const lookDraw = originTarget.clone().lerp(soloTarget, Math.max(pLen, pSketch))
+    const lookDraw = originTarget
+      .clone()
+      .lerp(soloTarget, Math.max(pDim, pSketch))
     const zoomOut = phase(p, PH * 0.85, PH * 2)
     const look = lookDraw
       .clone()
       .lerp(finalTarget, Math.max(zoomOut, pStretch))
 
-    const drawDist = lerp(0.32, 0.48, Math.max(pLen, pSketch, pFaces))
+    const drawDist = lerp(0.32, 0.48, Math.max(pDim, pSketch, pFaces))
     const joinedDist = 0.9
     const finalDist =
       Math.max(1.05, Math.sqrt(L * L + W * W + H * H) * SCALE * 1.22) * 1.05
