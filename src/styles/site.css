@@ -42,12 +42,15 @@
   transition: opacity 0.2s linear;
 }
 
-/* Avec bandeau de navigation : scène sous le header (suit le shrink) */
+/* Scène sous le header fixe (suit le shrink animé) */
 .home-story--with-header .home-story-stage {
   top: var(--header-current-h, var(--header-h, 72px));
   height: calc(100vh - var(--header-current-h, var(--header-h, 72px)));
   height: calc(100dvh - var(--header-current-h, var(--header-h, 72px)));
-  transition: top 0.22s ease, height 0.22s ease, opacity 0.2s linear;
+  transition:
+    top 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    height 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.2s linear;
 }
 
 /* Track invisible — ~14 viewports de scroll */
@@ -166,7 +169,7 @@
   background: rgba(10, 10, 10, 0.7);
 }
 
-/* Accueil scrollytelling : header + footer + scroll document */
+/* Accueil scrollytelling : header FIXE (toujours visible + cliquable) */
 .site-root.is-story-mode {
   min-height: 0;
   height: auto;
@@ -174,10 +177,21 @@
   background: #0a0a0a;
 }
 
-.site-root.is-story-mode .site-header {
-  position: sticky;
+.site-root.is-story-mode .site-header,
+.site-header.is-home {
+  position: fixed;
   top: 0;
-  z-index: 40;
+  left: 0;
+  right: 0;
+  width: 100%;
+  z-index: 50;
+  /* au-dessus de la scène 3D (z-index 5) */
+}
+
+/* Compense le header fixe dans le flux document */
+.site-root.is-story-mode .site-main.is-story {
+  padding-top: var(--header-current-h, 72px);
+  transition: padding-top 0.28s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* Bouton remonter en haut (accueil) */
@@ -223,7 +237,7 @@
   width: 100%;
   min-height: 0;
   overflow: visible;
-  padding: 0;
+  /* padding-top géré par .site-root.is-story-mode .site-main.is-story */
   margin: 0;
 }
 
@@ -396,17 +410,22 @@ body {
 .site-header {
   position: sticky;
   top: 0;
-  z-index: 40;
+  z-index: 50;
   width: 100%;
   flex-shrink: 0;
   background: rgba(10, 10, 10, 0.94);
-  backdrop-filter: blur(10px);
-  transition: background 0.22s ease, box-shadow 0.22s ease;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition:
+    background 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.28s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .site-header.is-compact {
-  background: rgba(10, 10, 10, 0.97);
-  box-shadow: 0 1px 0 rgba(201, 162, 39, 0.12);
+  background: rgba(10, 10, 10, 0.98);
+  box-shadow:
+    0 1px 0 rgba(201, 162, 39, 0.18),
+    0 8px 24px rgba(0, 0, 0, 0.35);
 }
 
 .site-header-inner {
@@ -414,16 +433,21 @@ body {
   max-width: none;
   margin: 0;
   padding: 0.85rem clamp(1rem, 3vw, 2.5rem);
+  min-height: 70px;
   display: flex;
   align-items: center;
   gap: 1.5rem;
   box-sizing: border-box;
-  transition: padding 0.22s ease, gap 0.22s ease;
+  transition:
+    padding 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    gap 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    min-height 0.28s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .site-header.is-compact .site-header-inner {
-  padding: 0.4rem clamp(0.85rem, 2.5vw, 2rem);
-  gap: 1rem;
+  padding: 0.35rem clamp(0.85rem, 2.5vw, 2rem);
+  min-height: 48px;
+  gap: 0.85rem;
 }
 
 .site-brand {
@@ -435,11 +459,11 @@ body {
   color: var(--ivory);
   cursor: pointer;
   padding: 0;
-  transition: gap 0.22s ease;
+  transition: gap 0.28s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .site-header.is-compact .site-brand {
-  gap: 0.45rem;
+  gap: 0.4rem;
 }
 
 .site-logo-img {
@@ -448,24 +472,28 @@ body {
   object-fit: contain;
   border: 1px solid var(--border);
   border-radius: 3px;
-  transition: width 0.22s ease, height 0.22s ease;
+  transition:
+    width 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    height 0.28s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .site-header.is-compact .site-logo-img {
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
 }
 
 .site-logo-word {
   color: var(--gold);
   font-size: 1.15rem;
   letter-spacing: 0.14em;
-  transition: font-size 0.22s ease, letter-spacing 0.22s ease;
+  transition:
+    font-size 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    letter-spacing 0.28s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .site-header.is-compact .site-logo-word {
-  font-size: 0.92rem;
-  letter-spacing: 0.12em;
+  font-size: 0.88rem;
+  letter-spacing: 0.11em;
 }
 
 .site-nav {
@@ -474,11 +502,11 @@ body {
   gap: 0.15rem 1.1rem;
   flex: 1;
   justify-content: center;
-  transition: gap 0.22s ease;
+  transition: gap 0.28s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .site-header.is-compact .site-nav {
-  gap: 0.1rem 0.85rem;
+  gap: 0.08rem 0.75rem;
 }
 
 .nav-link {
@@ -487,12 +515,16 @@ body {
   font-size: 0.72rem;
   padding: 0.35rem 0;
   border-bottom: 1px solid transparent;
-  transition: color 0.15s, border-color 0.15s, font-size 0.22s ease;
+  transition:
+    color 0.15s,
+    border-color 0.15s,
+    font-size 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    padding 0.28s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .site-header.is-compact .nav-link {
-  font-size: 0.68rem;
-  padding: 0.2rem 0;
+  font-size: 0.66rem;
+  padding: 0.15rem 0;
 }
 
 .nav-link:hover {

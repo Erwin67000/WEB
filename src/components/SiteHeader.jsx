@@ -10,7 +10,18 @@ const NAV = [
   { to: '/contact', label: 'Contact' },
 ]
 
-const COMPACT_AFTER = 48
+/** Dès le premier pixel de scroll sur l’accueil → version compacte */
+const COMPACT_AFTER = 12
+
+function getScrollY() {
+  return (
+    window.scrollY ||
+    window.pageYOffset ||
+    document.documentElement.scrollTop ||
+    document.body.scrollTop ||
+    0
+  )
+}
 
 export default function SiteHeader() {
   const cartCount = useConfigStore((s) => s.cartCount)
@@ -20,22 +31,38 @@ export default function SiteHeader() {
     /\/boutique\/[^/]+\/configurer$/.test(location.pathname)
   const isHome = location.pathname === '/'
 
-  // Compact uniquement sur l’accueil, après début du scroll
-  // Configurateur / boutique / concept / contact = toujours la version grande
+  // Compact uniquement sur l’accueil, dès qu’on descend
   const [compact, setCompact] = useState(false)
 
   useEffect(() => {
     if (!isHome) {
       setCompact(false)
+      document.documentElement.style.setProperty('--header-current-h', '72px')
       return
     }
-    const onScroll = () => setCompact(window.scrollY > COMPACT_AFTER)
-    onScroll()
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
+
+    let raf = 0
+    const update = () => {
+      const next = getScrollY() > COMPACT_AFTER
+      setCompact((prev) => (prev === next ? prev : next))
+    }
+
+    const onScroll = () => {
+      cancelAnimationFrame(raf)
+      raf = requestAnimationFrame(update)
+    }
+
+    update()
+    window.addEventListener('scroll', onScroll, { passive: true, capture: true })
+    document.addEventListener('scroll', onScroll, { passive: true, capture: true })
+    return () => {
+      cancelAnimationFrame(raf)
+      window.removeEventListener('scroll', onScroll, { capture: true })
+      document.removeEventListener('scroll', onScroll, { capture: true })
+    }
   }, [isHome, location.pathname])
 
-  // Hauteur pour le stage scrollytelling (accueil)
+  // Hauteur CSS pour le stage 3D + spacer sous le header fixe
   useEffect(() => {
     const h = isHome && compact ? '52px' : '72px'
     document.documentElement.style.setProperty('--header-current-h', h)
