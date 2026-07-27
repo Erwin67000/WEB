@@ -8,6 +8,7 @@ import {
 } from 'react-router-dom'
 import SiteHeader from './components/SiteHeader.jsx'
 import SiteFooter from './components/SiteFooter.jsx'
+import BackToTop from './components/BackToTop.jsx'
 import AccueilPage from './pages/AccueilPage.jsx'
 import BoutiquePage from './pages/BoutiquePage.jsx'
 import ArticlePage from './pages/ArticlePage.jsx'
@@ -75,7 +76,8 @@ function Shell() {
           isHomeStory ? ' is-story-mode' : ''
         }`}
       >
-        {!isConfigMode && <SiteHeader />}
+        {/* Header toujours visible (y compris configurateur) */}
+        <SiteHeader />
         <div
           className={`site-main${
             isConfigMode ? ' is-config' : isHomeStory ? ' is-story' : ' is-full'
@@ -98,6 +100,7 @@ function Shell() {
           </Routes>
         </div>
         {!isConfigMode && <SiteFooter />}
+        <BackToTop />
       </div>
     </ConfigStoreProvider>
   )

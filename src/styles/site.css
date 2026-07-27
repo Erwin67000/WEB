@@ -42,11 +42,12 @@
   transition: opacity 0.2s linear;
 }
 
-/* Avec bandeau de navigation : scène sous le header */
+/* Avec bandeau de navigation : scène sous le header (suit le shrink) */
 .home-story--with-header .home-story-stage {
-  top: var(--header-h, 72px);
-  height: calc(100vh - var(--header-h, 72px));
-  height: calc(100dvh - var(--header-h, 72px));
+  top: var(--header-current-h, var(--header-h, 72px));
+  height: calc(100vh - var(--header-current-h, var(--header-h, 72px)));
+  height: calc(100dvh - var(--header-current-h, var(--header-h, 72px)));
+  transition: top 0.22s ease, height 0.22s ease, opacity 0.2s linear;
 }
 
 /* Track invisible — ~14 viewports de scroll */
@@ -177,6 +178,44 @@
   position: sticky;
   top: 0;
   z-index: 40;
+}
+
+/* Bouton remonter en haut (accueil) */
+.back-to-top {
+  position: fixed;
+  right: clamp(1rem, 3vw, 1.75rem);
+  bottom: clamp(1.25rem, 3vw, 2rem);
+  z-index: 45;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 0.85rem;
+  border: 1px solid rgba(201, 162, 39, 0.45);
+  border-radius: 2px;
+  background: rgba(10, 10, 10, 0.88);
+  color: var(--gold, #c9a227);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
+  transition: background 0.2s, border-color 0.2s, transform 0.2s;
+}
+
+.back-to-top:hover {
+  background: rgba(20, 18, 12, 0.96);
+  border-color: var(--gold, #c9a227);
+  transform: translateY(-2px);
+}
+
+.back-to-top span:first-child {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.back-to-top-label {
+  font-family: var(--philae-font, system-ui, sans-serif);
 }
 
 .site-main.is-story {
@@ -359,8 +398,15 @@ body {
   top: 0;
   z-index: 40;
   width: 100%;
+  flex-shrink: 0;
   background: rgba(10, 10, 10, 0.94);
   backdrop-filter: blur(10px);
+  transition: background 0.22s ease, box-shadow 0.22s ease;
+}
+
+.site-header.is-compact {
+  background: rgba(10, 10, 10, 0.97);
+  box-shadow: 0 1px 0 rgba(201, 162, 39, 0.12);
 }
 
 .site-header-inner {
@@ -372,6 +418,12 @@ body {
   align-items: center;
   gap: 1.5rem;
   box-sizing: border-box;
+  transition: padding 0.22s ease, gap 0.22s ease;
+}
+
+.site-header.is-compact .site-header-inner {
+  padding: 0.4rem clamp(0.85rem, 2.5vw, 2rem);
+  gap: 1rem;
 }
 
 .site-brand {
@@ -383,6 +435,11 @@ body {
   color: var(--ivory);
   cursor: pointer;
   padding: 0;
+  transition: gap 0.22s ease;
+}
+
+.site-header.is-compact .site-brand {
+  gap: 0.45rem;
 }
 
 .site-logo-img {
@@ -391,12 +448,24 @@ body {
   object-fit: contain;
   border: 1px solid var(--border);
   border-radius: 3px;
+  transition: width 0.22s ease, height 0.22s ease;
+}
+
+.site-header.is-compact .site-logo-img {
+  width: 34px;
+  height: 34px;
 }
 
 .site-logo-word {
   color: var(--gold);
   font-size: 1.15rem;
   letter-spacing: 0.14em;
+  transition: font-size 0.22s ease, letter-spacing 0.22s ease;
+}
+
+.site-header.is-compact .site-logo-word {
+  font-size: 0.92rem;
+  letter-spacing: 0.12em;
 }
 
 .site-nav {
@@ -405,6 +474,11 @@ body {
   gap: 0.15rem 1.1rem;
   flex: 1;
   justify-content: center;
+  transition: gap 0.22s ease;
+}
+
+.site-header.is-compact .site-nav {
+  gap: 0.1rem 0.85rem;
 }
 
 .nav-link {
@@ -413,7 +487,12 @@ body {
   font-size: 0.72rem;
   padding: 0.35rem 0;
   border-bottom: 1px solid transparent;
-  transition: color 0.15s, border-color 0.15s;
+  transition: color 0.15s, border-color 0.15s, font-size 0.22s ease;
+}
+
+.site-header.is-compact .nav-link {
+  font-size: 0.68rem;
+  padding: 0.2rem 0;
 }
 
 .nav-link:hover {
@@ -1127,15 +1206,18 @@ body.config-lock {
   max-width: 48rem;
 }
 
-.page-concept .concept-hero {
-  margin: 2rem 0 2.5rem;
-  padding-bottom: 2rem;
-  border-bottom: 1px solid var(--border);
+.page-concept {
+  padding: 2rem clamp(1rem, 3vw, 2.5rem) 3rem;
+  box-sizing: border-box;
 }
 
-.page-concept .hero-title-sm {
-  font-size: clamp(1.75rem, 4vw, 2.75rem);
+.page-concept .concept-hero {
+  margin: 0 0 2rem;
+  padding: 2rem 0 2.25rem;
+  border-bottom: 1px solid var(--border);
+  max-width: 48rem;
 }
+
 
 .page-concept,
 .page-contact {
