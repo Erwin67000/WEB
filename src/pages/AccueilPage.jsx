@@ -30,7 +30,7 @@ const STRENGTHS = [
   {
     n: '06',
     title: 'Sur mesure réel',
-    text: "Dimensions libres dans le configurateur ; modèles boutique figés en L×P×H pour choisir vite.",
+    text: 'Dimensions libres dans le configurateur ; modèles boutique figés en L×P×H pour choisir vite.',
   },
 ]
 
@@ -39,15 +39,20 @@ export default function AccueilPage() {
 
   return (
     <div className="page page-accueil page-site">
-      {/* Intro courte */}
-      <section className="hero hero-home hero-home-compact">
+      {/* Démarre directement par le scrollytelling pleine largeur */}
+      <HomeScrollStory />
+
+      {/* Bloc texte / CTA en bas de page */}
+      <section className="hero hero-home hero-home-footer">
         <p className="section-kicker">Mobilier géométrique · Bois massif</p>
         <h1 className="hero-title">
           L&apos;ossature
           <br />
           <span className="gold">comme signature</span>
         </h1>
-        <p className="hero-lead">Forme &amp; fonctions — scrollez pour voir naître le meuble.</p>
+        <p className="hero-lead">
+          Forme &amp; fonctions — composez votre meuble en ligne.
+        </p>
         <div className="hero-actions">
           <button
             type="button"
@@ -65,9 +70,6 @@ export default function AccueilPage() {
           </button>
         </div>
       </section>
-
-      {/* Scrollytelling 3D */}
-      <HomeScrollStory />
 
       <section className="home-section">
         <div className="home-section-inner">

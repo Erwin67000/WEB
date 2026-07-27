@@ -1,33 +1,41 @@
-/* ——— Accueil scrollytelling ——— */
-.hero-home-compact {
-  padding-bottom: 1.5rem;
+/* ——— Accueil scrollytelling (pleine largeur, 4 viewports) ——— */
+.hero-home-footer {
+  padding-top: clamp(2.5rem, 6vw, 4rem);
+  padding-bottom: clamp(2rem, 5vw, 3.5rem);
 }
 
 .home-story {
   position: relative;
-  /* Hauteur de scroll = durée du récit */
-  height: 420vh;
+  width: 100vw;
+  max-width: 100%;
   margin: 0;
+  margin-left: calc(50% - 50vw);
+  /* hauteur : 4 × viewport (inline aussi) */
+  min-height: 400vh;
 }
 
 .home-story-sticky {
   position: sticky;
-  top: 72px;
-  height: calc(100dvh - 72px);
-  display: grid;
-  grid-template-columns: 1.15fr 0.85fr;
-  gap: 0;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
   overflow: hidden;
   background: #0a0a0a;
-  border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
+  z-index: 2;
+  /* laisser passer la molette vers le document */
+  pointer-events: none;
 }
 
 .home-story-canvas {
-  position: relative;
-  min-height: 0;
+  position: absolute;
+  inset: 0;
+  width: 100%;
   height: 100%;
   background: #0a0a0a;
+  pointer-events: none;
 }
 
 .home-story-canvas canvas {
@@ -36,47 +44,64 @@
   height: 100% !important;
 }
 
-.home-story-copy {
+/* Texte en overlay sur la 3D (pleine largeur) */
+.home-story-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none; /* scroll libre sur toute la largeur */
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding: clamp(1.25rem, 3vw, 2.5rem);
-  background: linear-gradient(180deg, #0e0c0a 0%, #12100c 100%);
-  border-left: 1px solid var(--border);
-  min-height: 0;
-  overflow: auto;
+  align-items: flex-end;
+  justify-content: flex-start;
+  padding: clamp(1rem, 3vw, 2.5rem);
+  background: linear-gradient(
+    90deg,
+    rgba(10, 10, 10, 0.82) 0%,
+    rgba(10, 10, 10, 0.45) 42%,
+    transparent 70%
+  );
+}
+
+.home-story-copy {
+  pointer-events: none; /* pas de capture molette */
+  max-width: min(28rem, 92vw);
+  padding: 0;
+  background: transparent;
+  border: none;
 }
 
 .home-story-title {
-  font-size: clamp(1.5rem, 3.2vw, 2.35rem);
+  font-size: clamp(1.55rem, 3.4vw, 2.5rem);
   font-weight: 500;
   letter-spacing: 0.02em;
   color: var(--ivory);
-  margin: 0.35rem 0 0.85rem;
-  line-height: 1.15;
+  margin: 0.35rem 0 0.75rem;
+  line-height: 1.12;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.65);
 }
 
 .home-story-text {
-  color: var(--muted);
-  font-size: clamp(0.9rem, 1.4vw, 1.05rem);
+  color: #c8c2b6;
+  font-size: clamp(0.9rem, 1.35vw, 1.05rem);
   line-height: 1.55;
-  max-width: 32rem;
-  margin: 0 0 1.25rem;
+  max-width: 28rem;
+  margin: 0 0 1.1rem;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.55);
 }
 
 .home-story-progress {
   height: 2px;
-  background: #2a2620;
+  background: rgba(42, 38, 32, 0.9);
   border-radius: 2px;
   overflow: hidden;
-  margin-bottom: 1.25rem;
-  max-width: 16rem;
+  margin-bottom: 1rem;
+  max-width: 14rem;
 }
 
 .home-story-progress-bar {
   height: 100%;
   background: var(--gold);
-  transition: width 0.12s linear;
+  transition: width 0.08s linear;
 }
 
 .home-story-chapters {
@@ -85,11 +110,11 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.45rem;
+  gap: 0.4rem;
 }
 
 .home-story-chapters li {
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   letter-spacing: 0.04em;
   color: #5a554c;
   transition: color 0.25s;
@@ -114,16 +139,11 @@
 }
 
 .home-story-hint {
-  margin-top: 1.5rem;
-  font-size: 0.72rem;
-  letter-spacing: 0.12em;
+  margin-top: 1.15rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: #5a554c;
-}
-
-.home-story-spacer {
-  /* réserve déjà dans height du parent */
-  display: none;
+  color: #6a655c;
 }
 
 .path-steps-2 {
@@ -145,23 +165,15 @@
 }
 
 @media (max-width: 900px) {
-  .home-story {
-    height: 380vh;
-  }
-  .home-story-sticky {
-    top: 0;
-    height: 100dvh;
-    grid-template-columns: 1fr;
-    grid-template-rows: 1fr auto;
-  }
-  .home-story-canvas {
-    min-height: 48vh;
-  }
-  .home-story-copy {
-    border-left: none;
-    border-top: 1px solid var(--border);
-    padding: 1rem 1.1rem 1.25rem;
-    max-height: 42vh;
+  .home-story-overlay {
+    align-items: flex-end;
+    background: linear-gradient(
+      0deg,
+      rgba(10, 10, 10, 0.92) 0%,
+      rgba(10, 10, 10, 0.55) 45%,
+      transparent 75%
+    );
+    padding: 1rem 1rem 1.25rem;
   }
   .home-story-chapters {
     display: none;
