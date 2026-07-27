@@ -541,6 +541,8 @@ export function createConfigStore(opts = {}) {
         ossatureFinish: resolveOssatureFinish(
           row.ossature_finish || row.texture || row.wood_finish,
         ),
+        // Préconfigurations boutique : panneaux vert olive
+        panneauCouleur: 'olive',
         modules,
         panneaux,
         positionMm: { x: 0, y: 0, z: 0 },

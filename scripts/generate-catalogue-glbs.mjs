@@ -50,11 +50,13 @@ const {
   EPAISSEUR_PANNEAU,
   BOIS_ATELIER_ID,
   resolveOssatureFinish,
-  DEFAULT_PANNEAU_COULEUR,
   PANNEAU_COULEURS,
 } = await import(
   pathToFileURL(path.join(root, 'src/1_STRUCTURE/00_matrice/matrice_constante.js')).href
 )
+
+/** Couleur panneau des préconfigs boutique (vignettes GLB) */
+const BOUTIQUE_PANNEAU_COULEUR = 'olive'
 const { parseMatriceCatalogue } = await import(
   pathToFileURL(path.join(root, 'src/1_STRUCTURE/00_matrice/matrice_catalogue.js')).href
 )
@@ -163,7 +165,9 @@ function buildRowGroup(row) {
   const surf = FINITIONS_OSSATURE[ossId] || FINITIONS_OSSATURE.brut
   const woodColor = shadeHex(finish.color, surf.shade ?? 1)
   const panneauColor =
-    PANNEAU_COULEURS[DEFAULT_PANNEAU_COULEUR]?.color || '#d4d0c8'
+    PANNEAU_COULEURS[BOUTIQUE_PANNEAU_COULEUR]?.color ||
+    PANNEAU_COULEURS.olive?.color ||
+    '#7a8f5c'
 
   const root = new THREE.Group()
   root.name = row.id
