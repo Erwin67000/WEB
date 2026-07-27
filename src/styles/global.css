@@ -489,32 +489,39 @@ a.btn.primary:hover {
 }
 
 .price-block {
-  background: var(--bg-elevated);
+  background: #1a1610;
   border-radius: 8px;
   padding: 0.7rem 0.8rem;
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
   font-size: 0.85rem;
+  color: #f5f0e6;
 }
 
 .price-block > div {
   display: flex;
   justify-content: space-between;
-  color: var(--text-muted);
+  color: #f5f0e6;
 }
 
 .price-block .ttc {
   margin-top: 0.25rem;
   padding-top: 0.4rem;
-  border-top: 1px solid var(--border);
-  color: var(--text);
+  border-top: 1px solid rgba(245, 240, 230, 0.25);
+  color: #f5f0e6;
   font-size: 0.95rem;
 }
 
 .price-block strong {
-  color: var(--text);
+  color: #f5f0e6;
   font-variant-numeric: tabular-nums;
+}
+
+.control-panel .price-block,
+.control-panel .price-block span,
+.control-panel .price-block strong {
+  color: #f5f0e6 !important;
 }
 
 .impact-block {

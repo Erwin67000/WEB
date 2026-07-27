@@ -150,10 +150,16 @@ export default function ArticlePage() {
             >
               Configurer cette base
             </button>
-            <Link to="/contact" className="btn btn-wood">
-              Demander un devis
-            </Link>
+            <button
+              type="button"
+              className="btn btn-wood"
+              onClick={() => navigate('/contact')}
+            >
+              Acheter
+              {row.price_from ? ` · ${row.price_from} € TTC` : ''}
+            </button>
           </div>
+          <p className="hint article-order-hint">Disponible sur commande</p>
         </div>
       </div>
     </div>

@@ -187,10 +187,11 @@
   max-width: 1100px;
 }
 
+/* Formulaire gauche : ivoire (labels + fond + champs) */
 .contact-form-site {
-  border: 1px solid var(--border);
-  background: var(--panel);
-  border-radius: 3px;
+  border: 1px solid #d4cbb8;
+  background: #f5f0e6;
+  border-radius: 10px;
   padding: 1.35rem 1.25rem;
   display: flex;
   flex-direction: column;
@@ -198,16 +199,16 @@
 }
 
 .contact-form-site .field-label {
-  color: var(--muted);
+  color: #1a1610;
 }
 
 .contact-form-site input,
 .contact-form-site textarea {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: 4px;
+  background: #fffef8 !important;
+  border: 1px solid #d4cbb8 !important;
+  border-radius: 6px;
   padding: 0.5rem 0.65rem;
-  color: var(--text);
+  color: #0a0a0a !important;
   width: 100%;
   box-sizing: border-box;
 }
@@ -215,17 +216,38 @@
 .contact-form-site input:focus,
 .contact-form-site textarea:focus {
   outline: none;
-  border-color: var(--gold);
+  border-color: var(--gold) !important;
 }
 
+/* Cartes droites : noir, texte or + ivoire, angles arrondis */
 .contact-aside-site {
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
 }
 
+.contact-aside-site .home-card {
+  background: #0a0a0a !important;
+  border: 1px solid #2a2620 !important;
+  border-radius: 12px !important;
+  color: #f5f0e6;
+}
+
+.contact-aside-site .home-card h3 {
+  color: var(--gold, #c9a227) !important;
+}
+
+.contact-aside-site .home-card p,
+.contact-aside-site .home-card .hint {
+  color: #c8c2b6 !important;
+}
+
+.contact-aside-site .home-card strong {
+  color: #f5f0e6 !important;
+}
+
 .contact-aside-site .home-card a {
-  color: var(--gold);
+  color: var(--gold, #c9a227) !important;
 }
 
 .form-success {

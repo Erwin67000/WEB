@@ -109,7 +109,6 @@ export default function ControlPanel() {
   const setPanneauPickMode = useActiveConfigStore((s) => s.setPanneauPickMode)
   const setNotes = useActiveConfigStore((s) => s.setNotes)
   const setContact = useActiveConfigStore((s) => s.setContact)
-  const requestDevis = useActiveConfigStore((s) => s.requestDevis)
   const requestModele3D = useActiveConfigStore((s) => s.requestModele3D)
   const requestAcheter = useActiveConfigStore((s) => s.requestAcheter)
   const refreshQuoteRef = useActiveConfigStore((s) => s.refreshQuoteRef)
@@ -679,10 +678,10 @@ export default function ControlPanel() {
           )}
         </section>
 
-        {/* Devis */}
+        {/* Achat / export */}
         <section className="panel-section">
           <button type="button" className="section-head" onClick={() => toggle('devis')}>
-            <span>Devis & export</span>
+            <span>Acheter</span>
             <span className="chev">{openSections.devis ? '▾' : '▸'}</span>
           </button>
           {openSections.devis && (
@@ -704,7 +703,7 @@ export default function ControlPanel() {
                   <strong>{pricing.tva.toFixed(2)} €</strong>
                 </div>
                 <div className="ttc">
-                  <span>TTC indicatif</span>
+                  <span>TTC</span>
                   <strong>{pricing.ttc.toFixed(2)} €</strong>
                 </div>
               </div>
@@ -723,20 +722,20 @@ export default function ControlPanel() {
                 <button
                   type="button"
                   className="btn primary"
-                  onClick={async () => {
-                    const result = await requestDevis()
+                  onClick={() => {
+                    const result = requestAcheter()
                     notify(
-                      result?.emailed
-                        ? 'Devis préparé — client mail ouvert'
-                        : 'Devis téléchargé (HTML + photo)',
+                      result?.url
+                        ? 'Redirection…'
+                        : 'Disponible sur commande — contact@philae.design',
                     )
                   }}
                 >
-                  Devis ({pricing.ttc.toFixed(0)} € TTC)
+                  Acheter · {pricing.ttc.toFixed(0)} € TTC
                 </button>
                 <button
                   type="button"
-                  className="btn primary"
+                  className="btn"
                   onClick={async () => {
                     await requestModele3D()
                     notify('Demande modèle 3D (45 €) préparée')
@@ -744,24 +743,10 @@ export default function ControlPanel() {
                 >
                   Modèle 3D (45 €)
                 </button>
-                <button
-                  type="button"
-                  className="btn"
-                  onClick={() => {
-                    const result = requestAcheter()
-                    notify(
-                      result?.url
-                        ? 'Redirection boutique…'
-                        : 'Achat en ligne : bientôt disponible',
-                    )
-                  }}
-                >
-                  Acheter
-                </button>
               </div>
               <p className="legal-hint">
-                Prix indicatifs. Le devis résume meubles, dimensions, aménagements
-                et panneaux. Contact : contact@philae.design
+                Disponible sur commande. Prix indicatifs. Contact :
+                contact@philae.design
               </p>
             </div>
           )}

@@ -214,6 +214,39 @@ body.theme-ivory,
   color: #5a554c !important;
 }
 
+/* Contact : cartes noires de droite — or + ivoire (pas le thème clair) */
+.site-root.theme-ivory .contact-aside-site .home-card h3 {
+  color: var(--gold, #c9a227) !important;
+}
+
+.site-root.theme-ivory .contact-aside-site .home-card p,
+.site-root.theme-ivory .contact-aside-site .home-card .hint {
+  color: #c8c2b6 !important;
+}
+
+.site-root.theme-ivory .contact-aside-site .home-card a {
+  color: var(--gold, #c9a227) !important;
+}
+
+.site-root.theme-ivory .contact-aside-site .home-card strong {
+  color: #f5f0e6 !important;
+}
+
+.site-root.theme-ivory .contact-form-site {
+  background: #f5f0e6 !important;
+  border-color: #d4cbb8 !important;
+}
+
+.site-root.theme-ivory .contact-form-site .field-label {
+  color: #0a0a0a !important;
+}
+
+/* Boutons produit / fiche : libellés ivoire */
+.site-root.theme-ivory .product-actions .btn,
+.site-root.theme-ivory .article-actions .btn {
+  color: #f5f0e6 !important;
+}
+
 .site-root.theme-ivory .section-kicker {
   color: var(--gold, #c9a227) !important;
 }
@@ -1302,6 +1335,13 @@ body.config-lock {
   margin: 1.25rem 0;
 }
 
+.article-order-hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  color: #5a554c;
+}
+
 .docs-block {
   margin-top: 2rem;
   padding-top: 1rem;
@@ -1496,16 +1536,27 @@ body.config-lock {
 .hero-actions .btn-primary {
   background: linear-gradient(180deg, #6b4e32 0%, #4a3422 100%);
   border-color: #a67c52;
-  color: #f5f0e6;
+  color: #f5f0e6 !important;
 }
 
 .page .btn-primary:hover {
   background: linear-gradient(180deg, #7d5c3c 0%, #5a4030 100%);
+  color: #f5f0e6 !important;
 }
 
 .page .btn-wood {
   background: #3d2e22;
-  color: #e8d5b5;
+  color: #f5f0e6 !important;
+}
+
+.page .btn-wood:hover {
+  color: #ffffff !important;
+}
+
+/* Boutons gamme / fiche produit : libellés ivoire */
+.product-actions .btn,
+.article-actions .btn {
+  color: #f5f0e6 !important;
 }
 
 .page .btn-ghost {
@@ -1762,8 +1813,9 @@ body.config-lock {
 
 .footer-tag {
   margin: 0.25rem 0 0;
-  color: var(--muted);
+  color: #f5f0e6;
   font-size: 0.8rem;
+  opacity: 0.9;
 }
 
 .footer-cols {
@@ -1796,23 +1848,26 @@ body.config-lock {
   border: none;
   padding: 0;
   text-align: left;
-  color: var(--muted);
+  color: #f5f0e6;
   font-size: 0.88rem;
   cursor: pointer;
   text-decoration: none;
   font-family: inherit;
+  opacity: 0.92;
 }
 
 .footer-col button:hover,
 .footer-col a:hover {
-  color: var(--ivory);
+  color: #ffffff;
+  opacity: 1;
 }
 
 .footer-col p {
   margin: 0;
-  color: var(--muted);
+  color: #f5f0e6;
   font-size: 0.85rem;
   line-height: 1.45;
+  opacity: 0.9;
 }
 
 .site-footer-bottom {
@@ -1822,16 +1877,32 @@ body.config-lock {
   gap: 0.5rem 1.5rem;
   padding: 1rem clamp(1.25rem, 4vw, 3rem) 1.35rem;
   border-top: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
-  color: var(--muted);
+  color: #f5f0e6;
   font-size: 0.78rem;
 }
 
 .site-footer-bottom p {
   margin: 0;
+  color: #f5f0e6;
 }
 
 .footer-credit {
-  opacity: 0.75;
+  opacity: 0.85;
+  color: #f5f0e6;
+}
+
+/* Footer toujours lisible (texte blanc/ivoire) même sous theme-ivory */
+.site-footer,
+.site-footer a,
+.site-footer p,
+.site-footer span,
+.site-footer button {
+  color: #f5f0e6;
+}
+
+.site-footer h4,
+.site-footer .footer-name {
+  color: var(--gold, #c9a227) !important;
 }
 
 /* —— Concept aéré + illustrations —— */
