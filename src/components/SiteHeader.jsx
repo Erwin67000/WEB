@@ -3,6 +3,7 @@ import { useConfigStore } from '../store/useConfigStore.js'
 
 const NAV = [
   { to: '/', label: 'Accueil', end: true },
+  { to: '/histoire', label: 'Histoire' },
   { to: '/boutique', label: 'Boutique' },
   { to: '/configurateur', label: 'Configurateur' },
   { to: '/concept', label: 'Le concept' },

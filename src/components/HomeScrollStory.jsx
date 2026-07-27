@@ -1,15 +1,15 @@
 /**
- * Scrollytelling accueil — pleine largeur, 4 pages de scroll.
+ * Scrollytelling Philae — 4 pages de scroll.
  *
- * Structure :
- *   section.home-story (hauteur 4×100vh)
- *     div.home-story-sticky (position:sticky, 100vh) → canvas + texte
- *     div.home-story-scroll-space (3×100vh) → crée la course de scroll
+ * mode="fixed" (page /histoire) :
+ *   - canvas + texte en position:fixed (restent toujours à l’écran)
+ *   - un track invisible de 4×100vh crée la course de scroll
  *
- * Progression : formule sticky classique via getBoundingClientRect,
- * mise à jour en boucle rAF (indépendante des events scroll / conteneur).
+ * mode="sticky" (legacy / accueil) :
+ *   - position:sticky classique
  */
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Canvas, useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { buildOssature } from '../1_STRUCTURE/01_meuble3D/ossature.js'
@@ -27,8 +27,6 @@ import {
 const SCALE = 0.001
 const WOOD = FINITIONS.chene.color
 const PANEL = PANNEAU_COULEURS[DEFAULT_PANNEAU_COULEUR]?.color || '#d4d0c8'
-
-/** Nombre de « pages » de scroll pour le récit */
 const SCROLL_PAGES = 4
 
 const STORY = [
@@ -76,20 +74,15 @@ function phase(p, start, end) {
   return easeInOut(smoothstep(start, end, p))
 }
 
-/**
- * Progression 0→1 pendant que la section sticky est « scrollee ».
- * Formule classique scrollytelling :
- *   p = -rect.top / (sectionHeight - viewportHeight)
- * Fonctionne avec le scroll window (et tout conteneur si rect change).
- */
-function getSectionProgress(sectionEl) {
-  if (!sectionEl) return 0
-  const rect = sectionEl.getBoundingClientRect()
+/** Progression 0→1 sur un track de hauteur H (document window). */
+function getTrackProgress(trackEl) {
+  if (!trackEl) return 0
+  const rect = trackEl.getBoundingClientRect()
   const vh = window.innerHeight || 1
-  const h = sectionEl.offsetHeight || 0
+  const h = trackEl.offsetHeight || 0
   const total = h - vh
   if (total <= 1) return 0
-  // rect.top = 0 au début du pin sticky ; négatif ensuite
+  // track top = 0 au démarrage → p=0 ; top = -(H-vh) en fin → p=1
   return clamp01(-rect.top / total)
 }
 
@@ -205,13 +198,11 @@ function StoryWorld({ progressRef }) {
   useFrame(({ camera }) => {
     const p = progressRef.current ?? 0
 
-    // 4 phases égales
-    const p1 = phase(p, 0.0, 0.25) // emboîtement
-    const p2 = phase(p, 0.2, 0.5) // cadre 12
-    const p3 = phase(p, 0.48, 0.74) // tablettes
-    const p4 = phase(p, 0.72, 0.98) // panneaux
+    const p1 = phase(p, 0.0, 0.25)
+    const p2 = phase(p, 0.2, 0.5)
+    const p3 = phase(p, 0.48, 0.74)
+    const p4 = phase(p, 0.72, 0.98)
 
-    // Rotation / vol UNIQUEMENT selon le scroll (p1), jamais le temps
     const spin = (1 - p1) * Math.PI * 2.2
     const fly = (1 - p1) * 200
 
@@ -226,7 +217,6 @@ function StoryWorld({ progressRef }) {
     setPrim('Y0', [fly * 0.55, 0, -fly], [spin * 0.4, 0, -spin])
     setPrim('Z0', [-fly * 0.35, fly, 0], [-spin, spin * 0.25, 0])
 
-    // Cadre complet
     if (secondaryGroup.current) {
       const sx = lerp(200 / 600, 1, p2)
       const sy = lerp(200 / 800, 1, p2)
@@ -378,14 +368,18 @@ function StoryScene({ progressRef }) {
   )
 }
 
-export default function HomeScrollStory() {
-  const sectionRef = useRef(null)
+/**
+ * @param {{ mode?: 'fixed' | 'sticky' }} props
+ */
+export default function HomeScrollStory({ mode = 'fixed' }) {
+  const trackRef = useRef(null)
   const progressRef = useRef(0)
   const [progress, setProgress] = useState(0)
   const [chapter, setChapter] = useState(0)
+  const isFixed = mode === 'fixed'
 
   useEffect(() => {
-    const el = sectionRef.current
+    const el = trackRef.current
     if (!el) return
 
     let raf = 0
@@ -393,11 +387,9 @@ export default function HomeScrollStory() {
     let lastP = -1
     let lastCh = -1
 
-    // Boucle rAF continue : lit la position à chaque frame.
-    // Indépendant des events scroll (window ou conteneur interne).
     const loop = () => {
       if (!alive) return
-      const p = getSectionProgress(el)
+      const p = getTrackProgress(el)
       progressRef.current = p
 
       if (Math.abs(p - lastP) > 0.002) {
@@ -416,7 +408,6 @@ export default function HomeScrollStory() {
     }
 
     raf = requestAnimationFrame(loop)
-
     return () => {
       alive = false
       cancelAnimationFrame(raf)
@@ -424,84 +415,104 @@ export default function HomeScrollStory() {
   }, [])
 
   const ch = STORY[chapter]
-  // Spacer = (SCROLL_PAGES - 1) viewports sous le sticky 1 viewport
-  // Total section height = SCROLL_PAGES * 100vh (aussi en CSS)
-  const spacerVh = (SCROLL_PAGES - 1) * 100
+  const trackVh = SCROLL_PAGES * 100
 
-  return (
-    <section
-      ref={sectionRef}
-      className="home-story"
-      aria-label="Assemblage du meuble Philae"
-      style={{ height: `${SCROLL_PAGES * 100}vh` }}
-    >
-      {/* Zone épinglée : 1 écran, pleine largeur */}
-      <div className="home-story-sticky">
-        <div className="home-story-canvas" aria-hidden>
-          <Canvas
-            dpr={[1, 1.5]}
-            camera={{
-              position: [1.6, 1.1, 2.0],
-              fov: 42,
-              near: 0.01,
-              far: 80,
-            }}
-            gl={{
-              antialias: true,
-              toneMapping: THREE.ACESFilmicToneMapping,
-              alpha: false,
-            }}
-            style={{ pointerEvents: 'none' }}
-            onCreated={({ gl }) => {
-              // Canvas ne capture jamais la molette
-              gl.domElement.style.pointerEvents = 'none'
-              gl.domElement.style.touchAction = 'pan-y'
-            }}
-          >
-            <Suspense fallback={null}>
-              <StoryScene progressRef={progressRef} />
-            </Suspense>
-          </Canvas>
-        </div>
+  const stage = (
+    <>
+      <div className="home-story-canvas" aria-hidden>
+        <Canvas
+          dpr={[1, 1.5]}
+          camera={{
+            position: [1.6, 1.1, 2.0],
+            fov: 42,
+            near: 0.01,
+            far: 80,
+          }}
+          gl={{
+            antialias: true,
+            toneMapping: THREE.ACESFilmicToneMapping,
+            alpha: false,
+          }}
+          style={{ pointerEvents: 'none' }}
+          onCreated={({ gl }) => {
+            gl.domElement.style.pointerEvents = 'none'
+            gl.domElement.style.touchAction = 'pan-y'
+          }}
+        >
+          <Suspense fallback={null}>
+            <StoryScene progressRef={progressRef} />
+          </Suspense>
+        </Canvas>
+      </div>
 
-        <div className="home-story-overlay">
-          <div className="home-story-copy">
-            <p className="section-kicker">{ch.kicker}</p>
-            <h2 className="home-story-title">{ch.title}</h2>
-            <p className="home-story-text">{ch.text}</p>
-            <div className="home-story-progress" aria-hidden>
-              <div
-                className="home-story-progress-bar"
-                style={{ width: `${Math.round(progress * 100)}%` }}
-              />
-            </div>
-            <ol className="home-story-chapters">
-              {STORY.map((s, i) => (
-                <li
-                  key={s.id}
-                  className={
-                    i === chapter ? 'active' : i < chapter ? 'done' : ''
-                  }
-                >
-                  <span>{String(i + 1).padStart(2, '0')}</span>
-                  {s.title}
-                </li>
-              ))}
-            </ol>
-            <p className="home-story-hint">
-              Scroll · 4 étapes · {Math.round(progress * 100)}%
-            </p>
+      <div className="home-story-overlay">
+        <div className="home-story-copy">
+          <p className="section-kicker">{ch.kicker}</p>
+          <h2 className="home-story-title">{ch.title}</h2>
+          <p className="home-story-text">{ch.text}</p>
+          <div className="home-story-progress" aria-hidden>
+            <div
+              className="home-story-progress-bar"
+              style={{ width: `${Math.round(progress * 100)}%` }}
+            />
           </div>
+          <ol className="home-story-chapters">
+            {STORY.map((s, i) => (
+              <li
+                key={s.id}
+                className={
+                  i === chapter ? 'active' : i < chapter ? 'done' : ''
+                }
+              >
+                <span>{String(i + 1).padStart(2, '0')}</span>
+                {s.title}
+              </li>
+            ))}
+          </ol>
+          <p className="home-story-hint">
+            Scroll · 4 étapes · {Math.round(progress * 100)}%
+          </p>
         </div>
       </div>
 
-      {/*
-        Spacer EXPLICITE : crée la hauteur de scroll sous le sticky.
-        Sans ça, un seul enfant sticky 100vh → section ≈ 100vh → % = 0.
-      */}
+      {isFixed && (
+        <Link to="/" className="home-story-exit">
+          ← Accueil
+        </Link>
+      )}
+    </>
+  )
+
+  if (isFixed) {
+    // Mode page /histoire : scène FIXÉE au viewport + track de scroll invisible
+    return (
+      <div
+        className="home-story home-story--fixed"
+        aria-label="Assemblage du meuble Philae"
+      >
+        <div className="home-story-stage">{stage}</div>
+        <div
+          ref={trackRef}
+          className="home-story-track"
+          style={{ height: `${trackVh}vh` }}
+          aria-hidden
+        />
+      </div>
+    )
+  }
+
+  // Mode sticky (fallback)
+  return (
+    <section
+      ref={trackRef}
+      className="home-story home-story--sticky"
+      aria-label="Assemblage du meuble Philae"
+      style={{ height: `${trackVh}vh` }}
+    >
+      <div className="home-story-sticky">{stage}</div>
       <div
         className="home-story-scroll-space"
-        style={{ height: `${spacerVh}vh` }}
+        style={{ height: `${(SCROLL_PAGES - 1) * 100}vh` }}
         aria-hidden
       />
     </section>

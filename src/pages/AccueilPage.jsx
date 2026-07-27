@@ -1,5 +1,4 @@
 import { useNavigate } from 'react-router-dom'
-import HomeScrollStory from '../components/HomeScrollStory.jsx'
 
 const STRENGTHS = [
   {
@@ -39,11 +38,7 @@ export default function AccueilPage() {
 
   return (
     <div className="page page-accueil page-site">
-      {/* Démarre directement par le scrollytelling pleine largeur */}
-      <HomeScrollStory />
-
-      {/* Bloc texte / CTA en bas de page */}
-      <section className="hero hero-home hero-home-footer">
+      <section className="hero hero-home">
         <p className="section-kicker">Mobilier géométrique · Bois massif</p>
         <h1 className="hero-title">
           L&apos;ossature
@@ -57,9 +52,9 @@ export default function AccueilPage() {
           <button
             type="button"
             className="btn btn-primary"
-            onClick={() => navigate('/configurateur')}
+            onClick={() => navigate('/histoire')}
           >
-            Configurateur libre
+            Voir l&apos;histoire
           </button>
           <button
             type="button"
@@ -67,6 +62,13 @@ export default function AccueilPage() {
             onClick={() => navigate('/boutique')}
           >
             Boutique préconfigurée
+          </button>
+          <button
+            type="button"
+            className="btn btn-ghost"
+            onClick={() => navigate('/configurateur')}
+          >
+            Configurateur libre
           </button>
         </div>
       </section>
