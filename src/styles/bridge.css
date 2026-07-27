@@ -26,8 +26,11 @@
   --radius: 4px;
   --header-h: 72px;
   --panel-w: 320px;
-  --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
-  --philae-font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  /* Corps / UI — Vernon Adams (Oswald) */
+  --font: 'Oswald', system-ui, -apple-system, sans-serif;
+  --philae-font: 'Oswald', system-ui, -apple-system, sans-serif;
+  /* Logo, header, titres — Stardos Stencil */
+  --philae-font-display: 'Stardos Stencil', 'Oswald', system-ui, sans-serif;
   --philae-font-mono: ui-monospace, 'Cascadia Code', Consolas, monospace;
 }
 

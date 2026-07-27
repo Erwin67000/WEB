@@ -19,7 +19,9 @@
   --radius: 4px;
   --header-h: 72px;
   --panel-w: 320px;
-  --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font: 'Oswald', system-ui, -apple-system, sans-serif;
+  --philae-font: 'Oswald', system-ui, -apple-system, sans-serif;
+  --philae-font-display: 'Stardos Stencil', 'Oswald', system-ui, sans-serif;
 }
 
 *,
@@ -48,6 +50,19 @@ body {
   background: var(--bg);
   color: var(--text);
   -webkit-font-smoothing: antialiased;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--philae-font-display);
+  font-weight: 400;
+  letter-spacing: 0.04em;
 }
 
 a {
