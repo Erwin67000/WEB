@@ -1,15 +1,15 @@
 /**
- * Scrollytelling Philae — page /histoire (mode fixed).
+ * Scrollytelling Philae — accueil (mode fixed).
  *
- * ~14 viewports de scroll (7 phases) :
- *  01  Une arête 200 mm
- *  02  Sommet : 2 arêtes 200 mm en translation
- *  03  Allongement des 3 arêtes → 600 / 400 / 800 (paramétrique L·W·H)
- *  04  Volume : les 9 autres arêtes en séquence
- *  05  Deux tablettes
+ *  01  Dessin de l’arête X : croix (0,0,0) → longueur 200 → ligne_arete croquis
+ *      → traits configurateur + faces
+ *  02  Arêtes Y & Z rejoignent le sommet (translation)
+ *      + rotation vue 90° autour de Z (entre 02 et 03)
+ *  03  Allongement paramétrique L/W/H
+ *      + rotation vue +45° autour de Z (entre 03 et 04)
+ *  04  9 arêtes restantes
+ *  05  Tablettes
  *  06  Panneaux olive
- *
- * Note : l’allongement reconstruit les points via buildGeometrie (pas de scale).
  */
 import { Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -22,7 +22,11 @@ import {
   buildOssature,
   areteToBuffers,
 } from '../1_STRUCTURE/01_meuble3D/ossature.js'
-import { buildGeometrie } from '../1_STRUCTURE/00_matrice/matrice_geometrie.js'
+import {
+  buildGeometrie,
+  calcAreteX,
+  ligne_arete,
+} from '../1_STRUCTURE/00_matrice/matrice_geometrie.js'
 import {
   buildPanneauComplet,
   createModule,
@@ -68,20 +72,20 @@ const STORY = [
   {
     id: 'one',
     kicker: '01 · Origine',
-    title: 'L’arête parfaite',
-    text: 'Une arête de 200 mm — bois massif coupé selon l’angle signature PHILAE.',
+    title: 'L’arête se dessine',
+    text: 'Du sommet naît la longueur 200 mm. Les lignes d’arête se tracent, puis le volume de bois apparaît.',
   },
   {
     id: 'assemble',
     kicker: '02 · Sommet',
     title: 'La configuration au sommet',
-    text: 'Deux arêtes de 200 mm rejoignent la première. Trois profils forment le sommet.',
+    text: 'Deux arêtes rejoignent la première. X, Y et Z forment l’angle signature.',
   },
   {
     id: 'stretch',
     kicker: '03 · Allongement',
     title: 'Les trois arêtes s’allongent',
-    text: 'X → 600 mm, Y → 400 mm, Z → 800 mm. Chaque arête grandit dans sa direction, sans déformer le profil.',
+    text: 'X → 600 mm, Y → 400 mm, Z → 800 mm. Chaque arête grandit dans sa direction.',
   },
   {
     id: 'frame',
@@ -102,6 +106,10 @@ const STORY = [
     text: 'Les panneaux complètent le volume.',
   },
 ]
+
+/** Couleur croquis (ivoire / trait à main) */
+const SKETCH_COLOR = '#e8dfc8'
+const SKETCH_WIDTH = 3.2
 
 function clamp01(t) {
   return Math.min(1, Math.max(0, t))
@@ -311,6 +319,184 @@ function setGroupOpacity(group, opacity) {
   })
 }
 
+/** Opacité séparée faces (mesh) / contours (lignes) d’un groupe arête. */
+function setAretePartsOpacity(group, solidOp, lineOp) {
+  if (!group) return
+  const so = clamp01(solidOp)
+  const lo = clamp01(lineOp)
+  group.visible = so > 0.015 || lo > 0.015
+  group.traverse((obj) => {
+    if (obj.isMesh && obj.material) {
+      obj.material.transparent = true
+      obj.material.opacity = so
+      obj.material.depthWrite = so > 0.9
+      obj.visible = so > 0.015
+    }
+    if (obj.isLineSegments && obj.material) {
+      obj.material.transparent = true
+      obj.material.opacity = lo
+      obj.visible = lo > 0.015
+    }
+    if (obj.isLine2 || obj.type === 'LineSegments2') {
+      if (obj.material) {
+        obj.material.transparent = true
+        obj.material.opacity = lo
+        obj.visible = lo > 0.015
+      }
+    }
+  })
+}
+
+/**
+ * Révélation croquis de l’arête X (mm SketchUp).
+ * API : sketchApiRef.current.set({ cross, len, sketch, sketchW, fade })
+ */
+function SketchRevealX({ sketchApiRef, unitL = UNIT_MM }) {
+  const { size, gl } = useThree()
+  const crossMatRef = useRef(null)
+  const lenMatRef = useRef(null)
+  const sketchMatRef = useRef(null)
+
+  const points = useMemo(() => calcAreteX(unitL), [unitL])
+  const a0 = points[0]
+  const a6 = points[6]
+
+  const crossGeo = useMemo(() => {
+    const s = 18
+    const g = new LineSegmentsGeometry()
+    g.setPositions([
+      -s, 0, 0, s, 0, 0,
+      0, -s, 0, 0, s, 0,
+      0, 0, -s, 0, 0, s,
+    ])
+    return g
+  }, [])
+
+  const lenGeo = useMemo(() => {
+    const g = new LineSegmentsGeometry()
+    g.setPositions([a0[0], a0[1], a0[2], a6[0], a6[1], a6[2]])
+    return g
+  }, [a0, a6])
+
+  const sketchGeo = useMemo(() => {
+    const arr = []
+    for (const [i, j] of ligne_arete) {
+      arr.push(
+        points[i][0],
+        points[i][1],
+        points[i][2],
+        points[j][0],
+        points[j][1],
+        points[j][2],
+      )
+    }
+    const g = new LineSegmentsGeometry()
+    g.setPositions(arr)
+    return g
+  }, [points])
+
+  const dpr = gl.getPixelRatio?.() || 1
+  const resW = Math.max(1, size.width * dpr)
+  const resH = Math.max(1, size.height * dpr)
+
+  useLayoutEffect(() => {
+    for (const r of [crossMatRef, lenMatRef, sketchMatRef]) {
+      if (r.current?.resolution) r.current.resolution.set(resW, resH)
+    }
+  }, [resW, resH])
+
+  useEffect(() => {
+    sketchApiRef.current = {
+      set({ cross = 0, len = 0, sketch = 0, sketchW = SKETCH_WIDTH, fade = 1 }) {
+        const f = clamp01(fade)
+        if (crossMatRef.current) {
+          crossMatRef.current.opacity = clamp01(cross) * f
+          crossMatRef.current.visible = cross * f > 0.02
+        }
+        // Longueur : on recolle le point d’arrivée
+        const t = clamp01(len)
+        lenGeo.setPositions([
+          a0[0],
+          a0[1],
+          a0[2],
+          a0[0] + (a6[0] - a0[0]) * t,
+          a0[1] + (a6[1] - a0[1]) * t,
+          a0[2] + (a6[2] - a0[2]) * t,
+        ])
+        if (lenMatRef.current) {
+          lenMatRef.current.opacity = (t > 0.01 ? 1 : 0) * f * (1 - sketch * 0.15)
+          lenMatRef.current.linewidth = lerp(5.5, sketchW, sketch)
+          lenMatRef.current.visible = t > 0.01 && f > 0.02
+          if (lenMatRef.current.resolution) {
+            lenMatRef.current.resolution.set(resW, resH)
+          }
+        }
+        if (sketchMatRef.current) {
+          sketchMatRef.current.opacity = clamp01(sketch) * f
+          sketchMatRef.current.linewidth = sketchW
+          sketchMatRef.current.visible = sketch * f > 0.02
+          if (sketchMatRef.current.resolution) {
+            sketchMatRef.current.resolution.set(resW, resH)
+          }
+        }
+      },
+    }
+    return () => {
+      sketchApiRef.current = null
+    }
+  }, [sketchApiRef, lenGeo, a0, a6, resW, resH])
+
+  useEffect(
+    () => () => {
+      crossGeo.dispose()
+      lenGeo.dispose()
+      sketchGeo.dispose()
+    },
+    [crossGeo, lenGeo, sketchGeo],
+  )
+
+  return (
+    <group>
+      <lineSegments2 geometry={crossGeo} renderOrder={5}>
+        <lineMaterial
+          ref={crossMatRef}
+          color={SKETCH_COLOR}
+          linewidth={3.8}
+          transparent
+          opacity={0}
+          depthTest
+          depthWrite={false}
+          resolution={[resW, resH]}
+        />
+      </lineSegments2>
+      <lineSegments2 geometry={lenGeo} renderOrder={5}>
+        <lineMaterial
+          ref={lenMatRef}
+          color={SKETCH_COLOR}
+          linewidth={5.5}
+          transparent
+          opacity={0}
+          depthTest
+          depthWrite={false}
+          resolution={[resW, resH]}
+        />
+      </lineSegments2>
+      <lineSegments2 geometry={sketchGeo} renderOrder={5}>
+        <lineMaterial
+          ref={sketchMatRef}
+          color={SKETCH_COLOR}
+          linewidth={SKETCH_WIDTH}
+          transparent
+          opacity={0}
+          depthTest
+          depthWrite={false}
+          resolution={[resW, resH]}
+        />
+      </lineSegments2>
+    </group>
+  )
+}
+
 function PanneauSolid({ nom, dims }) {
   const data = useMemo(() => {
     try {
@@ -382,17 +568,17 @@ function StoryWorld({ progressRef }) {
   const restRefs = useRef({})
   const shelvesGroup = useRef()
   const panelsGroup = useRef()
+  const spinGroup = useRef()
+  const sketchApiRef = useRef(null)
 
   const finalDims = { L: FINAL_L, W: FINAL_W, H: FINAL_H }
 
-  // Géométrie initiale 200 mm (buffers mis à jour en place pendant l’allongement)
   const primaryMeshes = useMemo(() => {
     return PRIMARY_IDS.map((id) =>
       meshDataForArete(id, UNIT_MM, UNIT_MM, UNIT_MM),
     ).filter(Boolean)
   }, [])
 
-  // Cadre final pour les 9 arêtes restantes (apparaissent seulement après allongement)
   const ossEnd = useMemo(() => buildOssature(finalDims), [])
   const restMeshes = useMemo(
     () => ossEnd.meshes.filter((m) => REST_EDGE_IDS.includes(m.id)),
@@ -405,59 +591,90 @@ function StoryWorld({ progressRef }) {
 
   useFrame(({ camera }) => {
     const p = progressRef.current ?? 0
-    // 6 phases : solo | join | stretch | rest | shelves | panels
     const PH = 1 / N_PHASES
 
-    // 01 — une arête 200 mm
-    const pSolo = phase(p, 0.0, PH * 0.95)
-    // 02 — 2 arêtes 200 mm en translation + dézoom
-    const pJoin = phase(p, PH * 0.88, PH * 2)
-    // 03 — ALLONGEMENT des 3 arêtes (L/W/H) — étape dédiée AVANT le volume
+    // ——— Phases narratives ———
+    // 01 : dessin arête X (sous-étapes)
+    // 02 : Y+Z translation
+    // 03 : allongement
+    // 04 : 9 arêtes
+    // 05–06 : tablettes / panneaux
+    const pJoin = phase(p, PH * 0.92, PH * 2)
     const pStretch = phase(p, PH * 2, PH * 3)
-    // 04 — 9 arêtes séquentielles (volume / ossature complète)
     const pRest = phase(p, PH * 3, PH * 4)
-    // 05 — tablettes
     const pShelves = phase(p, PH * 4, PH * 5)
-    // 06 — panneaux
     const pPanels = phase(p, PH * 5, 0.995)
 
-    // ——— Dims paramétriques pendant l’étape 03 uniquement ———
-    // X0 ↔ L (→ 600), Y0 ↔ W (→ 400), Z0 ↔ H (→ 800)
+    // Progression brute 0→1 dans la phase 01 (pour le dessin)
+    const tDraw = smoothstep(0, PH * 0.9, p)
+
+    // Sous-étapes du dessin (01)
+    const pCross = smoothstep(0.0, 0.12, tDraw) // croix (0,0,0)
+    const pLen = smoothstep(0.1, 0.34, tDraw) // ligne longueur 200
+    const pSketch = smoothstep(0.3, 0.55, tDraw) // ligne_arete croquis
+    const pClean = smoothstep(0.5, 0.72, tDraw) // traits configurateur
+    const pFaces = smoothstep(0.62, 0.88, tDraw) // faces arête X
+    // fondu du croquis quand le clean/faces prennent le relais
+    const sketchFade = 1 - smoothstep(0.62, 0.82, tDraw)
+
+    // Largeur croquis : grossier → épaisseur configurateur
+    const sketchW = lerp(SKETCH_WIDTH * 1.35, ARETE_EDGE_WIDTH, pClean)
+
+    sketchApiRef.current?.set({
+      cross: pCross * sketchFade,
+      len: pLen,
+      sketch: pSketch * sketchFade,
+      sketchW,
+      fade: 1,
+    })
+
+    // ——— Dims (allongement phase 03) ———
     const L = lerp(UNIT_MM, FINAL_L, pStretch)
     const W = lerp(UNIT_MM, FINAL_W, pStretch)
     const H = lerp(UNIT_MM, FINAL_H, pStretch)
 
-    // Mise à jour IMPÉRATIVE des buffers (fiable, chaque frame)
     for (const id of PRIMARY_IDS) {
       const data = meshDataForArete(id, L, W, H)
       applyAreteMeshData(primaryRefs.current[id], data)
     }
 
-    // Offsets translation (mm) — pure translation à 200 mm (avant allongement)
+    // Translation Y0 / Z0 (phase 02)
     const approach = 320
     const tJoin = 1 - pJoin
     const y0off = [0, approach * tJoin, 0]
     const z0off = [0, 0, approach * tJoin]
 
-    // Spin Z sur X0 pendant le solo, stop à l’emboîtement
-    const spinZ = (1 - pSolo) * 0.55 * (1 - pJoin * 0.85)
-
-    const setPrim = (id, posMm, rot = [0, 0, 0]) => {
+    const setPrim = (id, posMm) => {
       const g = primaryRefs.current[id]
       if (!g) return
       g.position.set(posMm[0], posMm[1], posMm[2])
-      g.rotation.set(rot[0], rot[1], rot[2])
+      g.rotation.set(0, 0, 0)
     }
 
-    setPrim('X0', [0, 0, 0], [0, 0, spinZ])
-    setGroupOpacity(primaryRefs.current.X0, Math.max(pSolo, 0.02))
+    setPrim('X0', [0, 0, 0])
+    // Faces + contours configurateur pour X0
+    setAretePartsOpacity(
+      primaryRefs.current.X0,
+      pFaces,
+      pClean,
+    )
 
-    setPrim('Y0', y0off, [0, 0, 0])
-    setPrim('Z0', z0off, [0, 0, 0])
+    setPrim('Y0', y0off)
+    setPrim('Z0', z0off)
     setGroupOpacity(primaryRefs.current.Y0, pJoin)
     setGroupOpacity(primaryRefs.current.Z0, pJoin)
 
-    // 9 arêtes — seulement après allongement (pStretch ≈ 1)
+    // Rotation vue autour de l’axe Z SketchUp (vertical après rot parent)
+    // Entre 02 et 03 : +90° ; entre 03 et 04 : +45°
+    const rot90 = phase(p, PH * 1.75, PH * 2.2) * (Math.PI / 2)
+    const rot45 = phase(p, PH * 2.75, PH * 3.25) * (Math.PI / 4)
+    if (spinGroup.current) {
+      // rotation.y dans l’espace parent = axe vertical scène
+      // (groupe enfants a déjà -PI/2 sur X → Z SketchUp ≈ Y world)
+      spinGroup.current.rotation.y = rot90 + rot45
+    }
+
+    // 9 arêtes
     REST_EDGE_IDS.forEach((id, i) => {
       const g = restRefs.current[id]
       if (!g) return
@@ -465,11 +682,10 @@ function StoryWorld({ progressRef }) {
       const slot = 1 / n
       const start = i * slot * 0.78
       const end = start + slot * 1.25
-      const o = smoothstep(start, end, pRest)
-      setGroupOpacity(g, o)
+      setGroupOpacity(g, smoothstep(start, end, pRest))
     })
 
-    // 2 tablettes
+    // Tablettes
     if (shelvesGroup.current) {
       shelvesGroup.current.visible = pShelves > 0.02
       shelvesGroup.current.traverse((o) => {
@@ -483,7 +699,7 @@ function StoryWorld({ progressRef }) {
       })
     }
 
-    // Panneaux olive
+    // Panneaux
     if (panelsGroup.current) {
       panelsGroup.current.visible = pPanels > 0.02
       panelsGroup.current.children.forEach((child, groupIdx) => {
@@ -500,155 +716,158 @@ function StoryWorld({ progressRef }) {
     const ty = (H * SCALE) / 2
     const tz = -(W * SCALE) / 2
 
+    // Phase dessin : cadrage proche de l’origine / longueur X
+    const originTarget = new THREE.Vector3(0, 20 * SCALE, -15 * SCALE)
     const soloTarget = new THREE.Vector3(
-      UNIT_MM * 0.5 * SCALE,
-      35 * SCALE,
-      -35 * SCALE,
+      UNIT_MM * 0.45 * SCALE,
+      40 * SCALE,
+      -40 * SCALE,
     )
     const finalTarget = new THREE.Vector3(tx, ty, tz)
 
+    const lookDraw = originTarget.clone().lerp(soloTarget, Math.max(pLen, pSketch))
     const zoomOut = phase(p, PH * 0.85, PH * 2)
-    const look = soloTarget
+    const look = lookDraw
       .clone()
       .lerp(finalTarget, Math.max(zoomOut, pStretch))
 
-    const soloDist = 0.38
-    const joinedDist = 0.88
+    const drawDist = lerp(0.32, 0.48, Math.max(pLen, pSketch, pFaces))
+    const joinedDist = 0.9
     const finalDist =
       Math.max(1.05, Math.sqrt(L * L + W * W + H * H) * SCALE * 1.22) * 1.05
 
     const dist = lerp(
-      lerp(soloDist, joinedDist, zoomOut),
+      lerp(drawDist, joinedDist, zoomOut),
       finalDist,
       pStretch,
     )
 
-    const ang = -0.95 + pJoin * 0.25 + pStretch * 0.55 + pRest * 0.25
+    // Angle caméra de base (la rotation modèle gère 90° / +45°)
+    const ang = -0.85 + pJoin * 0.2 + pStretch * 0.35
 
     const camGoal = new THREE.Vector3(
       look.x + Math.cos(ang) * dist,
-      look.y + dist * (0.28 + pStretch * 0.12),
+      look.y + dist * (0.32 + pStretch * 0.1),
       look.z + Math.sin(ang) * dist,
     )
-    camera.position.lerp(camGoal, 0.08)
+    camera.position.lerp(camGoal, 0.1)
     camera.lookAt(look)
   })
 
   return (
     <group>
       {/*
-        Coin X0/Y0/Z0 — montés à 200 mm, allongés chaque frame via
-        applyAreteMeshData(L,W,H) pendant l’étape 03.
+        spinGroup : rotation autour de l’axe vertical (Z SketchUp)
+        entre phases 02→03 (+90°) et 03→04 (+45°).
       */}
-      <group scale={[SCALE, SCALE, SCALE]} rotation={[-Math.PI / 2, 0, 0]}>
-        {primaryMeshes.map((m) => (
-          <group
-            key={`p-${m.id}`}
-            ref={(el) => {
-              if (el) primaryRefs.current[m.id] = el
-            }}
-            visible={false}
-          >
-            <AreteSolid meshData={m} color={WOOD} />
-          </group>
-        ))}
-      </group>
+      <group ref={spinGroup}>
+        <group scale={[SCALE, SCALE, SCALE]} rotation={[-Math.PI / 2, 0, 0]}>
+          {/* Croquis progressif arête X */}
+          <SketchRevealX sketchApiRef={sketchApiRef} unitL={UNIT_MM} />
 
-      {/* 9 arêtes restantes — taille finale, après l’allongement */}
-      <group scale={[SCALE, SCALE, SCALE]} rotation={[-Math.PI / 2, 0, 0]}>
-        {restMeshes.map((m) => (
-          <group
-            key={`r-${m.id}`}
-            ref={(el) => {
-              if (el) restRefs.current[m.id] = el
-            }}
-            visible={false}
-          >
-            <AreteSolid meshData={m} color={WOOD} />
-          </group>
-        ))}
-      </group>
-
-      {/* 2 tablettes olive */}
-      <group ref={shelvesGroup} visible={false}>
-        {shelves.map((mod, i) => {
-          const layout = moduleLayout(mod, finalDims, shelves)
-          const sx = layout.size[0] * SCALE
-          const sy = layout.size[2] * SCALE
-          const sz = layout.size[1] * SCALE
-          const hx = sx / 2
-          const hy = sy / 2
-          const hz = sz / 2
-          const wire = new Float32Array([
-            -hx, -hy, -hz, hx, -hy, -hz,
-            hx, -hy, -hz, hx, -hy, hz,
-            hx, -hy, hz, -hx, -hy, hz,
-            -hx, -hy, hz, -hx, -hy, -hz,
-            -hx, hy, -hz, hx, hy, -hz,
-            hx, hy, -hz, hx, hy, hz,
-            hx, hy, hz, -hx, hy, hz,
-            -hx, hy, hz, -hx, hy, -hz,
-            -hx, -hy, -hz, -hx, hy, -hz,
-            hx, -hy, -hz, hx, hy, -hz,
-            hx, -hy, hz, hx, hy, hz,
-            -hx, -hy, hz, -hx, hy, hz,
-          ])
-          return (
+          {/* Solides configurateur X0 Y0 Z0 */}
+          {primaryMeshes.map((m) => (
             <group
-              key={mod.id}
-              userData={{ shelfIndex: i }}
-              position={[
-                layout.center[0] * SCALE,
-                layout.center[2] * SCALE,
-                -layout.center[1] * SCALE,
-              ]}
+              key={`p-${m.id}`}
+              ref={(el) => {
+                if (el) primaryRefs.current[m.id] = el
+              }}
+              visible={false}
             >
-              <mesh userData={{ shelfIndex: i }}>
-                <boxGeometry args={[sx, sy, sz]} />
-                <meshStandardMaterial
-                  color={PANEL}
-                  roughness={0.55}
-                  metalness={0.04}
-                  transparent
-                  polygonOffset
-                  polygonOffsetFactor={1}
-                  polygonOffsetUnits={1}
-                />
-              </mesh>
-              <lineSegments userData={{ shelfIndex: i }} renderOrder={2}>
-                <bufferGeometry>
-                  <bufferAttribute
-                    attach="attributes-position"
-                    args={[wire, 3]}
-                  />
-                </bufferGeometry>
-                <lineBasicMaterial
-                  color={PANEL_EDGE}
-                  depthTest
-                  depthWrite={false}
-                  transparent
-                  polygonOffset
-                  polygonOffsetFactor={-2}
-                  polygonOffsetUnits={-2}
-                />
-              </lineSegments>
+              <AreteSolid meshData={m} color={WOOD} />
             </group>
-          )
-        })}
-      </group>
+          ))}
 
-      {/* Plateau & socle olive */}
-      <group
-        ref={panelsGroup}
-        scale={[SCALE, SCALE, SCALE]}
-        rotation={[-Math.PI / 2, 0, 0]}
-        visible={false}
-      >
-        <group>
-          <PanneauSolid nom="dessus_exterieur" dims={finalDims} />
+          {/* 9 arêtes restantes */}
+          {restMeshes.map((m) => (
+            <group
+              key={`r-${m.id}`}
+              ref={(el) => {
+                if (el) restRefs.current[m.id] = el
+              }}
+              visible={false}
+            >
+              <AreteSolid meshData={m} color={WOOD} />
+            </group>
+          ))}
+
+          {/* Panneaux (même repère SketchUp) */}
+          <group ref={panelsGroup} visible={false}>
+            <group>
+              <PanneauSolid nom="dessus_exterieur" dims={finalDims} />
+            </group>
+            <group>
+              <PanneauSolid nom="dessous" dims={finalDims} />
+            </group>
+          </group>
         </group>
-        <group>
-          <PanneauSolid nom="dessous" dims={finalDims} />
+
+        {/* Tablettes en repère Three déjà converti */}
+        <group ref={shelvesGroup} visible={false}>
+          {shelves.map((mod, i) => {
+            const layout = moduleLayout(mod, finalDims, shelves)
+            const sx = layout.size[0] * SCALE
+            const sy = layout.size[2] * SCALE
+            const sz = layout.size[1] * SCALE
+            const hx = sx / 2
+            const hy = sy / 2
+            const hz = sz / 2
+            const wire = new Float32Array([
+              -hx, -hy, -hz, hx, -hy, -hz,
+              hx, -hy, -hz, hx, -hy, hz,
+              hx, -hy, hz, -hx, -hy, hz,
+              -hx, -hy, hz, -hx, -hy, -hz,
+              -hx, hy, -hz, hx, hy, -hz,
+              hx, hy, -hz, hx, hy, hz,
+              hx, hy, hz, -hx, hy, hz,
+              -hx, hy, hz, -hx, hy, -hz,
+              -hx, -hy, -hz, -hx, hy, -hz,
+              hx, -hy, -hz, hx, hy, -hz,
+              hx, -hy, hz, hx, hy, hz,
+              -hx, -hy, hz, -hx, hy, hz,
+            ])
+            return (
+              <group
+                key={mod.id}
+                userData={{ shelfIndex: i }}
+                position={[
+                  layout.center[0] * SCALE,
+                  layout.center[2] * SCALE,
+                  -layout.center[1] * SCALE,
+                ]}
+              >
+                <mesh userData={{ shelfIndex: i }}>
+                  <boxGeometry args={[sx, sy, sz]} />
+                  <meshStandardMaterial
+                    color={PANEL}
+                    roughness={0.55}
+                    metalness={0.04}
+                    transparent
+                    polygonOffset
+                    polygonOffsetFactor={1}
+                    polygonOffsetUnits={1}
+                  />
+                </mesh>
+                <lineSegments userData={{ shelfIndex: i }} renderOrder={2}>
+                  <bufferGeometry>
+                    <bufferAttribute
+                      attach="attributes-position"
+                      args={[wire, 3]}
+                    />
+                  </bufferGeometry>
+                  <lineBasicMaterial
+                    color={PANEL_EDGE}
+                    depthTest
+                    depthWrite={false}
+                    transparent
+                    polygonOffset
+                    polygonOffsetFactor={-2}
+                    polygonOffsetUnits={-2}
+                  />
+                </lineSegments>
+              </group>
+            )
+          })}
         </group>
       </group>
     </group>
