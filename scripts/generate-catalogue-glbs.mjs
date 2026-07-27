@@ -119,7 +119,7 @@ function meshFromBuffers(positions, indices, color, name) {
  * sur le segment. Anti z-fighting côté viewer via polygonOffset sur les solides.
  * radiusMm un peu plus marqué pour les vignettes boutique (lisible au repos).
  */
-function tubesFromWire(wire, color, name, radiusMm = 0.62) {
+function tubesFromWire(wire, color, name, radiusMm = 1.25) {
   if (!wire || wire.length < 6) return null
   const group = new THREE.Group()
   group.name = name
@@ -180,7 +180,7 @@ function buildRowGroup(row) {
     root.add(
       meshFromBuffers(m.positions, m.indices, woodColor, `arete-${m.id}`),
     )
-    const lines = tubesFromWire(m.wire, edgeColor, `arete-wire-${m.id}`, 0.65)
+    const lines = tubesFromWire(m.wire, edgeColor, `arete-wire-${m.id}`, 1.3)
     if (lines) root.add(lines)
   }
 
@@ -203,7 +203,7 @@ function buildRowGroup(row) {
         buf.wire,
         edgeColor,
         `panneau-wire-${nom}`,
-        0.55,
+        1.1,
       )
       if (plines) root.add(plines)
     } catch (e) {
@@ -237,7 +237,7 @@ function buildRowGroup(row) {
     const edgeGroup = new THREE.Group()
     edgeGroup.position.copy(center)
     edgeGroup.name = `mod-wire-${mod.kind}-${mod.bayIndex}`
-    const r = 0.00055
+    const r = 0.0011
     const edgeMat = new THREE.MeshStandardMaterial({
       color: edgeColor,
       roughness: 0.4,

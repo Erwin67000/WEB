@@ -43,9 +43,24 @@
   overflow: visible;
 }
 
+/* Surcharge ivoire (Accueil / Boutique / Contact) — plus spécifique que .page-site */
+.theme-ivory .page-site,
+.site-root.theme-ivory .page-site,
+.site-root.theme-ivory .page {
+  background: #f5f0e6 !important;
+  color: #0a0a0a !important;
+}
+
 .page-site .hero-title,
 .page-site h1 {
   color: var(--ivory);
+}
+
+.theme-ivory .page-site .hero-title,
+.theme-ivory .page-site h1,
+.site-root.theme-ivory .hero-title,
+.site-root.theme-ivory h1 {
+  color: #0a0a0a !important;
 }
 
 .page-site .lead,

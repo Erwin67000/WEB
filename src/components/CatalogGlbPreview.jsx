@@ -143,7 +143,7 @@ function SnapshotCapture({ productId, onShot }) {
 function Scene({ url, productId, onShot }) {
   return (
     <>
-      <color attach="background" args={['#141210']} />
+      <color attach="background" args={['#f5f0e6']} />
       <ambientLight intensity={0.62} />
       <hemisphereLight args={['#e8f0ff', '#3a3020', 0.5]} />
       <directionalLight position={[3.5, 5, 2.5]} intensity={1.4} color="#fff5e6" />
@@ -260,7 +260,7 @@ export default function CatalogGlbPreview({
     <div
       ref={rootRef}
       className={`mini-3d ${className}`}
-      style={{ height, background: '#141210', position: 'relative' }}
+      style={{ height, background: '#f5f0e6', position: 'relative' }}
       onClick={(e) => e.stopPropagation()}
       onPointerDown={(e) => e.stopPropagation()}
     >

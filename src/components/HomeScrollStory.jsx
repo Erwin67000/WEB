@@ -108,8 +108,8 @@ const STORY = [
   },
 ]
 
-/** Couleur croquis (ivoire / trait à main) */
-const SKETCH_COLOR = '#e8dfc8'
+/** Couleur croquis (foncé sur fond ivoire) */
+const SKETCH_COLOR = '#1a1610'
 const SKETCH_WIDTH = 3.2
 
 function clamp01(t) {
@@ -1025,7 +1025,7 @@ function StoryWorld({ progressRef }) {
 function StoryScene({ progressRef }) {
   return (
     <>
-      <color attach="background" args={['#0a0a0a']} />
+      <color attach="background" args={['#f5f0e6']} />
       <ambientLight intensity={0.5} />
       <hemisphereLight args={['#e8f0ff', '#2a2010', 0.42]} />
       <directionalLight position={[4, 6, 3]} intensity={1.4} color="#fff5e6" />

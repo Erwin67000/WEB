@@ -110,15 +110,75 @@ textarea {
   letter-spacing: 0.04em;
 }
 
-/* ——— Control panel ——— */
+/* ——— Control panel (ivoire partout) ——— */
 .control-panel {
   position: relative;
-  background: var(--bg-panel);
-  border-right: 1px solid var(--border);
+  background: #f5f0e6;
+  border-right: 1px solid #d4cbb8;
+  color: #0a0a0a;
   display: flex;
   flex-direction: column;
   min-height: 0;
   z-index: 4;
+}
+
+.control-panel .section-head,
+.control-panel .field-label,
+.control-panel .slider-dim-head .field-label,
+.control-panel .muted,
+.control-panel p,
+.control-panel span,
+.control-panel label {
+  color: #1a1610;
+}
+
+.control-panel .section-head {
+  border-bottom-color: #ddd5c4;
+  background: #f0ebe0;
+}
+
+.control-panel .section-body {
+  color: #0a0a0a;
+}
+
+.control-panel input[type='text'],
+.control-panel input[type='email'],
+.control-panel input[type='tel'],
+.control-panel input[type='number'],
+.control-panel input[type='search'],
+.control-panel select,
+.control-panel textarea {
+  background: #fffef8 !important;
+  color: #0a0a0a !important;
+  border: 1px solid #d4cbb8 !important;
+}
+
+.control-panel input::placeholder,
+.control-panel textarea::placeholder {
+  color: #6a655c !important;
+}
+
+.control-panel .btn-sm,
+.control-panel .unit-chip,
+.control-panel .finish-choice-btn,
+.control-panel .swatch-btn {
+  background: #fffef8;
+  color: #0a0a0a;
+  border-color: #d4cbb8;
+}
+
+.control-panel .unit-chip.active,
+.control-panel .finish-choice-btn.active,
+.control-panel .swatch-btn.active {
+  border-color: var(--gold, #c9a227);
+  color: #0a0a0a;
+  background: rgba(201, 162, 39, 0.15);
+}
+
+.control-panel .panel-mobile-toggle {
+  background: #ebe4d4;
+  color: #1a1610;
+  border-bottom-color: #d4cbb8;
 }
 
 /* Toggle mobile (caché desktop) */

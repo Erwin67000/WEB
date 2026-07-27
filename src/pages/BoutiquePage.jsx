@@ -70,7 +70,7 @@ export default function BoutiquePage() {
         <p className="section-kicker">Catalogue</p>
         <h1 className="hero-title">Boutique</h1>
         <p className="hero-lead">
-          Retrouvez ici les modèles préconfigurés.
+          La gamme de modèles préconfigurés.
         </p>
         <p className="price-disclaimer">{PRICE_DISCLAIMER}</p>
         <p className="hint page-pad-x" style={{ paddingLeft: 0 }}>

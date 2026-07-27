@@ -11,7 +11,7 @@
   padding: 0 !important;
   width: 100%;
   min-height: 100vh;
-  background: #0a0a0a;
+  background: var(--ivory, #f5f0e6);
   overflow: visible;
 }
 
@@ -22,7 +22,7 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  background: #0a0a0a;
+  background: var(--ivory, #f5f0e6);
 }
 
 /* Scène figée sous le header (z-index < header) */
@@ -37,7 +37,7 @@
   height: 100dvh;
   z-index: 5;
   overflow: hidden;
-  background: #0a0a0a;
+  background: var(--ivory, #f5f0e6);
   pointer-events: none;
   transition: opacity 0.2s linear;
 }
@@ -66,7 +66,7 @@
 .site-root.is-story-mode .site-footer {
   position: relative;
   z-index: 20;
-  background: var(--bg, #0a0a0a);
+  /* footer garde son style sombre en bandeau bas */
 }
 
 /* Mode sticky (legacy) */
@@ -90,7 +90,7 @@
   height: 100dvh;
   max-height: 100dvh;
   overflow: hidden;
-  background: #0a0a0a;
+  background: var(--ivory, #f5f0e6);
   z-index: 2;
   pointer-events: none;
 }
@@ -107,7 +107,7 @@
   inset: 0;
   width: 100%;
   height: 100%;
-  background: #0a0a0a;
+  background: var(--ivory, #f5f0e6);
   pointer-events: none;
 }
 
@@ -118,7 +118,7 @@
   pointer-events: none !important;
 }
 
-/* Texte en overlay sur la 3D */
+/* Texte en overlay sur la 3D (fond ivoire → contraste sombre) */
 .home-story-overlay {
   position: absolute;
   inset: 0;
@@ -130,9 +130,9 @@
   padding: clamp(1.25rem, 3vw, 2.75rem);
   background: linear-gradient(
     90deg,
-    rgba(10, 10, 10, 0.82) 0%,
-    rgba(10, 10, 10, 0.45) 42%,
-    transparent 70%
+    rgba(245, 240, 230, 0.94) 0%,
+    rgba(245, 240, 230, 0.55) 42%,
+    transparent 72%
   );
 }
 
@@ -174,7 +174,7 @@
   min-height: 0;
   height: auto;
   overflow: visible;
-  background: var(--bg, #0a0a0a);
+  background: var(--ivory, #f5f0e6);
 }
 
 /* ——— Thème ivoire : Accueil / Boutique / Contact ——— */
@@ -225,8 +225,21 @@ body.theme-ivory,
 }
 
 .site-root.theme-ivory .product-media,
-.site-root.theme-ivory .product-mini-3d {
-  background: #0a0a0a !important;
+.site-root.theme-ivory .product-mini-3d,
+.site-root.theme-ivory .mini-3d,
+.site-root.theme-ivory .article-preview {
+  background: var(--ivory, #f5f0e6) !important;
+}
+
+/* Texte noir sur ivoire */
+.site-root.theme-ivory,
+.site-root.theme-ivory .page-site,
+.site-root.theme-ivory .page {
+  color: #0a0a0a !important;
+}
+
+.site-root.theme-ivory a:not(.nav-link):not(.site-logo-word) {
+  color: #1a1610;
 }
 
 .site-root.theme-ivory .tag-chip {
@@ -250,14 +263,45 @@ body.theme-ivory,
   border-color: #ddd5c4;
 }
 
-/* Scène 3D accueil : reste sombre (contraste meuble) */
+/* Accueil ivoire : scène + canvas ivoire */
 .site-root.theme-ivory .home-story-stage,
-.site-root.theme-ivory .home-story-canvas {
-  background: #0a0a0a !important;
+.site-root.theme-ivory .home-story-canvas,
+.site-root.theme-ivory .home-story,
+.site-root.theme-ivory .page-histoire {
+  background: var(--ivory, #f5f0e6) !important;
+}
+
+.site-root.theme-ivory .home-story-title {
+  color: #0a0a0a !important;
+  text-shadow: none;
+}
+
+.site-root.theme-ivory .home-story-text {
+  color: #1a1610 !important;
+  text-shadow: none;
+}
+
+.site-root.theme-ivory .home-story-chapters li {
+  color: #5a554c !important;
+}
+
+.site-root.theme-ivory .home-story-chapters li.active,
+.site-root.theme-ivory .home-story-chapters li.active span {
+  color: var(--gold, #a67c22) !important;
+}
+
+.site-root.theme-ivory .home-story-hint {
+  color: #3a352c !important;
+}
+
+.site-root.theme-ivory .home-story-progress {
+  background: rgba(26, 22, 16, 0.15);
 }
 
 html.story-mode.theme-ivory,
-body.story-mode.theme-ivory {
+body.story-mode.theme-ivory,
+html.theme-ivory.story-mode,
+body.theme-ivory.story-mode {
   background: var(--ivory, #f5f0e6) !important;
 }
 
@@ -311,7 +355,8 @@ html.story-mode,
 body.story-mode {
   margin: 0;
   padding: 0;
-  background: #0a0a0a;
+  /* fond par défaut ; surchargé par .theme-ivory */
+  background: var(--ivory, #f5f0e6);
   overflow-x: hidden;
   overflow-y: auto;
   height: auto;
@@ -333,19 +378,17 @@ body.story-mode {
   font-size: clamp(1.55rem, 3.4vw, 2.5rem);
   font-weight: 400;
   letter-spacing: 0.04em;
-  color: var(--ivory);
+  color: #0a0a0a;
   margin: 0.35rem 0 0.75rem;
   line-height: 1.12;
-  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.65);
 }
 
 .home-story-text {
-  color: #c8c2b6;
+  color: #1a1610;
   font-size: clamp(0.9rem, 1.35vw, 1.05rem);
   line-height: 1.55;
   max-width: 28rem;
   margin: 0 0 1.1rem;
-  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.55);
 }
 
 .home-story-progress {
@@ -428,8 +471,8 @@ body.story-mode {
     align-items: flex-end;
     background: linear-gradient(
       0deg,
-      rgba(10, 10, 10, 0.92) 0%,
-      rgba(10, 10, 10, 0.55) 45%,
+      rgba(245, 240, 230, 0.96) 0%,
+      rgba(245, 240, 230, 0.6) 45%,
       transparent 75%
     );
     padding: 1rem 1rem 1.25rem;
@@ -1195,8 +1238,8 @@ body.config-lock {
 .article-preview {
   min-height: 320px;
   height: 100%;
-  background: #141210;
-  border-right: 1px solid var(--border);
+  background: var(--ivory, #f5f0e6);
+  border-right: 1px solid #ddd5c4;
 }
 
 .article-mini {
@@ -1350,6 +1393,33 @@ body.config-lock {
   width: 100%;
   box-sizing: border-box;
   padding: 2rem clamp(1rem, 3vw, 2.5rem) 3rem;
+}
+
+/* Formulaires contact — champs ivoire, texte noir */
+.page-contact input,
+.page-contact textarea,
+.page-contact select,
+.theme-ivory input[type='text'],
+.theme-ivory input[type='email'],
+.theme-ivory input[type='tel'],
+.theme-ivory input[type='number'],
+.theme-ivory textarea,
+.theme-ivory select {
+  background: #fffef8 !important;
+  color: #0a0a0a !important;
+  border: 1px solid #d4cbb8 !important;
+}
+
+.page-contact input::placeholder,
+.page-contact textarea::placeholder,
+.theme-ivory input::placeholder,
+.theme-ivory textarea::placeholder {
+  color: #6a655c !important;
+}
+
+.page-contact label,
+.page-contact .field-label {
+  color: #0a0a0a;
 }
 
 .page-concept .concept-prose {
