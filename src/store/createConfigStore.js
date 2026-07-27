@@ -235,6 +235,14 @@ export function createConfigStore(opts = {}) {
 
     /** Max 3 meubles client. Retourne { ok, unit? } ou { ok: false, reason }. */
     addUnit: () => {
+      // Session boutique : un seul modèle figé, pas de multi-meubles
+      if (get().dimsLocked) {
+        return {
+          ok: false,
+          reason:
+            'Ce configurateur boutique est limité à un seul modèle. Utilisez le configurateur libre pour plusieurs meubles.',
+        }
+      }
       const MAX_UNITS = 3
       if (get().units.length >= MAX_UNITS) {
         return {

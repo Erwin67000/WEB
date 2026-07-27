@@ -136,16 +136,32 @@ export default function ControlPanel() {
   /** Chip en cours de renommage (id meuble) */
   const [editingUnitId, setEditingUnitId] = useState(null)
   const renameInputRef = useRef(null)
-  /** Au départ : seule la section Dimensions est ouverte. */
-  const [openSections, setOpenSections] = useState({
+  /**
+   * Configurateur libre : Dimensions ouverte.
+   * Session boutique (dimsLocked) : Dimensions + Agencements + Panneaux ouverts ;
+   * section Meubles masquée (un seul modèle).
+   */
+  const [openSections, setOpenSections] = useState(() => ({
     meuble: false,
     dims: true,
-    modules: false,
-    panneaux: false,
+    modules: !!dimsLocked,
+    panneaux: !!dimsLocked,
     scene: false,
     contact: false,
     devis: false,
-  })
+  }))
+
+  // Si on entre en session boutique après le montage, ouvrir les bonnes sections
+  useEffect(() => {
+    if (!dimsLocked) return
+    setOpenSections((s) => ({
+      ...s,
+      meuble: false,
+      dims: true,
+      modules: true,
+      panneaux: true,
+    }))
+  }, [dimsLocked])
 
   useEffect(() => {
     if (editingUnitId && renameInputRef.current) {
@@ -184,91 +200,99 @@ export default function ControlPanel() {
         <span className="chev">{mobileOpen ? '▾' : '▴'}</span>
       </button>
       <div className="panel-scroll">
-        {/* Meubles */}
-        <section className="panel-section">
-          <button type="button" className="section-head" onClick={() => toggle('meuble')}>
-            <span>Meubles</span>
-            <span className="chev">{openSections.meuble ? '▾' : '▸'}</span>
-          </button>
-          {openSections.meuble && (
-            <div className="section-body">
-              <div className="unit-list">
-                {units.map((u, idx) =>
-                  editingUnitId === u.id ? (
-                    <input
-                      key={u.id}
-                      ref={renameInputRef}
-                      className="unit-chip-input"
-                      type="text"
-                      value={u.label}
-                      maxLength={40}
-                      onChange={(e) =>
-                        updateUnit(u.id, { label: e.target.value })
-                      }
-                      onBlur={() => setEditingUnitId(null)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === 'Escape') {
-                          setEditingUnitId(null)
+        {/* Meubles — masqué en session boutique (un seul modèle figé) */}
+        {!dimsLocked && (
+          <section className="panel-section">
+            <button
+              type="button"
+              className="section-head"
+              onClick={() => toggle('meuble')}
+            >
+              <span>Meubles</span>
+              <span className="chev">{openSections.meuble ? '▾' : '▸'}</span>
+            </button>
+            {openSections.meuble && (
+              <div className="section-body">
+                <div className="unit-list">
+                  {units.map((u, idx) =>
+                    editingUnitId === u.id ? (
+                      <input
+                        key={u.id}
+                        ref={renameInputRef}
+                        className="unit-chip-input"
+                        type="text"
+                        value={u.label}
+                        maxLength={40}
+                        onChange={(e) =>
+                          updateUnit(u.id, { label: e.target.value })
                         }
-                      }}
-                    />
-                  ) : (
-                    <button
-                      key={u.id}
-                      type="button"
-                      className={`unit-chip ${u.id === activeUnitId ? 'active' : ''}`}
-                      title={
-                        u.id === activeUnitId
-                          ? 'Cliquer pour renommer'
-                          : 'Sélectionner'
-                      }
-                      onClick={() => {
-                        if (u.id === activeUnitId) {
-                          setEditingUnitId(u.id)
-                        } else {
-                          setActiveUnit(u.id)
-                          setEditingUnitId(null)
+                        onBlur={() => setEditingUnitId(null)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === 'Escape') {
+                            setEditingUnitId(null)
+                          }
+                        }}
+                      />
+                    ) : (
+                      <button
+                        key={u.id}
+                        type="button"
+                        className={`unit-chip ${u.id === activeUnitId ? 'active' : ''}`}
+                        title={
+                          u.id === activeUnitId
+                            ? 'Cliquer pour renommer'
+                            : 'Sélectionner'
                         }
-                      }}
-                    >
-                      {u.label || `Meuble ${idx + 1}`}
-                    </button>
-                  ),
-                )}
+                        onClick={() => {
+                          if (u.id === activeUnitId) {
+                            setEditingUnitId(u.id)
+                          } else {
+                            setActiveUnit(u.id)
+                            setEditingUnitId(null)
+                          }
+                        }}
+                      >
+                        {u.label || `Meuble ${idx + 1}`}
+                      </button>
+                    ),
+                  )}
+                </div>
+                <div className="row-actions">
+                  <button
+                    type="button"
+                    className="btn-sm"
+                    onClick={() => {
+                      const result = addUnit()
+                      if (result && result.ok === false) {
+                        notify(
+                          result.reason ||
+                            'Veuillez nous contacter via notre formulaire pour tout projet d’envergure',
+                        )
+                      }
+                    }}
+                  >
+                    + Meuble
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-sm danger"
+                    onClick={() => removeUnit(activeUnitId)}
+                    disabled={units.length <= 1}
+                  >
+                    Supprimer
+                  </button>
+                </div>
               </div>
-              <div className="row-actions">
-                <button
-                  type="button"
-                  className="btn-sm"
-                  onClick={() => {
-                    const result = addUnit()
-                    if (result && result.ok === false) {
-                      notify(
-                        result.reason ||
-                          'Veuillez nous contacter via notre formulaire pour tout projet d’envergure',
-                      )
-                    }
-                  }}
-                >
-                  + Meuble
-                </button>
-                <button
-                  type="button"
-                  className="btn-sm danger"
-                  onClick={() => removeUnit(activeUnitId)}
-                  disabled={units.length <= 1}
-                >
-                  Supprimer
-                </button>
-              </div>
-            </div>
-          )}
-        </section>
+            )}
+          </section>
+        )}
 
-        {/* Dimensions */}
+        {/* Dimensions — en boutique : L×P×H du modèle (figées) */}
         <section className="panel-section">
           <button type="button" className="section-head" onClick={() => toggle('dims')}>
-            <span>Dimensions</span>
+            <span>
+              {dimsLocked ? 'Dimensions du modèle' : 'Dimensions'}
+            </span>
             <span className="chev">{openSections.dims ? '▾' : '▸'}</span>
           </button>
           {openSections.dims && (
