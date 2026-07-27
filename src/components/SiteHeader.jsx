@@ -41,6 +41,9 @@ export default function SiteHeader() {
       return
     }
 
+    // Au (re)chargement de l’accueil : grand bandeau tant que scroll = 0
+    setCompact(false)
+
     let raf = 0
     const update = () => {
       const next = getScrollY() > COMPACT_AFTER
@@ -52,10 +55,12 @@ export default function SiteHeader() {
       raf = requestAnimationFrame(update)
     }
 
-    update()
+    // Après ScrollToTop (reset asynchrone)
+    const t = window.setTimeout(update, 60)
     window.addEventListener('scroll', onScroll, { passive: true, capture: true })
     document.addEventListener('scroll', onScroll, { passive: true, capture: true })
     return () => {
+      clearTimeout(t)
       cancelAnimationFrame(raf)
       window.removeEventListener('scroll', onScroll, { capture: true })
       document.removeEventListener('scroll', onScroll, { capture: true })

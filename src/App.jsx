@@ -9,6 +9,7 @@ import {
 import SiteHeader from './components/SiteHeader.jsx'
 import SiteFooter from './components/SiteFooter.jsx'
 import BackToTop from './components/BackToTop.jsx'
+import ScrollToTop from './components/ScrollToTop.jsx'
 import AccueilPage from './pages/AccueilPage.jsx'
 import BoutiquePage from './pages/BoutiquePage.jsx'
 import ArticlePage from './pages/ArticlePage.jsx'
@@ -71,6 +72,7 @@ function Shell() {
 
   return (
     <ConfigStoreProvider store={useConfigStore}>
+      <ScrollToTop />
       <div
         className={`site-root${isConfigMode ? ' is-config-mode' : ''}${
           isHomeStory ? ' is-story-mode' : ''
