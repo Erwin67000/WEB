@@ -45,8 +45,8 @@ const SCALE = 0.001
 const WOOD = FINITIONS.chene.color
 const PANEL = PANNEAU_COULEURS.olive.color
 const PANEL_EDGE = PANNEAU_COULEURS.olive.edge
-/** ~2+ viewports par phase narrative (6 phases → ~14 écrans) */
-const SCROLL_PAGES = 14
+/** ~1.5 viewports par phase narrative (6 phases → ~9 écrans, ~1.5× plus court) */
+const SCROLL_PAGES = 9
 /** Aligné sur STORY.length */
 const N_PHASES = 6
 const UNIT_MM = 200
@@ -988,8 +988,8 @@ function StoryScene({ progressRef }) {
  * - reste bien visible au milieu de l’étape
  * - sortie seulement sur le dernier demi-scroll
  */
-const TEXT_FADE_IN_SCROLLS = 1.0
-const TEXT_FADE_OUT_SCROLLS = 0.55
+const TEXT_FADE_IN_SCROLLS = 0.65
+const TEXT_FADE_OUT_SCROLLS = 0.35
 
 export default function HomeScrollStory({
   mode = 'fixed',

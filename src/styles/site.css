@@ -53,11 +53,11 @@
     opacity 0.2s linear;
 }
 
-/* Track invisible — ~14 viewports de scroll */
+/* Track invisible — ~9 viewports de scroll (~1.5× plus court) */
 .home-story--fixed .home-story-track {
   position: relative;
   width: 100%;
-  min-height: 1400vh;
+  min-height: 900vh;
   pointer-events: none;
   z-index: 0;
 }
@@ -75,8 +75,8 @@
   max-width: 100vw;
   margin-left: calc(50% - 50vw);
   margin-right: calc(50% - 50vw);
-  height: 1400vh;
-  min-height: 1400vh;
+  height: 900vh;
+  min-height: 900vh;
   overflow: visible;
 }
 
