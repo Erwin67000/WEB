@@ -704,3 +704,33 @@ a.site-brand {
 .color-swatch-label {
   line-height: 1.2;
 }
+
+/* Footer : texte ivoire même sous theme-ivory (noir pages Accueil/Boutique/Contact) */
+.site-footer,
+.site-footer *,
+html.theme-ivory .site-footer,
+html.theme-ivory .site-footer *,
+body.theme-ivory .site-footer,
+body.theme-ivory .site-footer *,
+#root.theme-ivory .site-footer,
+#root.theme-ivory .site-footer *,
+.site-root.theme-ivory .site-footer,
+.site-root.theme-ivory .site-footer * {
+  color: #f5f0e6 !important;
+}
+
+.site-footer h4,
+.site-footer .footer-name,
+html.theme-ivory .site-footer h4,
+html.theme-ivory .site-footer .footer-name,
+body.theme-ivory .site-footer h4,
+body.theme-ivory .site-footer .footer-name,
+.site-root.theme-ivory .site-footer h4,
+.site-root.theme-ivory .site-footer .footer-name {
+  color: var(--gold, #c9a227) !important;
+}
+
+.site-footer a:hover,
+.site-footer button:hover {
+  color: #ffffff !important;
+}

@@ -301,8 +301,45 @@ body.theme-ivory,
   color: #0a0a0a !important;
 }
 
+/* Liens pages ivoire en noir (footer forcé ivoire plus bas avec !important) */
 .site-root.theme-ivory a:not(.nav-link):not(.site-logo-word) {
   color: #1a1610;
+}
+
+.site-root.theme-ivory .site-footer a {
+  color: #f5f0e6 !important;
+}
+
+/* Footer : texte ivoire (écrase le noir theme-ivory, y compris héritage) */
+html.theme-ivory .site-footer,
+html.theme-ivory .site-footer *,
+body.theme-ivory .site-footer,
+body.theme-ivory .site-footer *,
+#root.theme-ivory .site-footer,
+#root.theme-ivory .site-footer *,
+.site-root.theme-ivory .site-footer,
+.site-root.theme-ivory .site-footer * {
+  color: #f5f0e6 !important;
+}
+
+html.theme-ivory .site-footer h4,
+html.theme-ivory .site-footer .footer-name,
+body.theme-ivory .site-footer h4,
+body.theme-ivory .site-footer .footer-name,
+#root.theme-ivory .site-footer h4,
+#root.theme-ivory .site-footer .footer-name,
+.site-root.theme-ivory .site-footer h4,
+.site-root.theme-ivory .site-footer .footer-name {
+  color: var(--gold, #c9a227) !important;
+}
+
+html.theme-ivory .site-footer a:hover,
+html.theme-ivory .site-footer button:hover,
+body.theme-ivory .site-footer a:hover,
+body.theme-ivory .site-footer button:hover,
+.site-root.theme-ivory .site-footer a:hover,
+.site-root.theme-ivory .site-footer button:hover {
+  color: #ffffff !important;
 }
 
 .site-root.theme-ivory .tag-chip {
@@ -1906,18 +1943,20 @@ body.config-lock {
   color: #f5f0e6;
 }
 
-/* Footer toujours lisible (texte blanc/ivoire) même sous theme-ivory */
+/* Footer toujours lisible (texte ivoire) — * pour battre héritage theme-ivory */
 .site-footer,
-.site-footer a,
-.site-footer p,
-.site-footer span,
-.site-footer button {
-  color: #f5f0e6;
+.site-footer * {
+  color: #f5f0e6 !important;
 }
 
 .site-footer h4,
 .site-footer .footer-name {
   color: var(--gold, #c9a227) !important;
+}
+
+.site-footer a:hover,
+.site-footer button:hover {
+  color: #ffffff !important;
 }
 
 /* —— Concept aéré + illustrations —— */
