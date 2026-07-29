@@ -1221,6 +1221,23 @@ body.config-lock {
   height: 100% !important;
   touch-action: none;
   -webkit-touch-callout: none;
+  position: relative;
+  z-index: 1;
+  cursor: grab;
+}
+
+.mini-3d canvas:active {
+  cursor: grabbing;
+}
+
+/* Page produit : zone 3D plein cadre, orbit prioritaire */
+.article-preview .mini-3d,
+.article-mini {
+  cursor: grab;
+}
+
+.article-preview .mini-3d canvas {
+  z-index: 2;
 }
 
 .mini-3d-hint {
@@ -1275,6 +1292,27 @@ body.config-lock {
   text-transform: uppercase;
   margin: 0.15rem 0;
   color: var(--ivory);
+}
+
+/* Titre vignette cliquable → page détail */
+.product-name-link {
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.product-name-link:hover {
+  color: var(--gold, #c9a227);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.site-root.theme-ivory .product-name-link {
+  color: #12100c;
+}
+
+.site-root.theme-ivory .product-name-link:hover {
+  color: var(--gold, #a67c22);
 }
 
 .product-desc {

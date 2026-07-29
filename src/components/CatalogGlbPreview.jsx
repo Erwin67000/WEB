@@ -140,7 +140,12 @@ function SnapshotCapture({ productId, onShot }) {
   return null
 }
 
-function Scene({ url, productId, onShot }) {
+/**
+ * Scène GLB + orbit libre.
+ * Bounds fit une seule fois (pas observe) : observe recadrait en boucle
+ * et bloquait la rotation tout en laissant le zoom.
+ */
+function Scene({ url, productId, onShot, freeOrbit = false }) {
   return (
     <>
       <color attach="background" args={['#f5f0e6']} />
@@ -149,7 +154,7 @@ function Scene({ url, productId, onShot }) {
       <directionalLight position={[3.5, 5, 2.5]} intensity={1.4} color="#fff5e6" />
       <directionalLight position={[-2, 2.5, -3]} intensity={0.4} />
 
-      <Bounds fit observe margin={1.35}>
+      <Bounds fit clip={false} observe={false} margin={1.35}>
         <Center>
           <GlbModel url={url} />
         </Center>
@@ -160,9 +165,15 @@ function Scene({ url, productId, onShot }) {
         enableDamping
         dampingFactor={0.08}
         enablePan={false}
-        maxPolarAngle={Math.PI * 0.49}
-        minDistance={0.4}
-        maxDistance={12}
+        enableRotate
+        enableZoom
+        rotateSpeed={0.85}
+        zoomSpeed={0.9}
+        /* page produit : tour libre ; vignette boutique : un peu plus cadré */
+        minPolarAngle={freeOrbit ? 0.12 : 0.2}
+        maxPolarAngle={freeOrbit ? Math.PI * 0.92 : Math.PI * 0.72}
+        minDistance={0.35}
+        maxDistance={freeOrbit ? 16 : 12}
       />
       <SnapshotCapture productId={productId} onShot={onShot} />
     </>
@@ -176,6 +187,8 @@ export default function CatalogGlbPreview({
   hint = true,
   eager = false,
   dpr = [1, 1.25],
+  /** true = page produit (orbit large) ; false = vignette grille */
+  freeOrbit = false,
 }) {
   const rootRef = useRef(null)
   const slotId = useRef(`glb-${productId}`)
@@ -306,6 +319,7 @@ export default function CatalogGlbPreview({
             <Scene
               url={url}
               productId={productId}
+              freeOrbit={freeOrbit}
               onShot={(data) => setSnapshot(data)}
             />
           </Suspense>
@@ -315,7 +329,11 @@ export default function CatalogGlbPreview({
       {!showLive && !snapshot && (
         <div className="mini-3d-placeholder" aria-hidden />
       )}
-      {hint && <span className="mini-3d-hint">Orbit · zoom</span>}
+      {hint && (
+        <span className="mini-3d-hint">
+          {freeOrbit ? 'Glisser pour tourner · molette zoom' : 'Orbit · zoom'}
+        </span>
+      )}
     </div>
   )
 }

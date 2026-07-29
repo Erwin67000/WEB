@@ -431,6 +431,7 @@ export default function ArticlePage() {
             className="article-mini"
             hint
             eager
+            freeOrbit
             dpr={[1, 1.5]}
           />
         </div>

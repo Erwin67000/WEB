@@ -138,7 +138,14 @@ export default function BoutiquePage() {
                   <span className="product-cat">{r.category}</span>
                   {r.featured && <span className="badge-gold">Vedette</span>}
                 </div>
-                <h2 className="product-name">{r.name}</h2>
+                <h2 className="product-name">
+                  <Link
+                    to={`/boutique/${r.id}`}
+                    className="product-name-link"
+                  >
+                    {r.name}
+                  </Link>
+                </h2>
                 <p className="product-desc">{r.short_description}</p>
                 <p className="product-dims">
                   {fin?.label || r.wood_finish} · {r.L_mm}×{r.W_mm}×{r.H_mm} mm

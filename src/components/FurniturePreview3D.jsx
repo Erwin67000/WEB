@@ -126,9 +126,12 @@ function PreviewScene({ unit, autoRotate = false }) {
         enableDamping
         dampingFactor={0.08}
         enablePan={false}
-        minDistance={maxDim * 1.05}
-        maxDistance={maxDim * 7}
-        maxPolarAngle={Math.PI * 0.49}
+        enableRotate
+        enableZoom
+        minDistance={maxDim * 0.9}
+        maxDistance={maxDim * 8}
+        minPolarAngle={0.12}
+        maxPolarAngle={Math.PI * 0.92}
         target={target}
         autoRotate={autoRotate}
         autoRotateSpeed={0.45}
@@ -176,6 +179,7 @@ export function unitFromCatalogRow(row) {
  *   eager?: boolean,
  *   dpr?: number|[number,number],
  *   forceLive?: boolean,
+ *   freeOrbit?: boolean,
  * }} props
  */
 export default function FurniturePreview3D({
@@ -190,6 +194,8 @@ export default function FurniturePreview3D({
   eager = false,
   /** Force le pipeline calculé (debug) */
   forceLive = false,
+  /** Orbit large (page produit) */
+  freeOrbit = false,
 }) {
   const productId = productIdProp || catalogRow?.id || unitProp?.id
   const glbUrl = productId ? catalogGlbUrl(productId) : null
@@ -204,6 +210,7 @@ export default function FurniturePreview3D({
         hint={hint}
         eager={eager}
         dpr={dpr}
+        freeOrbit={freeOrbit}
       />
     )
   }
