@@ -1,20 +1,30 @@
-import { useMemo } from 'react'
+import { useMemo, useEffect, useLayoutEffect, useRef } from 'react'
+import { useThree, extend } from '@react-three/fiber'
 import * as THREE from 'three'
+import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js'
+import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeometry.js'
+import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js'
 import { buildPanneauComplet, moduleLayout } from './agencement.js'
 import {
   FINITIONS,
-  PANNEAU_COULEURS,
   DEFAULT_PANNEAU_COULEUR,
   resolvePanneauColor,
+  PANNEAU_EDGE_COLOR,
+  PANNEAU_EDGE_WIDTH,
 } from '../00_matrice/matrice_constante.js'
 
 import { useActiveConfigStore } from '../../store/ConfigStoreContext.jsx'
 
+extend({ LineSegments2, LineSegmentsGeometry, LineMaterial })
+
 const SCALE = 0.001
 
-/** Filaire d’un rectangle (4 côtés). */
+/** Filaire d’un rectangle (4 côtés) — trait fin panneaux. */
 function RectangleWire({ rectangle }) {
-  const edges = useMemo(() => {
+  const { size, gl } = useThree()
+  const lineMatRef = useRef(null)
+
+  const edgeBasic = useMemo(() => {
     const geo = new THREE.BufferGeometry()
     geo.setAttribute(
       'position',
@@ -23,10 +33,56 @@ function RectangleWire({ rectangle }) {
     return geo
   }, [rectangle])
 
+  const edgeFat = useMemo(() => {
+    const geo = new LineSegmentsGeometry()
+    geo.setPositions(Array.from(rectangle.wire))
+    return geo
+  }, [rectangle])
+
+  const dpr = gl.getPixelRatio?.() || 1
+  const resW = Math.max(1, size.width * dpr)
+  const resH = Math.max(1, size.height * dpr)
+
+  useLayoutEffect(() => {
+    const mat = lineMatRef.current
+    if (mat?.resolution) mat.resolution.set(resW, resH)
+  }, [resW, resH])
+
+  useEffect(() => {
+    return () => {
+      edgeBasic.dispose()
+      edgeFat.dispose()
+    }
+  }, [edgeBasic, edgeFat])
+
+  const color = rectangle.color || PANNEAU_EDGE_COLOR
+
   return (
-    <lineSegments geometry={edges}>
-      <lineBasicMaterial color={rectangle.color} linewidth={2} />
-    </lineSegments>
+    <group>
+      <lineSegments geometry={edgeBasic} renderOrder={2}>
+        <lineBasicMaterial
+          color={color}
+          depthTest
+          depthWrite={false}
+          polygonOffset
+          polygonOffsetFactor={-2}
+          polygonOffsetUnits={-2}
+        />
+      </lineSegments>
+      <lineSegments2 geometry={edgeFat} renderOrder={3}>
+        <lineMaterial
+          ref={lineMatRef}
+          color={color}
+          linewidth={PANNEAU_EDGE_WIDTH}
+          depthTest
+          depthWrite={false}
+          polygonOffset
+          polygonOffsetFactor={-2}
+          polygonOffsetUnits={-2}
+          resolution={[resW, resH]}
+        />
+      </lineSegments2>
+    </group>
   )
 }
 
@@ -62,7 +118,10 @@ function RectangleFace({ rectangle, opacity = 0.12 }) {
  * Vous redéfinirez la suite de triangles dans matrice_panneau_grok si besoin.
  */
 function PanneauSolidMesh({ panneau, color, edgeColor }) {
-  const { geometry, edges } = useMemo(() => {
+  const { size, gl } = useThree()
+  const lineMatRef = useRef(null)
+
+  const { geometry, edgeBasic, edgeFat } = useMemo(() => {
     const buf = panneau.toBuffers()
     const geo = new THREE.BufferGeometry()
     geo.setAttribute('position', new THREE.BufferAttribute(buf.positions, 3))
@@ -70,14 +129,36 @@ function PanneauSolidMesh({ panneau, color, edgeColor }) {
     geo.setIndex(new THREE.BufferAttribute(buf.indices, 1))
     geo.computeVertexNormals()
 
-    const edgeGeo = new THREE.BufferGeometry()
-    edgeGeo.setAttribute(
+    const basic = new THREE.BufferGeometry()
+    basic.setAttribute(
       'position',
       new THREE.BufferAttribute(buf.wire.slice(), 3),
     )
 
-    return { geometry: geo, edges: edgeGeo }
+    const fat = new LineSegmentsGeometry()
+    fat.setPositions(Array.from(buf.wire))
+
+    return { geometry: geo, edgeBasic: basic, edgeFat: fat }
   }, [panneau])
+
+  const dpr = gl.getPixelRatio?.() || 1
+  const resW = Math.max(1, size.width * dpr)
+  const resH = Math.max(1, size.height * dpr)
+
+  useLayoutEffect(() => {
+    const mat = lineMatRef.current
+    if (mat?.resolution) mat.resolution.set(resW, resH)
+  }, [resW, resH])
+
+  useEffect(() => {
+    return () => {
+      geometry.dispose()
+      edgeBasic.dispose()
+      edgeFat.dispose()
+    }
+  }, [geometry, edgeBasic, edgeFat])
+
+  const lineColor = edgeColor || PANNEAU_EDGE_COLOR
 
   return (
     <group>
@@ -92,9 +173,10 @@ function PanneauSolidMesh({ panneau, color, edgeColor }) {
           polygonOffsetUnits={2}
         />
       </mesh>
-      <lineSegments geometry={edges} renderOrder={2}>
+      {/* Contour panneau : plus fin que les arêtes ossature (ARETE_EDGE_WIDTH) */}
+      <lineSegments geometry={edgeBasic} renderOrder={2}>
         <lineBasicMaterial
-          color={edgeColor || '#0a0a0a'}
+          color={lineColor}
           depthTest
           depthWrite={false}
           polygonOffset
@@ -102,6 +184,19 @@ function PanneauSolidMesh({ panneau, color, edgeColor }) {
           polygonOffsetUnits={-2}
         />
       </lineSegments>
+      <lineSegments2 geometry={edgeFat} renderOrder={3}>
+        <lineMaterial
+          ref={lineMatRef}
+          color={lineColor}
+          linewidth={PANNEAU_EDGE_WIDTH}
+          depthTest
+          depthWrite={false}
+          polygonOffset
+          polygonOffsetFactor={-2}
+          polygonOffsetUnits={-2}
+          resolution={[resW, resH]}
+        />
+      </lineSegments2>
     </group>
   )
 }

@@ -180,11 +180,12 @@ function buildRowGroup(row) {
     root.add(
       meshFromBuffers(m.positions, m.indices, woodColor, `arete-${m.id}`),
     )
+    // Arêtes ossature : trait de référence
     const lines = tubesFromWire(m.wire, edgeColor, `arete-wire-${m.id}`, 1.3)
     if (lines) root.add(lines)
   }
 
-  // Panneaux solides + contours exacts
+  // Panneaux solides + contours exacts (trait plus fin que les arêtes)
   for (const nom of row.panneaux || []) {
     try {
       const data = buildPanneauComplet(nom, dims, {
@@ -203,7 +204,7 @@ function buildRowGroup(row) {
         buf.wire,
         edgeColor,
         `panneau-wire-${nom}`,
-        1.1,
+        0.85,
       )
       if (plines) root.add(plines)
     } catch (e) {

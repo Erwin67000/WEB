@@ -178,6 +178,12 @@ export function parseMatriceCatalogue(text) {
       L_mm: Number(obj.L_mm) || 0,
       W_mm: Number(obj.W_mm) || 0,
       H_mm: Number(obj.H_mm) || 0,
+      /** Raccourci dims pour UI / checkout */
+      dims: {
+        L: Number(obj.L_mm) || 0,
+        W: Number(obj.W_mm) || 0,
+        H: Number(obj.H_mm) || 0,
+      },
       /**
        * texture / ossature_finish = finition client (brut, vernis_clair…).
        * wood_finish = essence atelier (souvent chene) — non choisie par le client.
@@ -198,6 +204,8 @@ export function parseMatriceCatalogue(text) {
       price_from:
         Number(obj.price_furniture_ttc_eur || obj.price_ttc_eur) || 0,
       price_ttc_eur:
+        Number(obj.price_furniture_ttc_eur || obj.price_ttc_eur) || 0,
+      price_furniture_ttc_eur:
         Number(obj.price_furniture_ttc_eur || obj.price_ttc_eur) || 0,
       price_model3d_ht_eur: Number(obj.price_model3d_ht_eur) || 49,
       price_json_ht_eur: Number(obj.price_json_ht_eur) || 25,

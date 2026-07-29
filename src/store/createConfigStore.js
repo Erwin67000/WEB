@@ -23,6 +23,7 @@ import {
   BOUTIQUE_CHECKOUT_URL,
   BOIS_ATELIER_ID,
   resolveOssatureFinish,
+  PANNEAU_LABELS,
 } from '../1_STRUCTURE/00_matrice/matrice_constante.js'
 import {
   captureViewportScreenshot,
@@ -60,16 +61,6 @@ export function panneauSurfaceM2(nom, dims) {
     return (L * W) / 1e6
   }
   return (L * H) / 1e6
-}
-
-const PANNEAU_LABELS = {
-  fond: 'Fond',
-  porte: 'Porte',
-  dessous: 'Dessous',
-  joue1: 'Joue 1',
-  joue2: 'Joue 2',
-  dessus_interieur: 'Dessus intérieur',
-  dessus_exterieur: 'Dessus extérieur',
 }
 
 /**

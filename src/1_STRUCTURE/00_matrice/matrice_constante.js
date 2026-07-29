@@ -92,6 +92,33 @@ export const ARETE_EDGE_COLOR = '#0a0a0a'
 /** Épaisseur des lignes d’arêtes en pixels (LineMaterial / LineSegments2). */
 export const ARETE_EDGE_WIDTH = 2.4
 
+/** Couleur des contours de panneaux (légèrement plus doux que l’arête). */
+export const PANNEAU_EDGE_COLOR = '#0a0a0a'
+/**
+ * Contours panneaux : trait un peu plus fin que les arêtes ossature.
+ * (ARETE_EDGE_WIDTH ≈ 2.4 → panneau ≈ 1.65)
+ */
+export const PANNEAU_EDGE_WIDTH = 1.65
+
+/** Rayon tubes GLB catalogue (mm) — arêtes vs panneaux. */
+export const ARETE_TUBE_RADIUS_MM = 1.3
+export const PANNEAU_TUBE_RADIUS_MM = 0.85
+
+/** Libellés panneaux (catalogue / fiche produit / devis). */
+export const PANNEAU_LABELS = {
+  fond: 'Fond',
+  porte: 'Porte',
+  dessous: 'Dessous',
+  joue1: 'Joue 1',
+  joue2: 'Joue 2',
+  dessus_interieur: 'Dessus intérieur',
+  dessus_exterieur: 'Dessus extérieur',
+}
+
+export function panneauLabel(nom) {
+  return PANNEAU_LABELS[nom] || String(nom || '').replace(/_/g, ' ')
+}
+
 /**
  * @deprecated Préférer l’API Stripe `/api/checkout` (Worker).
  * Si non vide, requestAcheter peut encore ouvrir cette URL en secours.
