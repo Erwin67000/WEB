@@ -738,24 +738,80 @@ export function createConfigStore(opts = {}) {
     },
 
     /**
-     * Acheter — lien boutique (à configurer via BOUTIQUE_CHECKOUT_URL).
-     * Pour l’instant : panier local + message si URL vide.
+     * Acheter — Stripe Checkout Session (paiement total TTC).
+     * Crée une session via /api/checkout puis redirige vers Stripe.
+     * @returns {Promise<{ url?: string, orderId?: string, pricing, quoteRef, error?: string }>}
      */
-    requestAcheter: () => {
+    requestAcheter: async () => {
       const s = get()
       const pricing = computePricing(s.units)
       set((st) => ({ cartCount: st.cartCount + 1 }))
-      const url = BOUTIQUE_CHECKOUT_URL
-      if (url) {
-        const sep = url.includes('?') ? '&' : '?'
-        window.open(
-          `${url}${sep}ref=${encodeURIComponent(s.quoteRef)}&ttc=${pricing.ttc.toFixed(2)}`,
-          '_blank',
-          'noopener,noreferrer',
-        )
+
+      if (!Number.isFinite(pricing.ttc) || pricing.ttc < 0.5) {
+        return {
+          url: null,
+          pricing,
+          quoteRef: s.quoteRef,
+          error: 'Montant insuffisant pour un paiement en ligne',
+        }
+      }
+
+      // Secours legacy si URL boutique configurée manuellement
+      if (BOUTIQUE_CHECKOUT_URL) {
+        const sep = BOUTIQUE_CHECKOUT_URL.includes('?') ? '&' : '?'
+        const url = `${BOUTIQUE_CHECKOUT_URL}${sep}ref=${encodeURIComponent(s.quoteRef)}&ttc=${pricing.ttc.toFixed(2)}`
+        window.open(url, '_blank', 'noopener,noreferrer')
         return { url, pricing, quoteRef: s.quoteRef }
       }
-      return { url: null, pricing, quoteRef: s.quoteRef }
+
+      try {
+        const { createCheckoutSession, labelFromUnits } = await import(
+          '../lib/checkout.js'
+        )
+        const result = await createCheckoutSession({
+          source: s.dimsLocked ? 'boutique' : 'configurator',
+          quoteRef: s.quoteRef,
+          productLabel: labelFromUnits(s.units),
+          productId: s.catalogProductId || undefined,
+          paymentMode: 'full',
+          pricing: {
+            ht: pricing.ht,
+            tva: pricing.tva,
+            ttc: pricing.ttc,
+          },
+          contact: s.contact || {},
+          config: {
+            quoteRef: s.quoteRef,
+            units: snapshotFromState(s).units,
+            environmentId: s.environmentId,
+            notes: s.notes,
+            contact: s.contact,
+            pricing,
+          },
+        })
+
+        if (result.url) {
+          // Redirection pleine page → Stripe Checkout (ne démonte pas le 3D avant)
+          window.location.assign(result.url)
+        }
+        return {
+          url: result.url,
+          orderId: result.orderId,
+          sessionId: result.sessionId,
+          pricing,
+          quoteRef: s.quoteRef,
+        }
+      } catch (e) {
+        console.error('[requestAcheter]', e)
+        return {
+          url: null,
+          pricing,
+          quoteRef: s.quoteRef,
+          error:
+            e.message ||
+            'Paiement indisponible — contact@philae.design',
+        }
+      }
     },
 
     requestCNC: (message = '') => {

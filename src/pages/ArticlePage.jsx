@@ -3,19 +3,30 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   FINITIONS_OSSATURE,
   resolveOssatureFinish,
+  TVA,
 } from '../1_STRUCTURE/00_matrice/matrice_constante.js'
 import { MODULE_KINDS } from '../1_STRUCTURE/00_matrice/matrice_configuration.js'
 import { formatTag, getCatalogItem } from '../data/catalog.js'
 import FurniturePreview3D from '../components/FurniturePreview3D.jsx'
+import { createCheckoutSession } from '../lib/checkout.js'
 
 const PRICE_DISCLAIMER =
   'Modèle figé de matrice_catalogue. Pour personnaliser : Configurer (session isolée).'
+
+/** Prix TTC catalogue → ventilation HT / TVA 20 % (prix affiché TTC). */
+function pricingFromTtc(ttc) {
+  const t = Number(ttc) || 0
+  const ht = t / (1 + TVA)
+  return { ht, tva: t - ht, ttc: t }
+}
 
 export default function ArticlePage() {
   const { productId } = useParams()
   const navigate = useNavigate()
   const [row, setRow] = useState(null)
   const [error, setError] = useState(null)
+  const [buyBusy, setBuyBusy] = useState(false)
+  const [buyMsg, setBuyMsg] = useState('')
 
   useEffect(() => {
     let cancelled = false
@@ -62,6 +73,53 @@ export default function ArticlePage() {
   const moduleLabels = (row.modules || [])
     .map((m) => MODULE_KINDS[m.kind]?.label || m.kind)
     .join(', ')
+
+  const ttc =
+    Number(row.price_furniture_ttc_eur || row.price_ttc_eur || row.price_from) ||
+    0
+
+  async function handleBuyNow() {
+    if (ttc < 0.5) {
+      navigate('/contact')
+      return
+    }
+    setBuyBusy(true)
+    setBuyMsg('Préparation du paiement sécurisé…')
+    try {
+      const dims = row.dims || {}
+      const dimLabel =
+        dims.L && dims.W && dims.H
+          ? ` (${Math.round(dims.L)}×${Math.round(dims.W)}×${Math.round(dims.H)} mm)`
+          : ''
+      const result = await createCheckoutSession({
+        source: 'boutique',
+        quoteRef: `CAT-${row.id}`,
+        productLabel: `${row.name || row.id}${dimLabel}`,
+        productId: row.id,
+        paymentMode: 'full',
+        pricing: pricingFromTtc(ttc),
+        config: {
+          catalog: {
+            id: row.id,
+            name: row.name,
+            dims: row.dims,
+            modules: row.modules,
+            panneaux: row.panneaux,
+            ossature_finish: row.ossature_finish || row.texture,
+          },
+        },
+      })
+      if (result.url) {
+        window.location.assign(result.url)
+        return
+      }
+      setBuyMsg('Paiement indisponible — contact@philae.design')
+    } catch (e) {
+      setBuyMsg(e.message || 'Erreur paiement')
+    } finally {
+      setBuyBusy(false)
+    }
+  }
 
   return (
     <div className="page page-article page-site page-full">
@@ -153,13 +211,20 @@ export default function ArticlePage() {
             <button
               type="button"
               className="btn btn-wood"
-              onClick={() => navigate('/contact')}
+              disabled={buyBusy}
+              onClick={handleBuyNow}
             >
-              Acheter
-              {row.price_from ? ` · ${row.price_from} € TTC` : ''}
+              {buyBusy
+                ? 'Redirection…'
+                : ttc >= 0.5
+                  ? `Acheter · ${Math.round(ttc)} € TTC`
+                  : 'Demander un devis'}
             </button>
           </div>
-          <p className="hint article-order-hint">Disponible sur commande</p>
+          {buyMsg && <p className="hint article-order-hint">{buyMsg}</p>}
+          <p className="hint article-order-hint">
+            Paiement sécurisé Stripe · Fabrication sur commande
+          </p>
         </div>
       </div>
     </div>

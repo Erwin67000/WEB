@@ -131,6 +131,7 @@ export default function ControlPanel() {
   )
 
   const [flash, setFlash] = useState('')
+  const [checkoutBusy, setCheckoutBusy] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   /** Chip en cours de renommage (id meuble) */
   const [editingUnitId, setEditingUnitId] = useState(null)
@@ -722,16 +723,31 @@ export default function ControlPanel() {
                 <button
                   type="button"
                   className="btn primary"
-                  onClick={() => {
-                    const result = requestAcheter()
-                    notify(
-                      result?.url
-                        ? 'Redirection…'
-                        : 'Disponible sur commande — contact@philae.design',
-                    )
+                  disabled={checkoutBusy || pricing.ttc < 0.5}
+                  onClick={async () => {
+                    setCheckoutBusy(true)
+                    notify('Préparation du paiement sécurisé…')
+                    try {
+                      const result = await requestAcheter()
+                      if (result?.error) {
+                        notify(result.error)
+                        return
+                      }
+                      if (result?.url) {
+                        notify('Redirection vers Stripe…')
+                        return
+                      }
+                      notify(
+                        'Paiement indisponible — contact@philae.design',
+                      )
+                    } finally {
+                      setCheckoutBusy(false)
+                    }
                   }}
                 >
-                  Acheter · {pricing.ttc.toFixed(0)} € TTC
+                  {checkoutBusy
+                    ? 'Redirection…'
+                    : `Acheter · ${pricing.ttc.toFixed(0)} € TTC`}
                 </button>
                 <button
                   type="button"
@@ -745,8 +761,8 @@ export default function ControlPanel() {
                 </button>
               </div>
               <p className="legal-hint">
-                Disponible sur commande. Prix indicatifs. Contact :
-                contact@philae.design
+                Paiement sécurisé Stripe · TVA 20 % incluse dans le TTC ·
+                Fabrication sur commande · contact@philae.design
               </p>
             </div>
           )}

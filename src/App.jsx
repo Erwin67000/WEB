@@ -17,6 +17,8 @@ import BoutiqueConfigurePage from './pages/BoutiqueConfigurePage.jsx'
 import ConfigurateurPage from './pages/ConfigurateurPage.jsx'
 import ConceptPage from './pages/ConceptPage.jsx'
 import ContactPage from './pages/ContactPage.jsx'
+import CheckoutSuccessPage from './pages/CheckoutSuccessPage.jsx'
+import CheckoutCancelPage from './pages/CheckoutCancelPage.jsx'
 import { ConfigStoreProvider } from './store/ConfigStoreContext.jsx'
 import { useConfigStore } from './store/useConfigStore.js'
 
@@ -28,13 +30,14 @@ function Shell() {
   )
   const isHomeStory = location.pathname === '/'
   const isConfigMode = isMainConfig || isBoutiqueSession
-  // Fond ivoire : Accueil, Boutique (+ fiche produit), Contact
+  // Fond ivoire : Accueil, Boutique (+ fiche produit), Contact, pages commande
   // Noir : Configurateur, Concept, session boutique config
   const isIvoryBg =
     location.pathname === '/' ||
     location.pathname === '/contact' ||
     location.pathname === '/boutique' ||
-    /^\/boutique\/[^/]+$/.test(location.pathname)
+    /^\/boutique\/[^/]+$/.test(location.pathname) ||
+    location.pathname.startsWith('/commande/')
 
   useEffect(() => {
     document.title = isBoutiqueSession
@@ -119,6 +122,9 @@ function Shell() {
             <Route path="/concept" element={<ConceptPage />} />
             <Route path="/contact" element={<ContactPage />} />
             <Route path="/atelier" element={<ConceptPage />} />
+            {/* Stripe Checkout — retour après paiement */}
+            <Route path="/commande/succes" element={<CheckoutSuccessPage />} />
+            <Route path="/commande/annule" element={<CheckoutCancelPage />} />
           </Routes>
         </div>
         {!isConfigMode && <SiteFooter />}

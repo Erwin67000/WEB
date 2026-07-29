@@ -1,0 +1,24 @@
+# Copier vers .dev.vars (local wrangler) — NE JAMAIS committer .dev.vars
+# Clés : https://dashboard.stripe.com/apikeys
+#
+# Production :
+#   wrangler secret put STRIPE_SECRET_KEY
+#   wrangler secret put STRIPE_WEBHOOK_SECRET
+#   wrangler secret put SITE_URL
+
+# Obligatoire — Worker (jamais dans le front)
+STRIPE_SECRET_KEY=sk_test_xxxxxxxx
+
+# Optionnel — Checkout redirect n’en a pas besoin côté Worker
+STRIPE_PUBLISHABLE_KEY=pk_test_xxxxxxxx
+
+# Secret endpoint webhook (événement : checkout.session.completed)
+# URL : https://VOTRE_DOMAINE/api/webhooks/stripe
+STRIPE_WEBHOOK_SECRET=whsec_xxxxxxxx
+
+# URL publique (success_url / cancel_url Checkout)
+SITE_URL=http://localhost:3102
+
+# Optionnel
+# CORS_ORIGINS=https://philae.design,https://www.philae.design
+# DEPOSIT_PERCENT=30

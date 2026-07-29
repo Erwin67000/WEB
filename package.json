@@ -8,6 +8,7 @@
   },
   "scripts": {
     "dev": "vite",
+    "dev:api": "wrangler dev --port 8787",
     "sync:catalogue": "node scripts/sync-catalogue.mjs",
     "build:catalogue-glbs": "node scripts/generate-catalogue-glbs.mjs",
     "build:devis-template": "node scripts/build-devis-template.mjs",
@@ -15,6 +16,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "lint": "oxlint",
+    "db:init:local": "wrangler d1 execute philae-orders --local --file=worker/schema.sql",
+    "db:init:remote": "wrangler d1 execute philae-orders --remote --file=worker/schema.sql",
     "deploy": "npm run build && wrangler deploy"
   },
   "dependencies": {

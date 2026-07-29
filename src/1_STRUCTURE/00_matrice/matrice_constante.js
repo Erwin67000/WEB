@@ -93,8 +93,8 @@ export const ARETE_EDGE_COLOR = '#0a0a0a'
 export const ARETE_EDGE_WIDTH = 2.4
 
 /**
- * URL boutique / checkout (à configurer plus tard).
- * Vide = bouton Acheter affiche un message d’attente.
+ * @deprecated Préférer l’API Stripe `/api/checkout` (Worker).
+ * Si non vide, requestAcheter peut encore ouvrir cette URL en secours.
  */
 export const BOUTIQUE_CHECKOUT_URL = ''
 
