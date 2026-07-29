@@ -131,14 +131,14 @@ export function configRow(unit) {
  * Coins meuble : Z0(0,0) · Z1(L,0) · Z3(L,W) · Z2(0,W)
  */
 export const TABLETTE_OCTOGONE_REFS = [
-  { arete: 'Z0', point: 3 },
   { arete: 'Z0', point: 5 },
-  { arete: 'Z1', point: 5 },
+  { arete: 'Z0', point: 3 },
   { arete: 'Z1', point: 3 },
-  { arete: 'Z3', point: 3 },
+  { arete: 'Z1', point: 5 },
   { arete: 'Z3', point: 5 },
-  { arete: 'Z2', point: 5 },
+  { arete: 'Z3', point: 3 },
   { arete: 'Z2', point: 3 },
+  { arete: 'Z2', point: 5 },
 ]
 
 /**
@@ -289,19 +289,18 @@ export function buildTablettePlateBuffers(dims, zCenterMm, epaisseurMm = EPAISSE
 export const TRAVERSE_EXTRUSION_MM = LARGEUR_ARETE // 40
 
 /**
- * Profil 6 points en plan local (u, v) — sens horaire.
+ * Profil 6 points, parralèle à (planX, Y ou Z). — sens horaire.
  * u = axe long de la traverse (portée), v = hauteur.
  * À affiner pour coller au dessin atelier.
  */
-export const TRAVERSE_PROFILE_6 = [
-  [-1, -0.35],
-  [1, -0.35],
-  [1.15, 0],
-  [1, 0.35],
-  [-1, 0.35],
-  [-1.15, 0],
-]
 
+
+export const TRAVERSE_PROFILE_6 = [
+  { arete: 'Z0', point: 5 },
+  { arete: 'Z1', point: 5 },
+  { arete: 'Z1', point: 3 },
+  { arete: 'Z0', point: 3 }
+]
 /**
  * Filaire traverse (12 points : 0..5 face A, 6..11 face B).
  * Affinable comme ligne_arete.
