@@ -250,8 +250,20 @@ export function buildPanneaux(dims, noms = ['fond'], params = {}) {
 export { face_panneau, ligne_panneau, PANNEAU_DEFS, Panneau }
 
 // ---------------------------------------------------------------------------
-// Modules (tiroirs, portes, tablettes) — inchangé pour l’instant
+// Modules (tiroirs, portes, tablettes)
+// Tablette géométrie : matrice_configuration.buildTablette (octogone + traverses)
 // ---------------------------------------------------------------------------
+
+export {
+  buildTablette,
+  buildTraverse,
+  buildTabletteTraverses,
+  TABLETTE_OCTOGONE_REFS,
+  ligne_tablette,
+  face_tablette,
+  ligne_traverse,
+  face_traverse,
+} from '../00_matrice/matrice_configuration.js'
 
 export function createModule(kind, bayIndex = 0, extras = {}) {
   return {

@@ -92,8 +92,8 @@ export const ARETE_EDGE_COLOR = '#0a0a0a'
 /** Épaisseur des lignes d’arêtes en pixels (LineMaterial / LineSegments2). */
 export const ARETE_EDGE_WIDTH = 2.4
 
-/** Couleur des contours de panneaux (légèrement plus doux que l’arête). */
-export const PANNEAU_EDGE_COLOR = '#0a0a0a'
+/** Couleur des contours de panneaux + tablettes (noir). */
+export const PANNEAU_EDGE_COLOR = '#000000'
 /**
  * Contours panneaux : trait un peu plus fin que les arêtes ossature.
  * (ARETE_EDGE_WIDTH ≈ 2.4 → panneau ≈ 1.65)

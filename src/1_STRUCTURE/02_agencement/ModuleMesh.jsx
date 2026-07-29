@@ -5,12 +5,16 @@ import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js'
 import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeometry.js'
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js'
 import { buildPanneauComplet, moduleLayout } from './agencement.js'
+import { buildTablette } from '../00_matrice/matrice_configuration.js'
 import {
   FINITIONS,
   DEFAULT_PANNEAU_COULEUR,
   resolvePanneauColor,
   PANNEAU_EDGE_COLOR,
   PANNEAU_EDGE_WIDTH,
+  ARETE_EDGE_COLOR,
+  ARETE_EDGE_WIDTH,
+  EPAISSEUR_PANNEAU,
 } from '../00_matrice/matrice_constante.js'
 
 import { useActiveConfigStore } from '../../store/ConfigStoreContext.jsx'
@@ -321,6 +325,153 @@ function BoxAt({ center, size, color, opacity = 1 }) {
   )
 }
 
+/**
+ * Rendu d’un buffer solide + filaire (coords meuble mm → Three).
+ * wireWidth : PANNEAU_EDGE_WIDTH (tablette) ou ARETE_EDGE_WIDTH (traverse).
+ */
+function SolidWireMesh({
+  positions,
+  indices,
+  wire,
+  color,
+  edgeColor,
+  wireWidth,
+  roughness = 0.55,
+  metalness = 0.04,
+}) {
+  const { size, gl } = useThree()
+  const lineMatRef = useRef(null)
+
+  const { geometry, edgeBasic, edgeFat } = useMemo(() => {
+    const geo = new THREE.BufferGeometry()
+    // Meuble mm (X,Y,Z) → Three (X, Z, −Y) × SCALE
+    const n = positions.length / 3
+    const pos = new Float32Array(n * 3)
+    for (let i = 0; i < n; i++) {
+      const x = positions[i * 3]
+      const y = positions[i * 3 + 1]
+      const z = positions[i * 3 + 2]
+      pos[i * 3] = x * SCALE
+      pos[i * 3 + 1] = z * SCALE
+      pos[i * 3 + 2] = -y * SCALE
+    }
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3))
+    geo.setIndex(new THREE.BufferAttribute(indices.slice(), 1))
+    geo.computeVertexNormals()
+
+    const wCount = wire.length / 6
+    const wPos = new Float32Array(wCount * 6)
+    for (let i = 0; i < wCount; i++) {
+      const o = i * 6
+      wPos[o] = wire[o] * SCALE
+      wPos[o + 1] = wire[o + 2] * SCALE
+      wPos[o + 2] = -wire[o + 1] * SCALE
+      wPos[o + 3] = wire[o + 3] * SCALE
+      wPos[o + 4] = wire[o + 5] * SCALE
+      wPos[o + 5] = -wire[o + 4] * SCALE
+    }
+    const basic = new THREE.BufferGeometry()
+    basic.setAttribute('position', new THREE.BufferAttribute(wPos, 3))
+
+    const fat = new LineSegmentsGeometry()
+    fat.setPositions(Array.from(wPos))
+
+    return { geometry: geo, edgeBasic: basic, edgeFat: fat }
+  }, [positions, indices, wire])
+
+  const dpr = gl.getPixelRatio?.() || 1
+  const resW = Math.max(1, size.width * dpr)
+  const resH = Math.max(1, size.height * dpr)
+
+  useLayoutEffect(() => {
+    const mat = lineMatRef.current
+    if (mat?.resolution) mat.resolution.set(resW, resH)
+  }, [resW, resH])
+
+  useEffect(() => {
+    return () => {
+      geometry.dispose()
+      edgeBasic.dispose()
+      edgeFat.dispose()
+    }
+  }, [geometry, edgeBasic, edgeFat])
+
+  const lineColor = edgeColor || PANNEAU_EDGE_COLOR
+
+  return (
+    <group>
+      <mesh geometry={geometry} castShadow receiveShadow renderOrder={0}>
+        <meshStandardMaterial
+          color={color}
+          roughness={roughness}
+          metalness={metalness}
+          side={THREE.DoubleSide}
+          polygonOffset
+          polygonOffsetFactor={2}
+          polygonOffsetUnits={2}
+        />
+      </mesh>
+      <lineSegments geometry={edgeBasic} renderOrder={2}>
+        <lineBasicMaterial
+          color={lineColor}
+          depthTest
+          depthWrite={false}
+          polygonOffset
+          polygonOffsetFactor={-2}
+          polygonOffsetUnits={-2}
+        />
+      </lineSegments>
+      <lineSegments2 geometry={edgeFat} renderOrder={3}>
+        <lineMaterial
+          ref={lineMatRef}
+          color={lineColor}
+          linewidth={wireWidth}
+          depthTest
+          depthWrite={false}
+          polygonOffset
+          polygonOffsetFactor={-2}
+          polygonOffsetUnits={-2}
+          resolution={[resW, resH]}
+        />
+      </lineSegments2>
+    </group>
+  )
+}
+
+/** Tablette : plateau octogone + 2 traverses (matière arête). */
+function TabletteMesh({ dims, zCenterMm, plateColor, woodColor, woodRoughness }) {
+  const data = useMemo(
+    () => buildTablette(dims, zCenterMm, { epaisseurMm: EPAISSEUR_PANNEAU }),
+    [dims.L, dims.W, dims.H, zCenterMm],
+  )
+
+  return (
+    <group>
+      <SolidWireMesh
+        positions={data.plate.positions}
+        indices={data.plate.indices}
+        wire={data.plate.wire}
+        color={plateColor}
+        edgeColor={PANNEAU_EDGE_COLOR}
+        wireWidth={PANNEAU_EDGE_WIDTH}
+      />
+      {data.traverses.map((tr) => (
+        <SolidWireMesh
+          key={tr.id}
+          positions={tr.positions}
+          indices={tr.indices}
+          wire={tr.wire}
+          color={woodColor}
+          edgeColor={ARETE_EDGE_COLOR}
+          wireWidth={ARETE_EDGE_WIDTH}
+          roughness={woodRoughness ?? 0.55}
+          metalness={0.05}
+        />
+      ))}
+    </group>
+  )
+}
+
 export function ModulesMesh({
   dims,
   modules = [],
@@ -337,6 +488,18 @@ export function ModulesMesh({
     <group>
       {modules.map((mod) => {
         const layout = moduleLayout(mod, dims, modules)
+        if (mod.kind === 'shelf') {
+          return (
+            <TabletteMesh
+              key={mod.id}
+              dims={dims}
+              zCenterMm={layout.zMm ?? layout.center[2]}
+              plateColor={shelfColor}
+              woodColor={finish.color}
+              woodRoughness={0.55}
+            />
+          )
+        }
         if (mod.kind === 'drawer') {
           return (
             <group key={mod.id}>
