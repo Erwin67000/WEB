@@ -10,6 +10,7 @@
     "dev": "vite",
     "dev:api": "wrangler dev --port 8787",
     "sync:catalogue": "node scripts/sync-catalogue.mjs",
+    "catalogue:xlsx": "node scripts/csv-to-catalogue-xlsx.mjs",
     "build:catalogue-glbs": "node scripts/generate-catalogue-glbs.mjs",
     "build:devis-template": "node scripts/build-devis-template.mjs",
     "prebuild": "node scripts/sync-catalogue.mjs && node scripts/generate-catalogue-glbs.mjs",
@@ -29,6 +30,7 @@
     "react-dom": "^19.2.7",
     "react-router-dom": "^7.18.1",
     "three": "^0.185.1",
+    "xlsx": "^0.18.5",
     "zustand": "^5.0.14"
   },
   "devDependencies": {

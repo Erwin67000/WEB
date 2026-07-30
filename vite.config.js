@@ -40,6 +40,9 @@ function structureStaticPlugin() {
         const ext = path.extname(filePath).toLowerCase()
         const types = {
           '.csv': 'text/csv; charset=utf-8',
+          '.xlsx':
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          '.xls': 'application/vnd.ms-excel',
           '.json': 'application/json; charset=utf-8',
           '.glb': 'model/gltf-binary',
           '.gltf': 'model/gltf+json',

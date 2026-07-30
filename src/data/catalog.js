@@ -1,8 +1,8 @@
 /**
  * Pont boutique → matrice_catalogue
  *
- * La source de vérité n’est plus un tableau JS hardcodé :
- *   01_structure/08_bibliotheque/models/boutique/matrice_catalogue.csv
+ * Source de vérité :
+ *   public/catalogue/matrice_catalogue.xlsx
  *
  * API async : loadCatalog() / getCatalogItem(id)
  */
@@ -14,6 +14,7 @@ export {
   parseModulesSpec,
   parsePanneauxSpec,
   parseMatriceCatalogue,
+  parseMatriceCatalogueWorkbook,
   MATRICE_CATALOGUE_URL,
   CATALOGUE_COLUMNS,
 } from '../1_STRUCTURE/00_matrice/matrice_catalogue.js'

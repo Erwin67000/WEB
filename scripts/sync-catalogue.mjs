@@ -1,63 +1,86 @@
 /**
  * Source unique du catalogue boutique :
- *   public/catalogue/matrice_catalogue.csv
+ *   public/catalogue/matrice_catalogue.xlsx
  *
- * Si le monorepo expose encore un CSV, on le copie ICI (édition atelier).
- * Sinon on ne fait rien (la boutique lit public/catalogue uniquement).
- *
- * Plus de double copie sous public/structure/...
+ * Si le monorepo expose un xlsx/csv plus récent, on l’importe ici.
  */
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
-const monorepoCsv = path.resolve(
+const monoDir = path.resolve(
   root,
-  '../../01_structure/08_bibliotheque/models/boutique/matrice_catalogue.csv',
+  '../../01_structure/08_bibliotheque/models/boutique',
 )
-const target = path.join(root, 'public/catalogue/matrice_catalogue.csv')
+const targetXlsx = path.join(root, 'public/catalogue/matrice_catalogue.xlsx')
+const targetCsv = path.join(root, 'public/catalogue/matrice_catalogue.csv')
 
-// Nettoyage de l’ancien doublon structure (ne sert plus)
+const candidates = [
+  path.join(monoDir, 'matrice_catalogue.xlsx'),
+  path.join(monoDir, 'matrice_catalogue.xls'),
+  path.join(monoDir, 'matrice_catalogue.csv'),
+]
+
 const legacy = path.join(
   root,
   'public/structure/08_bibliotheque/models/boutique/matrice_catalogue.csv',
 )
 
-if (fs.existsSync(monorepoCsv)) {
-  // Monorepo plus récent que public → on importe
-  const monoStat = fs.statSync(monorepoCsv)
-  const pubExists = fs.existsSync(target)
-  const pubStat = pubExists ? fs.statSync(target) : null
-  if (!pubExists || monoStat.mtimeMs > (pubStat?.mtimeMs || 0)) {
-    // Si monorepo est plus petit (ancien) et public a plus de lignes, garder public
-    const monoLines = fs.readFileSync(monorepoCsv, 'utf8').trim().split(/\n/).length
-    const pubLines = pubExists
-      ? fs.readFileSync(target, 'utf8').trim().split(/\n/).length
-      : 0
-    if (!pubExists || monoLines >= pubLines) {
-      fs.mkdirSync(path.dirname(target), { recursive: true })
-      fs.writeFileSync(target, fs.readFileSync(monorepoCsv))
-      console.log('[sync:catalogue] import monorepo →', path.relative(root, target))
-    } else {
-      console.log(
-        '[sync:catalogue] conserve public/catalogue (plus complet que monorepo)',
-      )
-    }
+function pickMono() {
+  for (const p of candidates) {
+    if (fs.existsSync(p)) return p
+  }
+  return null
+}
+
+const mono = pickMono()
+if (mono) {
+  const ext = path.extname(mono).toLowerCase()
+  const dest =
+    ext === '.csv'
+      ? targetCsv
+      : path.join(root, 'public/catalogue', `matrice_catalogue${ext === '.xls' ? '.xls' : '.xlsx'}`)
+  const monoStat = fs.statSync(mono)
+  const destExists = fs.existsSync(dest)
+  const destStat = destExists ? fs.statSync(dest) : null
+  if (!destExists || monoStat.mtimeMs > (destStat?.mtimeMs || 0)) {
+    fs.mkdirSync(path.dirname(dest), { recursive: true })
+    fs.writeFileSync(dest, fs.readFileSync(mono))
+    console.log('[sync:catalogue] import monorepo →', path.relative(root, dest))
   } else {
     console.log('[sync:catalogue] public/catalogue à jour')
   }
 } else {
-  console.log('[sync:catalogue] monorepo absent — source =', path.relative(root, target))
+  console.log(
+    '[sync:catalogue] monorepo absent — source locale public/catalogue/',
+  )
 }
 
 if (fs.existsSync(legacy)) {
-  fs.unlinkSync(legacy)
-  console.log('[sync:catalogue] supprimé doublon', path.relative(root, legacy))
+  try {
+    fs.unlinkSync(legacy)
+    console.log('[sync:catalogue] supprimé doublon', path.relative(root, legacy))
+  } catch {
+    /* ignore */
+  }
 }
 
-if (!fs.existsSync(target)) {
-  console.error('[sync:catalogue] ERREUR : catalogue manquant', target)
+const hasExcel =
+  fs.existsSync(targetXlsx) ||
+  fs.existsSync(path.join(root, 'public/catalogue/matrice_catalogue.xls'))
+const hasCsv = fs.existsSync(targetCsv)
+
+if (!hasExcel && !hasCsv) {
+  console.error(
+    '[sync:catalogue] ERREUR : aucun catalogue (xlsx/xls/csv) dans public/catalogue/',
+  )
   process.exit(1)
 }
-console.log('[sync:catalogue] source unique : public/catalogue/matrice_catalogue.csv')
+
+console.log(
+  '[sync:catalogue] source :',
+  hasExcel
+    ? 'public/catalogue/matrice_catalogue.xlsx'
+    : 'public/catalogue/matrice_catalogue.csv (legacy)',
+)

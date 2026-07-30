@@ -302,25 +302,27 @@ export const TRAVERSE_EXTRUSION_MM = LARGEUR_ARETE // 40
  * @type {{ arete: string, point: number, dX?: number, dY?: number }[]}
  */
 export const TRAVERSE_PROFILE_6 = [
-  { arete: 'Z0', point: 5 },
   { arete: 'Z0', point: 3 },
-  { arete: 'Z2', point: 3 },
+  { arete: 'Z0', point: 5 },
   { arete: 'Z2', point: 5 },
-  { arete: 'Z2', point: 5, dX: 20 },
-  { arete: 'Z0', point: 5, dX: 20 },
+  { arete: 'Z2', point: 3 },
+  { arete: 'Z2', point: 3, dX: 11.75 },
+  { arete: 'Z0', point: 3, dX: 11.75 },
 ]
+
+
 
 /**
  * 2ᵉ traverse côté X max (Z1 — Z3).
  * @type {typeof TRAVERSE_PROFILE_6}
  */
 export const TRAVERSE_PROFILE_6_BACK = [
-  { arete: 'Z1', point: 5 },
   { arete: 'Z1', point: 3 },
-  { arete: 'Z3', point: 3 },
+  { arete: 'Z1', point: 5 },
   { arete: 'Z3', point: 5 },
-  { arete: 'Z3', point: 5, dX: -20 },
-  { arete: 'Z1', point: 5, dX: -20 },
+  { arete: 'Z3', point: 3 },
+  { arete: 'Z3', point: 3, dX: -11.75 },
+  { arete: 'Z1', point: 3, dX: -11.75 },
 ]
 
 /**

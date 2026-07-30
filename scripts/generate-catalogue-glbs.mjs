@@ -1,10 +1,9 @@
 /**
- * Génère un GLB par ligne active de matrice_catalogue.csv.
+ * Génère un GLB par ligne active de matrice_catalogue.xlsx.
+ * Tablettes = octogone + 2 traverses (buildTablette).
  * Sortie : public/catalogue/glb/<id>.glb
  *
  * Usage : node scripts/generate-catalogue-glbs.mjs
- * Branché en prebuild pour que la boutique charge des modèles figés
- * (pas de calcul géométrique à l’affichage des vignettes).
  */
 import fs from 'node:fs'
 import path from 'node:path'
@@ -34,6 +33,8 @@ if (typeof globalThis.FileReader === 'undefined') {
 }
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
+const xlsxPath = path.join(root, 'public/catalogue/matrice_catalogue.xlsx')
+const xlsPath = path.join(root, 'public/catalogue/matrice_catalogue.xls')
 const csvPath = path.join(root, 'public/catalogue/matrice_catalogue.csv')
 const outDir = path.join(root, 'public/catalogue/glb')
 
@@ -54,12 +55,30 @@ const {
 } = await import(
   pathToFileURL(path.join(root, 'src/1_STRUCTURE/00_matrice/matrice_constante.js')).href
 )
+const { buildTablette } = await import(
+  pathToFileURL(
+    path.join(root, 'src/1_STRUCTURE/00_matrice/matrice_configuration.js'),
+  ).href
+)
 
 /** Couleur panneau des préconfigs boutique (vignettes GLB) */
 const BOUTIQUE_PANNEAU_COULEUR = 'olive'
-const { parseMatriceCatalogue } = await import(
+const { parseMatriceCatalogue, parseMatriceCatalogueWorkbook } = await import(
   pathToFileURL(path.join(root, 'src/1_STRUCTURE/00_matrice/matrice_catalogue.js')).href
 )
+
+function loadCatalogueRows() {
+  if (fs.existsSync(xlsxPath)) {
+    return parseMatriceCatalogueWorkbook(fs.readFileSync(xlsxPath))
+  }
+  if (fs.existsSync(xlsPath)) {
+    return parseMatriceCatalogueWorkbook(fs.readFileSync(xlsPath))
+  }
+  if (fs.existsSync(csvPath)) {
+    return parseMatriceCatalogue(fs.readFileSync(csvPath, 'utf8'))
+  }
+  return null
+}
 
 const SCALE = 0.001
 
@@ -212,22 +231,71 @@ function buildRowGroup(row) {
     }
   }
 
-  // Modules (boîtes + contours exacts sur arêtes de la boîte)
+  // Modules : tablettes paramétriques (octogone + traverses) ou boîtes legacy
   const modules = row.modules || []
+  const woodMat = new THREE.MeshStandardMaterial({
+    color: woodColor,
+    roughness: surf.roughness ?? 0.55,
+    metalness: surf.metalness ?? 0.05,
+    polygonOffset: true,
+    polygonOffsetFactor: 2,
+    polygonOffsetUnits: 2,
+  })
+
   for (const mod of modules) {
+    if (mod.kind === 'shelf') {
+      try {
+        const layout = moduleLayout(mod, dims, modules)
+        const zTop = layout.zTopMm ?? layout.zMm
+        const tab = buildTablette(dims, zTop, { epaisseurMm: EPAISSEUR_PANNEAU })
+        // Plateau (couleur panneau boutique)
+        root.add(
+          meshFromBuffers(
+            tab.plate.positions,
+            tab.plate.indices,
+            new THREE.Color(panneauColor),
+            `tablette-plate-${mod.id || mod.bayIndex}`,
+          ),
+        )
+        const plateLines = tubesFromWire(
+          tab.plate.wire,
+          edgeColor,
+          `tablette-plate-wire-${mod.id || mod.bayIndex}`,
+          0.85,
+        )
+        if (plateLines) root.add(plateLines)
+        // Traverses (matière arête / bois)
+        for (const tr of tab.traverses) {
+          root.add(
+            meshFromBuffers(
+              tr.positions,
+              tr.indices,
+              woodColor,
+              `tablette-${tr.id}-${mod.id || mod.bayIndex}`,
+            ),
+          )
+          const tw = tubesFromWire(
+            tr.wire,
+            edgeColor,
+            `tablette-${tr.id}-wire-${mod.id || mod.bayIndex}`,
+            1.3,
+          )
+          if (tw) root.add(tw)
+        }
+      } catch (e) {
+        console.warn(`  [skip tablette ${mod.id}]`, e.message)
+      }
+      continue
+    }
+
+    // Tiroirs / portes : boîte + filaire (legacy)
     const layout = moduleLayout(mod, dims, modules)
     const [cx, cy, cz] = layout.center
     const [sx, sy, sz] = layout.size
     const center = meubleToThree(cx, cy, cz)
     const geo = new THREE.BoxGeometry(sx * SCALE, sz * SCALE, sy * SCALE)
-    const mat = new THREE.MeshStandardMaterial({
-      color: panneauColor,
-      roughness: 0.6,
-      metalness: 0.02,
-      polygonOffset: true,
-      polygonOffsetFactor: 2,
-      polygonOffsetUnits: 2,
-    })
+    const mat = woodMat.clone()
+    mat.color = new THREE.Color(panneauColor)
     const mesh = new THREE.Mesh(geo, mat)
     mesh.position.copy(center)
     mesh.name = `mod-${mod.kind}-${mod.bayIndex}`
@@ -303,15 +371,18 @@ function disposeGroup(g) {
 }
 
 // ——— main ———
-if (!fs.existsSync(csvPath)) {
-  console.error('[generate-glbs] catalogue manquant:', csvPath)
+const rows = loadCatalogueRows()
+if (!rows) {
+  console.error(
+    '[generate-glbs] catalogue manquant (xlsx/xls/csv) dans public/catalogue/',
+  )
   process.exit(1)
 }
-
-const rows = parseMatriceCatalogue(fs.readFileSync(csvPath, 'utf8'))
 fs.mkdirSync(outDir, { recursive: true })
 
-console.log(`[generate-glbs] ${rows.length} modèles → ${path.relative(root, outDir)}`)
+console.log(
+  `[generate-glbs] ${rows.length} modèles (tablettes paramétriques) → ${path.relative(root, outDir)}`,
+)
 
 let ok = 0
 for (const row of rows) {

@@ -1,22 +1,22 @@
 /**
  * Recalcule price_furniture_ttc_eur pour chaque ligne de
- * public/catalogue/matrice_catalogue.csv selon PRIX (matrice_constante).
- *
- * Formules HT :
- *   ossature = forfait + 4×(L+W+H)/1000 × €/m
- *   panneau  = forfait + surface m² × €/m²
- *   tablette = forfait + L×W m² × €/m²
- *   tiroir   = forfait + L×W×H_tiroir m³ × €/m³  (H défaut 200 mm)
- *   porte    = forfait + L×H m² × €/m²
- * TTC catalogue = round(HT × 1.2)
+ * public/catalogue/matrice_catalogue.xlsx selon PRIX.
  *
  * Usage: node scripts/recalc-catalogue-prices.mjs
  */
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import * as XLSX from 'xlsx'
+import {
+  parseMatriceCatalogue,
+  parseMatriceCatalogueWorkbook,
+  CATALOGUE_COLUMNS,
+} from '../src/1_STRUCTURE/00_matrice/matrice_catalogue.js'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
+const xlsxPath = path.join(root, 'public/catalogue/matrice_catalogue.xlsx')
+const csvPath = path.join(root, 'public/catalogue/matrice_catalogue.csv')
 
 const TVA = 0.2
 const PRIX = {
@@ -31,7 +31,6 @@ const PRIX = {
   tiroirHauteurDefautMm: 200,
   porteForfait: 250,
   porteParM2: 100,
-  piedForfait: 100,
   modele3d: 45,
 }
 
@@ -56,121 +55,118 @@ function parseModules(spec) {
   for (const part of String(spec).split('|')) {
     const [kindRaw, countStr] = part.split(':')
     const kind = (kindRaw || '').trim().toLowerCase()
-    if (!['shelf', 'drawer', 'door', 'pied'].includes(kind)) continue
+    if (!kind) continue
     const n = Math.max(1, Number(countStr) || 1)
-    for (let b = 0; b < n; b++) out.push({ kind })
+    for (let i = 0; i < n; i++) out.push({ kind })
   }
   return out
 }
 
-function parsePanneaux(spec) {
-  if (!spec?.trim()) return []
-  return String(spec)
-    .split(/[|;,/]+/)
-    .map((p) => p.trim())
-    .filter(Boolean)
-}
-
-function modulePrice(mod, dims) {
-  if (mod.kind === 'shelf') {
-    const a = (dims.L * dims.W) / 1e6
-    return PRIX.tabletteForfait + a * PRIX.tabletteParM2
+function modulePrice(m, dims) {
+  const shelfArea = (dims.L * dims.W) / 1e6
+  if (m.kind === 'shelf') {
+    return PRIX.tabletteForfait + shelfArea * PRIX.tabletteParM2
   }
-  if (mod.kind === 'drawer') {
+  if (m.kind === 'drawer') {
     const h = PRIX.tiroirHauteurDefautMm
-    const v = (dims.L * dims.W * h) / 1e9
-    return PRIX.tiroirForfait + v * PRIX.tiroirParM3
+    const vol = (dims.L * dims.W * h) / 1e9
+    return PRIX.tiroirForfait + vol * PRIX.tiroirParM3
   }
-  if (mod.kind === 'door') {
-    const a = (dims.L * dims.H) / 1e6
-    return PRIX.porteForfait + a * PRIX.porteParM2
+  if (m.kind === 'door') {
+    return PRIX.porteForfait + ((dims.L * dims.H) / 1e6) * PRIX.porteParM2
   }
-  if (mod.kind === 'pied') return PRIX.piedForfait
-  return 10
+  return 0
 }
 
 function unitHt(row) {
-  const dims = { L: +row.L_mm, W: +row.W_mm, H: +row.H_mm }
+  const dims = {
+    L: Number(row.L_mm) || 0,
+    W: Number(row.W_mm) || 0,
+    H: Number(row.H_mm) || 0,
+  }
   const longueurM = (4 * (dims.L + dims.W + dims.H)) / 1000
   const ossature = PRIX.ossatureForfait + longueurM * PRIX.ossatureParMetre
-  const panTotal = parsePanneaux(row.panneaux)
-    .map((n) => PRIX.panneauForfait + panneauSurfaceM2(n, dims) * PRIX.panneauParM2)
-    .reduce((a, b) => a + b, 0)
+  const panneaux = String(row.panneaux || '')
+    .split(/[|;,/]+/)
+    .map((p) => p.trim())
+    .filter(Boolean)
+  const panTotal = panneaux.reduce(
+    (s, nom) =>
+      s + PRIX.panneauForfait + panneauSurfaceM2(nom, dims) * PRIX.panneauParM2,
+    0,
+  )
   const modTotal = parseModules(row.modules)
     .map((m) => modulePrice(m, dims))
     .reduce((a, b) => a + b, 0)
-  return {
-    id: row.id,
-    ossature,
-    panneaux: panTotal,
-    modules: modTotal,
-    ht: ossature + panTotal + modTotal,
+  return ossature + panTotal + modTotal
+}
+
+function loadRawSheet() {
+  if (fs.existsSync(xlsxPath)) {
+    const wb = XLSX.read(fs.readFileSync(xlsxPath), { type: 'buffer' })
+    const name =
+      wb.SheetNames.find((n) => /catalogue/i.test(n)) || wb.SheetNames[0]
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[name], {
+      defval: '',
+      raw: false,
+    })
+    return { kind: 'xlsx', rows, wb, sheetName: name }
   }
-}
-
-function splitCsvLine(line) {
-  const out = []
-  let cur = ''
-  let inQ = false
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i]
-    if (ch === '"') {
-      if (inQ && line[i + 1] === '"') {
-        cur += '"'
-        i++
-      } else inQ = !inQ
-    } else if (ch === ',' && !inQ) {
-      out.push(cur)
-      cur = ''
-    } else cur += ch
+  if (fs.existsSync(csvPath)) {
+    const text = fs.readFileSync(csvPath, 'utf8')
+    const parsed = parseMatriceCatalogue(text)
+    // re-read as objects for write
+    const wb = XLSX.read(text, { type: 'string' })
+    const name = wb.SheetNames[0]
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[name], {
+      defval: '',
+      raw: false,
+    })
+    return { kind: 'csv', rows, wb, sheetName: name }
   }
-  out.push(cur)
-  return out
-}
-
-function quoteField(c, header) {
-  if (header === 'tags') return `"${String(c).replace(/^"|"$/g, '')}"`
-  if (/[",\n]/.test(c)) return `"${String(c).replace(/"/g, '""')}"`
-  return c
-}
-
-const csvPath = path.join(root, 'public/catalogue/matrice_catalogue.csv')
-const text = fs.readFileSync(csvPath, 'utf8').replace(/^\uFEFF/, '')
-const lines = text.split(/\r?\n/).filter((l) => l.trim())
-const headers = splitCsvLine(lines[0])
-const priceIdx = headers.indexOf('price_furniture_ttc_eur')
-const model3dIdx = headers.indexOf('price_model3d_ht_eur')
-
-if (priceIdx < 0) {
-  console.error('Colonne price_furniture_ttc_eur introuvable')
+  console.error('Catalogue introuvable (xlsx/csv)')
   process.exit(1)
 }
 
-const finalLines = [lines[0]]
+const { rows } = loadRawSheet()
 const report = []
-
-for (const line of lines.slice(1)) {
-  const cols = splitCsvLine(line)
-  const obj = {}
-  headers.forEach((h, i) => {
-    obj[h] = (cols[i] ?? '').trim()
-  })
-  const detail = unitHt(obj)
-  const ttc = Math.round(detail.ht * (1 + TVA))
+const updated = rows.map((obj) => {
+  const ht = unitHt(obj)
+  const ttc = Math.round(ht * (1 + TVA))
   const old = Number(obj.price_furniture_ttc_eur) || 0
-  cols[priceIdx] = String(ttc)
-  if (model3dIdx >= 0) cols[model3dIdx] = String(PRIX.modele3d)
-
-  finalLines.push(cols.map((c, i) => quoteField(c, headers[i])).join(','))
   report.push({
     id: obj.id,
     old,
     new: ttc,
     delta: ttc - old,
-    ht: Math.round(detail.ht * 100) / 100,
+    ht: Math.round(ht * 100) / 100,
   })
-}
+  return {
+    ...obj,
+    price_furniture_ttc_eur: ttc,
+    price_model3d_ht_eur: PRIX.modele3d,
+  }
+})
 
-fs.writeFileSync(csvPath, finalLines.join('\n') + '\n', 'utf8')
+// Écriture xlsx (ordre de colonnes stable)
+const ordered = updated.map((r) => {
+  const o = {}
+  for (const c of CATALOGUE_COLUMNS) {
+    if (r[c] !== undefined) o[c] = r[c]
+  }
+  // conserver colonnes extras
+  for (const k of Object.keys(r)) {
+    if (!(k in o)) o[k] = r[k]
+  }
+  return o
+})
+
+const sheet = XLSX.utils.json_to_sheet(ordered)
+const out = XLSX.utils.book_new()
+XLSX.utils.book_append_sheet(out, sheet, 'catalogue')
+XLSX.writeFile(out, xlsxPath)
+
 console.table(report)
-console.log(`\n${report.length} configurations mises à jour → ${path.relative(root, csvPath)}`)
+console.log(
+  `\n${report.length} configurations → ${path.relative(root, xlsxPath)}`,
+)

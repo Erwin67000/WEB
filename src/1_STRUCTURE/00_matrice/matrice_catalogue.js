@@ -1,13 +1,16 @@
 /**
  * matrice_catalogue — lecture de la gamme boutique.
  *
- * Source unique (CSV) :
- *   public/catalogue/matrice_catalogue.csv
+ * Source unique (Excel, éditable dans VS Code via extension Excel Viewer) :
+ *   public/catalogue/matrice_catalogue.xlsx
  * Servi en dev/prod via :
- *   /catalogue/matrice_catalogue.csv
+ *   /catalogue/matrice_catalogue.xlsx
+ *
+ * Fallback legacy : .csv si le xlsx est absent.
  *
  * Une ligne = un modèle. La boutique boucle sur les lignes active=true.
  */
+import * as XLSX from 'xlsx'
 
 /** Colonnes documentées (schéma matrice). */
 export const CATALOGUE_COLUMNS = [
@@ -34,12 +37,16 @@ export const CATALOGUE_COLUMNS = [
   'sku',
 ]
 
-/** URL unique du catalogue. */
-export const MATRICE_CATALOGUE_URL = '/catalogue/matrice_catalogue.csv'
+/** URL principale — Excel. */
+export const MATRICE_CATALOGUE_URL = '/catalogue/matrice_catalogue.xlsx'
 
-export const MATRICE_CATALOGUE_FALLBACKS = []
+/** Fallbacks (ordre de tentative). */
+export const MATRICE_CATALOGUE_FALLBACKS = [
+  '/catalogue/matrice_catalogue.xls',
+  '/catalogue/matrice_catalogue.csv',
+]
 
-/** Kinds de modules reconnus par l’agencement V5. */
+/** Kinds de modules reconnus par l’agencement. */
 const MODULE_KINDS_OK = new Set(['shelf', 'drawer', 'door'])
 
 /** Kinds CSV legacy mappés vers panneaux. */
@@ -52,7 +59,6 @@ const MODULE_TO_PANNEAU = {
  * Parse `drawer:2|shelf:1` → [{ kind, bayIndex, id, openFactor }, …]
  */
 export function parseModulesSpec(spec) {
-  if (!spec?.trim()) return []
   if (Array.isArray(spec)) {
     return spec.map((m, i) => ({
       id: m.id || `mod-${i}`,
@@ -61,6 +67,7 @@ export function parseModulesSpec(spec) {
       openFactor: m.openFactor ?? 0,
     }))
   }
+  if (spec == null || !String(spec).trim()) return []
   const out = []
   let i = 0
   for (const part of String(spec).split('|')) {
@@ -84,7 +91,6 @@ export function parseModulesSpec(spec) {
 
 /**
  * Parse `fond|joue1|dessus_exterieur` → string[]
- * Si vide et modules contiennent des indices panneaux legacy, ignore.
  */
 export function parsePanneauxSpec(spec) {
   if (Array.isArray(spec)) return [...spec]
@@ -100,7 +106,7 @@ export function parseTagsField(...rawParts) {
   const seen = new Set()
   const out = []
   for (const raw of rawParts) {
-    if (!raw?.trim()) continue
+    if (raw == null || raw === '') continue
     const parts = String(raw)
       .split(/[,|;/\s]+/)
       .map((t) => t.trim().replace(/^#+/, '').toLowerCase())
@@ -140,13 +146,69 @@ function splitCsvLine(line) {
 }
 
 function asBool(v, defaultTrue = false) {
-  if (v === undefined || v === '') return defaultTrue
-  return String(v).toLowerCase() === 'true' || v === '1'
+  if (v === undefined || v === null || v === '') return defaultTrue
+  if (typeof v === 'boolean') return v
+  if (typeof v === 'number') return v !== 0
+  const s = String(v).toLowerCase().trim()
+  return s === 'true' || s === '1' || s === 'oui' || s === 'yes'
+}
+
+function cellStr(v) {
+  if (v == null) return ''
+  return String(v).trim()
+}
+
+/**
+ * Normalise un objet ligne brute (clés = en-têtes) → CatalogueRow.
+ */
+export function normalizeCatalogueRow(obj) {
+  const category = cellStr(obj.category)
+  const tags = parseTagsField(obj.tags, obj.tag)
+  const modulesSpec = cellStr(obj.modules)
+  const panneauxSpec = cellStr(obj.panneaux)
+  const L = Number(obj.L_mm) || 0
+  const W = Number(obj.W_mm) || 0
+  const H = Number(obj.H_mm) || 0
+
+  return {
+    id: cellStr(obj.id),
+    name: cellStr(obj.name),
+    category,
+    tags,
+    L_mm: L,
+    W_mm: W,
+    H_mm: H,
+    dims: { L, W, H },
+    wood_finish: cellStr(obj.wood_finish || 'chene').toLowerCase(),
+    texture: cellStr(obj.texture || obj.ossature_finish || '').toLowerCase(),
+    ossature_finish: cellStr(
+      obj.ossature_finish || obj.texture || '',
+    ).toLowerCase(),
+    modules_spec: modulesSpec,
+    modules: parseModulesSpec(modulesSpec),
+    panneaux_spec: panneauxSpec,
+    panneaux: parsePanneauxSpec(panneauxSpec),
+    price_from:
+      Number(obj.price_furniture_ttc_eur || obj.price_ttc_eur) || 0,
+    price_ttc_eur:
+      Number(obj.price_furniture_ttc_eur || obj.price_ttc_eur) || 0,
+    price_furniture_ttc_eur:
+      Number(obj.price_furniture_ttc_eur || obj.price_ttc_eur) || 0,
+    price_model3d_ht_eur: Number(obj.price_model3d_ht_eur) || 49,
+    price_json_ht_eur: Number(obj.price_json_ht_eur) || 25,
+    scene: cellStr(obj.scene || 'none'),
+    short_description: cellStr(obj.short_description),
+    featured: asBool(obj.featured, false),
+    active: asBool(obj.active, true),
+    sort_order: Number(obj.sort_order) || 0,
+    docs_ready: asBool(obj.docs_ready, false),
+    sku: cellStr(obj.sku || obj.id),
+  }
 }
 
 /**
  * Parse le CSV matrice_catalogue → lignes normalisées.
- * @returns {CatalogueRow[]}
+ * @returns {object[]}
  */
 export function parseMatriceCatalogue(text) {
   const lines = String(text || '')
@@ -163,62 +225,29 @@ export function parseMatriceCatalogue(text) {
     headers.forEach((h, i) => {
       obj[h] = (cols[i] ?? '').trim()
     })
-
-    const category = obj.category || ''
-    // Tags = uniquement la colonne tags (pas la category, qui s’affichait en #module etc.)
-    const tags = parseTagsField(obj.tags, obj.tag)
-    const modulesSpec = obj.modules || ''
-    const panneauxSpec = obj.panneaux || ''
-
-    return {
-      id: obj.id,
-      name: obj.name,
-      category,
-      tags,
-      L_mm: Number(obj.L_mm) || 0,
-      W_mm: Number(obj.W_mm) || 0,
-      H_mm: Number(obj.H_mm) || 0,
-      /** Raccourci dims pour UI / checkout */
-      dims: {
-        L: Number(obj.L_mm) || 0,
-        W: Number(obj.W_mm) || 0,
-        H: Number(obj.H_mm) || 0,
-      },
-      /**
-       * texture / ossature_finish = finition client (brut, vernis_clair…).
-       * wood_finish = essence atelier (souvent chene) — non choisie par le client.
-       */
-      wood_finish: (obj.wood_finish || 'chene').toLowerCase(),
-      texture: (obj.texture || obj.ossature_finish || '').toLowerCase(),
-      ossature_finish: (
-        obj.ossature_finish ||
-        obj.texture ||
-        ''
-      ).toLowerCase(),
-      /** Spec brute CSV (string) */
-      modules_spec: modulesSpec,
-      /** Modules normalisés pour le store */
-      modules: parseModulesSpec(modulesSpec),
-      panneaux_spec: panneauxSpec,
-      panneaux: parsePanneauxSpec(panneauxSpec),
-      price_from:
-        Number(obj.price_furniture_ttc_eur || obj.price_ttc_eur) || 0,
-      price_ttc_eur:
-        Number(obj.price_furniture_ttc_eur || obj.price_ttc_eur) || 0,
-      price_furniture_ttc_eur:
-        Number(obj.price_furniture_ttc_eur || obj.price_ttc_eur) || 0,
-      price_model3d_ht_eur: Number(obj.price_model3d_ht_eur) || 49,
-      price_json_ht_eur: Number(obj.price_json_ht_eur) || 25,
-      scene: obj.scene || 'none',
-      short_description: obj.short_description || '',
-      featured: asBool(obj.featured, false),
-      active: asBool(obj.active, true),
-      sort_order: Number(obj.sort_order) || 0,
-      docs_ready: asBool(obj.docs_ready, false),
-      sku: obj.sku || obj.id,
-    }
+    return normalizeCatalogueRow(obj)
   })
 
+  return finalizeRows(rows)
+}
+
+/**
+ * Parse un classeur Excel (ArrayBuffer | Uint8Array | Buffer) → lignes.
+ */
+export function parseMatriceCatalogueWorkbook(data) {
+  const wb = XLSX.read(data, { type: 'array', cellDates: false, raw: false })
+  const sheetName =
+    wb.SheetNames.find((n) => /catalogue/i.test(n)) || wb.SheetNames[0]
+  if (!sheetName) return []
+  const sheet = wb.Sheets[sheetName]
+  const rawRows = XLSX.utils.sheet_to_json(sheet, {
+    defval: '',
+    raw: false,
+  })
+  return finalizeRows(rawRows.map((obj) => normalizeCatalogueRow(obj)))
+}
+
+function finalizeRows(rows) {
   return rows
     .filter((r) => r.active && r.id)
     .sort(
@@ -230,9 +259,12 @@ let _cache = null
 let _cacheAt = 0
 const CACHE_MS = 2000
 
+function isExcelUrl(url) {
+  return /\.xlsx?$/i.test(url)
+}
+
 /**
- * Charge la matrice catalogue (fetch + parse).
- * Cache court pour éviter les multi-fetch boutique/article.
+ * Charge la matrice catalogue (fetch + parse Excel ou CSV).
  */
 export async function loadMatriceCatalogue({ force = false } = {}) {
   const now = Date.now()
@@ -247,7 +279,13 @@ export async function loadMatriceCatalogue({ force = false } = {}) {
         lastErr = new Error(`${url} → ${res.status}`)
         continue
       }
-      const rows = parseMatriceCatalogue(await res.text())
+      let rows
+      if (isExcelUrl(url)) {
+        const ab = await res.arrayBuffer()
+        rows = parseMatriceCatalogueWorkbook(new Uint8Array(ab))
+      } else {
+        rows = parseMatriceCatalogue(await res.text())
+      }
       _cache = rows
       _cacheAt = now
       return rows
@@ -270,10 +308,16 @@ export function clearCatalogueCache() {
 
 export default {
   CATALOGUE_COLUMNS,
-  parseMatriceCatalogue,
-  loadMatriceCatalogue,
-  getCatalogueItem,
+  MATRICE_CATALOGUE_URL,
+  MATRICE_CATALOGUE_FALLBACKS,
   parseModulesSpec,
   parsePanneauxSpec,
+  parseTagsField,
   formatTag,
+  normalizeCatalogueRow,
+  parseMatriceCatalogue,
+  parseMatriceCatalogueWorkbook,
+  loadMatriceCatalogue,
+  getCatalogueItem,
+  clearCatalogueCache,
 }

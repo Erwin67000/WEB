@@ -7,7 +7,6 @@ import {
 import {
   formatTag,
   loadCatalog,
-  MATRICE_CATALOGUE_URL,
 } from '../data/catalog.js'
 import FurniturePreview3D from '../components/FurniturePreview3D.jsx'
 import { preloadCatalogGlbs } from '../components/CatalogGlbPreview.jsx'
