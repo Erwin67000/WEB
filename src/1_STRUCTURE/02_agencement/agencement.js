@@ -250,20 +250,45 @@ export function buildPanneaux(dims, noms = ['fond'], params = {}) {
 export { face_panneau, ligne_panneau, PANNEAU_DEFS, Panneau }
 
 // ---------------------------------------------------------------------------
-// Modules (tiroirs, portes, tablettes)
-// Tablette géométrie : matrice_configuration.buildTablette (octogone + traverses)
+// Modules — orchestration
+//   panneaux (6 + variantes) : buildPanneauComplet / PANNEAU_DEFS
+//   traverses Y par paire    : ./traverse.js
+//   tablettes               : ./Z.tablette/tablette.js
+//   tiroirs                 : ./tiroir/tiroir.js
 // ---------------------------------------------------------------------------
 
 export {
-  buildTablette,
   buildTraverse,
+  buildTraversePair,
   buildTabletteTraverses,
+  TRAVERSE_EXTRUSION_MM,
+  TRAVERSE_PROFILE_LEFT,
+  TRAVERSE_PROFILE_RIGHT,
+  TRAVERSE_PROFILE_6,
+  TRAVERSE_PROFILE_6_BACK,
+  ligne_traverse,
+  face_traverse,
+  resolveTraverseProfile2D,
+} from './traverse.js'
+
+export {
+  buildTablette,
+  buildTablettePlateBuffers,
   TABLETTE_OCTOGONE_REFS,
   ligne_tablette,
   face_tablette,
-  ligne_traverse,
-  face_traverse,
-} from '../00_matrice/matrice_configuration.js'
+  resolveTabletteOctogone,
+} from './Z.tablette/tablette.js'
+
+export {
+  buildTiroir,
+  buildDrawerOpenBox,
+  buildDrawerRails,
+  normalizeRailGeometry,
+  RAIL_STL_URL,
+  RAIL_STL_SCALE,
+  RAIL_MOUNT_OFFSET,
+} from './tiroir/tiroir.js'
 
 export function createModule(kind, bayIndex = 0, extras = {}) {
   return {

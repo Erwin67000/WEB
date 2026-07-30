@@ -1,11 +1,17 @@
-import { useMemo, useEffect, useLayoutEffect, useRef } from 'react'
+import { useMemo, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useThree, extend } from '@react-three/fiber'
 import * as THREE from 'three'
 import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js'
 import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeometry.js'
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js'
-import { buildPanneauComplet, moduleLayout } from './agencement.js'
-import { buildTablette } from '../00_matrice/matrice_configuration.js'
+import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js'
+import {
+  buildPanneauComplet,
+  moduleLayout,
+  buildTablette,
+  buildTiroir,
+  normalizeRailGeometry,
+} from './agencement.js'
 import {
   FINITIONS,
   DEFAULT_PANNEAU_COULEUR,
@@ -438,7 +444,7 @@ function SolidWireMesh({
   )
 }
 
-/** Tablette : plateau octogone (extrusion −Z) + 2 traverses au-dessus (+Z). */
+/** Tablette : plateau octogone (extrusion −Z) + paire de traverses (+Z). */
 function TabletteMesh({ dims, zTopMm, plateColor, woodColor, woodRoughness }) {
   const data = useMemo(() => {
     try {
@@ -478,6 +484,115 @@ function TabletteMesh({ dims, zTopMm, plateColor, woodColor, woodRoughness }) {
   )
 }
 
+/** Cache géométrie rail (normalisée) partagée. */
+let _railGeoPromise = null
+function loadNormalizedRail(url) {
+  if (!_railGeoPromise) {
+    _railGeoPromise = new Promise((resolve, reject) => {
+      const loader = new STLLoader()
+      loader.load(
+        url,
+        (geo) => {
+          try {
+            resolve(normalizeRailGeometry(geo))
+          } catch (e) {
+            reject(e)
+          }
+        },
+        undefined,
+        reject,
+      )
+    })
+  }
+  return _railGeoPromise
+}
+
+function RailMesh({ mount, metalColor = '#8a9099' }) {
+  const [geo, setGeo] = useState(null)
+
+  useEffect(() => {
+    let cancelled = false
+    loadNormalizedRail(mount.stlUrl)
+      .then((g) => {
+        if (!cancelled) setGeo(g)
+      })
+      .catch((e) => console.warn('[RailMesh]', e.message))
+    return () => {
+      cancelled = true
+    }
+  }, [mount.stlUrl])
+
+  if (!geo) return null
+
+  const [x, y, z] = mount.position
+  // Meuble mm → Three
+  const pos = [x * SCALE, z * SCALE, -y * SCALE]
+  const sx = (mount.mirrorX ? -1 : 1) * SCALE
+  // Géométrie déjà en mm après normalizeRailGeometry
+  return (
+    <mesh
+      geometry={geo}
+      position={pos}
+      scale={[sx, SCALE, SCALE]}
+      castShadow
+      receiveShadow
+      renderOrder={1}
+    >
+      <meshStandardMaterial
+        color={metalColor}
+        metalness={0.65}
+        roughness={0.35}
+      />
+    </mesh>
+  )
+}
+
+/** Tiroir : 2 traverses + 2 rails STL + boîte ouverte 5 faces. */
+function TiroirMesh({ dims, layout, plateColor, woodColor, woodRoughness }) {
+  const data = useMemo(() => {
+    try {
+      return buildTiroir(dims, layout)
+    } catch (e) {
+      console.error('[TiroirMesh]', e)
+      return null
+    }
+  }, [dims.L, dims.W, dims.H, layout])
+
+  if (!data) return null
+
+  return (
+    <group>
+      {data.traverses.map((tr) => (
+        <SolidWireMesh
+          key={tr.id}
+          positions={tr.positions}
+          indices={tr.indices}
+          wire={tr.wire}
+          color={woodColor}
+          edgeColor={ARETE_EDGE_COLOR}
+          wireWidth={ARETE_EDGE_WIDTH}
+          roughness={woodRoughness ?? 0.55}
+          metalness={0.05}
+        />
+      ))}
+      {data.rails.map((r) => (
+        <RailMesh key={r.id} mount={r} />
+      ))}
+      {data.box.panels.map((p) => (
+        <SolidWireMesh
+          key={p.id}
+          positions={p.positions}
+          indices={p.indices}
+          wire={p.wire}
+          color={plateColor}
+          edgeColor={PANNEAU_EDGE_COLOR}
+          wireWidth={PANNEAU_EDGE_WIDTH}
+        />
+      ))}
+    </group>
+  )
+}
+
 export function ModulesMesh({
   dims,
   modules = [],
@@ -508,21 +623,14 @@ export function ModulesMesh({
         }
         if (mod.kind === 'drawer') {
           return (
-            <group key={mod.id}>
-              <BoxAt
-                center={layout.center}
-                size={layout.size}
-                color={darker}
-                opacity={0.9}
-              />
-              {layout.faceCenter && (
-                <BoxAt
-                  center={layout.faceCenter}
-                  size={layout.faceSize}
-                  color={finish.color}
-                />
-              )}
-            </group>
+            <TiroirMesh
+              key={mod.id}
+              dims={dims}
+              layout={layout}
+              plateColor={shelfColor}
+              woodColor={finish.color}
+              woodRoughness={0.55}
+            />
           )
         }
         if (mod.kind === 'door') {

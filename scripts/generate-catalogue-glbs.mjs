@@ -57,7 +57,7 @@ const {
 )
 const { buildTablette } = await import(
   pathToFileURL(
-    path.join(root, 'src/1_STRUCTURE/00_matrice/matrice_configuration.js'),
+    path.join(root, 'src/1_STRUCTURE/02_agencement/Z.tablette/tablette.js'),
   ).href
 )
 
