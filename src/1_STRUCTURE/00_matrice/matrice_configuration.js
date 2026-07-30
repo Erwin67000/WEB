@@ -282,25 +282,90 @@ export function buildTablettePlateBuffers(dims, zCenterMm, epaisseurMm = EPAISSE
 }
 
 // ===========================================================================
-// TRAVERSE — polygone 6 points + extrusion 40 mm (matière arête)
+// TRAVERSE — polygone 6 points (plan XY 2D) + extrusion 40 mm (matière arête)
 // ===========================================================================
 
 /** Épaisseur d’extrusion traverse (mm) — section type arête 40. */
 export const TRAVERSE_EXTRUSION_MM = LARGEUR_ARETE // 40
 
 /**
- * Profil 6 points, parralèle à (planX, Y ou Z). — sens horaire.
- * u = axe long de la traverse (portée), v = hauteur.
- * À affiner pour coller au dessin atelier.
+ * Décalage des 2 points intermédiaires le long de +X / −X (mm).
+ * Depuis le poteau Z0 : +20 vers l’intérieur ; depuis Z1 : −20.
  */
+export const TRAVERSE_OFFSET_X_MM = 20
 
-
+/**
+ * Profil traverse — 6 points en **2D (X, Y uniquement)**.
+ *
+ * Chaque ref lit l’arête Z → `points[i]` → on garde **seulement X et Y**.
+ * Le Z de la traverse est injecté plus bas selon la tablette (`zMm`).
+ *
+ * Les 2 points « manquants » sont les mêmes refs d’arête avec `dX: ±20`.
+ *
+ * Ordre sens horaire (vue du dessus), côté Y min (Z0 — Z1) :
+ *   Z0.p5 → (Z0.p5 +20 X) → (Z1.p5 −20 X) → Z1.p5 → Z1.p3 → Z0.p3
+ *
+ * @type {{ arete: string, point: number, dX?: number, dY?: number }[]}
+ */
 export const TRAVERSE_PROFILE_6 = [
   { arete: 'Z0', point: 5 },
+  { arete: 'Z0', point: 5, dX: TRAVERSE_OFFSET_X_MM },
+  { arete: 'Z1', point: 5, dX: -TRAVERSE_OFFSET_X_MM },
   { arete: 'Z1', point: 5 },
   { arete: 'Z1', point: 3 },
-  { arete: 'Z0', point: 3 }
+  { arete: 'Z0', point: 3 },
 ]
+
+/**
+ * 2ᵉ traverse (côté Y max : Z2 — Z3), même logique, dX inversé selon X.
+ * @type {typeof TRAVERSE_PROFILE_6}
+ */
+export const TRAVERSE_PROFILE_6_BACK = [
+  { arete: 'Z2', point: 5 },
+  { arete: 'Z2', point: 5, dX: TRAVERSE_OFFSET_X_MM },
+  { arete: 'Z3', point: 5, dX: -TRAVERSE_OFFSET_X_MM },
+  { arete: 'Z3', point: 5 },
+  { arete: 'Z3', point: 3 },
+  { arete: 'Z2', point: 3 },
+]
+
+/**
+ * Résout une ref traverse → [x, y] (2D).
+ * Z d’arête ignoré — le positionnement vertical vient de la tablette.
+ *
+ * @param {Record<string, { points: number[][] }>} byId
+ * @param {{ arete: string, point: number, dX?: number, dY?: number }} ref
+ * @returns {[number, number]}
+ */
+export function resolveTraverseRef2D(byId, ref) {
+  const edge = byId[ref.arete]
+  if (!edge) throw new Error(`Traverse : arête inconnue "${ref.arete}"`)
+  const p = edge.points[ref.point]
+  if (!p) {
+    throw new Error(
+      `Traverse : point ${ref.point} hors plage sur ${ref.arete}`,
+    )
+  }
+  const dX = Number(ref.dX ?? ref.offsetX ?? 0) || 0
+  const dY = Number(ref.dY ?? ref.offsetY ?? 0) || 0
+  // 2D strict : X,Y du point d’arête Z (+ décalage optionnel)
+  return [p[0] + dX, p[1] + dY]
+}
+
+/**
+ * Nuage 2D complet du profil traverse (6 × [x,y]).
+ * @param {{ L: number, W: number, H: number }} dims
+ * @param {typeof TRAVERSE_PROFILE_6} [refs]
+ * @returns {number[][]}
+ */
+export function resolveTraverseProfile2D(dims, refs = TRAVERSE_PROFILE_6) {
+  if (!refs || refs.length !== 6) {
+    throw new Error(`Traverse : 6 refs 2D requises, reçu ${refs?.length}`)
+  }
+  const { byId } = buildGeometrie(dims)
+  return refs.map((ref) => resolveTraverseRef2D(byId, ref))
+}
+
 /**
  * Filaire traverse (12 points : 0..5 face A, 6..11 face B).
  * Affinable comme ligne_arete.
@@ -354,69 +419,54 @@ const AXIS_VEC = {
 /**
  * Construit une traverse paramétrique.
  *
+ * Profil en **2D (XY)** depuis les arêtes Z ; le **Z** est fourni par la tablette.
+ * Extrusion le long de `direction` (défaut **Z** : épaisseur 40 mm sous le plateau).
+ *
  * @param {object} opts
- * @param {'X'|'Y'|'Z'} opts.direction — axe d’extrusion (épaisseur TRAVERSE_EXTRUSION_MM)
- * @param {number[]} opts.center — centre du profil [x,y,z] mm
- * @param {number} opts.halfLength — demi-portée le long de l’axe long du profil (mm)
- * @param {number} [opts.halfHeight=7] — demi-hauteur du profil (mm)
+ * @param {{ L: number, W: number, H: number }} opts.dims
+ * @param {number} opts.zMm — cote Z du plan du profil (variable selon tablette)
+ * @param {'X'|'Y'|'Z'} [opts.direction='Z'] — axe d’extrusion
  * @param {number} [opts.extrusionMm=40]
- * @param {number[][]} [opts.profile6] — profil unitaire override
- * @returns {{
- *   id: string,
- *   direction: string,
- *   points: number[][],
- *   positions: Float32Array,
- *   indices: Uint16Array,
- *   wire: Float32Array,
- *   material: 'arete',
- * }}
+ * @param {typeof TRAVERSE_PROFILE_6} [opts.profileRefs]
+ * @param {number[][]} [opts.profile2D] — override direct 6×[x,y]
+ * @param {string} [opts.id]
  */
 export function buildTraverse({
-  direction = 'X',
-  center = [0, 0, 0],
-  halfLength = 100,
-  halfHeight = 7,
+  dims,
+  zMm = 0,
+  direction = 'Z',
   extrusionMm = TRAVERSE_EXTRUSION_MM,
-  profile6 = TRAVERSE_PROFILE_6,
+  profileRefs = TRAVERSE_PROFILE_6,
+  profile2D = null,
   id = 'traverse',
 } = {}) {
   const dir = String(direction).toUpperCase()
   if (!AXIS_VEC[dir]) {
     throw new Error(`Traverse : direction invalide "${direction}" (X|Y|Z)`)
   }
-  if (!profile6 || profile6.length !== 6) {
-    throw new Error('Traverse : profil 6 points requis')
+
+  const xy =
+    profile2D ||
+    (dims
+      ? resolveTraverseProfile2D(dims, profileRefs)
+      : null)
+
+  if (!xy || xy.length !== 6) {
+    throw new Error('Traverse : profil 6 points 2D requis (dims + refs ou profile2D)')
   }
 
   const ex = AXIS_VEC[dir]
-  // Axes locaux du profil : u = long, v = haut (Z meuble), w = extrusion
-  // long = perpendiculaire à extrusion dans le plan horizontal si possible
-  let uAxis
-  let vAxis = [0, 0, 1]
-  if (dir === 'X') {
-    uAxis = [0, 1, 0] // portée en Y
-  } else if (dir === 'Y') {
-    uAxis = [1, 0, 0] // portée en X
-  } else {
-    // Extrusion Z : profil dans XY
-    uAxis = [1, 0, 0]
-    vAxis = [0, 1, 0]
-  }
 
-  const faceA = profile6.map(([u, v]) => {
-    const uu = u * halfLength
-    const vv = v * halfHeight
-    return [
-      center[0] + uAxis[0] * uu + vAxis[0] * vv - (ex[0] * extrusionMm) / 2,
-      center[1] + uAxis[1] * uu + vAxis[1] * vv - (ex[1] * extrusionMm) / 2,
-      center[2] + uAxis[2] * uu + vAxis[2] * vv - (ex[2] * extrusionMm) / 2,
-    ]
-  })
+  // Plan du profil = XY (2D arêtes Z) placé à zMm.
+  // Extrusion Z : vers le bas (−Z) sous la tablette.
+  // Extrusion X/Y : même polygone XY, poussé le long de l’axe.
+  const faceA = xy.map(([x, y]) => [x, y, zMm])
 
+  const sign = dir === 'Z' ? -1 : 1
   const faceB = faceA.map((p) => [
-    p[0] + ex[0] * extrusionMm,
-    p[1] + ex[1] * extrusionMm,
-    p[2] + ex[2] * extrusionMm,
+    p[0] + sign * ex[0] * extrusionMm,
+    p[1] + sign * ex[1] * extrusionMm,
+    p[2] + sign * ex[2] * extrusionMm,
   ])
 
   const points = [...faceA, ...faceB]
@@ -456,13 +506,17 @@ export function buildTraverse({
     /** Même matière que l’ossature / arête */
     material: 'arete',
     extrusionMm,
-    center: [...center],
+    zMm,
+    profile2D: xy.map((p) => [...p]),
   }
 }
 
 /**
- * Deux traverses sous la tablette (portée en profondeur Y, extrusion X).
- * Positions à ⅓ et ⅔ de L — répartition stable quand on ajoute des tablettes.
+ * Deux traverses sous la tablette :
+ *  1. côté Y min (Z0—Z1) — TRAVERSE_PROFILE_6
+ *  2. côté Y max (Z2—Z3) — TRAVERSE_PROFILE_6_BACK
+ *
+ * Z = dessous du plateau (variable avec la tablette).
  *
  * @param {{ L: number, W: number, H: number }} dims
  * @param {number} zCenterMm — Z centre plateau
@@ -473,23 +527,27 @@ export function buildTabletteTraverses(
   zCenterMm,
   epaisseurPlateau = EPAISSEUR_PANNEAU,
 ) {
-  const { L, W } = dims
-  const inset = 28
-  const halfLen = Math.max(40, (W - 2 * inset) / 2)
-  // Sous le plateau
-  const zTrav = zCenterMm - epaisseurPlateau / 2 - 10
-  const xs = [L * (1 / 3), L * (2 / 3)]
+  // Plan du profil = face inférieure du plateau (Z variable)
+  const zTrav = zCenterMm - epaisseurPlateau / 2
 
-  return xs.map((x, i) =>
+  return [
     buildTraverse({
-      id: `traverse-${i}`,
-      direction: 'X',
-      center: [x, W / 2, zTrav],
-      halfLength: halfLen,
-      halfHeight: 8,
+      id: 'traverse-front',
+      dims,
+      zMm: zTrav,
+      direction: 'Z',
       extrusionMm: TRAVERSE_EXTRUSION_MM,
+      profileRefs: TRAVERSE_PROFILE_6,
     }),
-  )
+    buildTraverse({
+      id: 'traverse-back',
+      dims,
+      zMm: zTrav,
+      direction: 'Z',
+      extrusionMm: TRAVERSE_EXTRUSION_MM,
+      profileRefs: TRAVERSE_PROFILE_6_BACK,
+    }),
+  ]
 }
 
 /**
@@ -529,7 +587,11 @@ export default {
   buildTablettePlateBuffers,
   buildTablette,
   TRAVERSE_EXTRUSION_MM,
+  TRAVERSE_OFFSET_X_MM,
   TRAVERSE_PROFILE_6,
+  TRAVERSE_PROFILE_6_BACK,
+  resolveTraverseRef2D,
+  resolveTraverseProfile2D,
   ligne_traverse,
   face_traverse,
   buildTraverse,
