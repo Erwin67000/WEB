@@ -11,6 +11,7 @@ import {
   buildTablette,
   buildTiroir,
   normalizeRailGeometry,
+  railGeometryToThree,
 } from './agencement.js'
 import {
   FINITIONS,
@@ -484,11 +485,11 @@ function TabletteMesh({ dims, zTopMm, plateColor, woodColor, woodRoughness }) {
   )
 }
 
-/** Cache géométrie rail (normalisée) partagée. */
-let _railGeoPromise = null
-function loadNormalizedRail(url) {
-  if (!_railGeoPromise) {
-    _railGeoPromise = new Promise((resolve, reject) => {
+/** Cache géométrie rail normalisée (mm, Y=longueur). */
+let _railGeoMmPromise = null
+function loadNormalizedRailMm(url) {
+  if (!_railGeoMmPromise) {
+    _railGeoMmPromise = new Promise((resolve, reject) => {
       const loader = new STLLoader()
       loader.load(
         url,
@@ -504,36 +505,42 @@ function loadNormalizedRail(url) {
       )
     })
   }
-  return _railGeoPromise
+  return _railGeoMmPromise
 }
 
+/**
+ * Rail aligné axe Y des traverses.
+ * position = origine meuble mm (début traverse en Y, face intérieure en X).
+ */
 function RailMesh({ mount, metalColor = '#8a9099' }) {
   const [geo, setGeo] = useState(null)
+  const scaleY = mount.scale?.y ?? 1
+  const mirrorX = Boolean(mount.mirrorX)
 
   useEffect(() => {
     let cancelled = false
-    loadNormalizedRail(mount.stlUrl)
-      .then((g) => {
-        if (!cancelled) setGeo(g)
+    loadNormalizedRailMm(mount.stlUrl)
+      .then((gMm) => {
+        if (cancelled) return
+        // Conversion meuble→Three : long axe Y traverse → −Z Three
+        setGeo(railGeometryToThree(gMm, scaleY, mirrorX))
       })
       .catch((e) => console.warn('[RailMesh]', e.message))
     return () => {
       cancelled = true
     }
-  }, [mount.stlUrl])
+  }, [mount.stlUrl, scaleY, mirrorX])
 
   if (!geo) return null
 
   const [x, y, z] = mount.position
-  // Meuble mm → Three
+  // Origine rail en repère meuble → Three
   const pos = [x * SCALE, z * SCALE, -y * SCALE]
-  const sx = (mount.mirrorX ? -1 : 1) * SCALE
-  // Géométrie déjà en mm après normalizeRailGeometry
+
   return (
     <mesh
       geometry={geo}
       position={pos}
-      scale={[sx, SCALE, SCALE]}
       castShadow
       receiveShadow
       renderOrder={1}

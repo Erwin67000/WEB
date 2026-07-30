@@ -285,6 +285,7 @@ export {
   buildDrawerOpenBox,
   buildDrawerRails,
   normalizeRailGeometry,
+  railGeometryToThree,
   RAIL_STL_URL,
   RAIL_STL_SCALE,
   RAIL_MOUNT_OFFSET,
