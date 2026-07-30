@@ -438,12 +438,18 @@ function SolidWireMesh({
   )
 }
 
-/** Tablette : plateau octogone + 2 traverses (matière arête). */
-function TabletteMesh({ dims, zCenterMm, plateColor, woodColor, woodRoughness }) {
-  const data = useMemo(
-    () => buildTablette(dims, zCenterMm, { epaisseurMm: EPAISSEUR_PANNEAU }),
-    [dims.L, dims.W, dims.H, zCenterMm],
-  )
+/** Tablette : plateau octogone (extrusion −Z) + 2 traverses au-dessus (+Z). */
+function TabletteMesh({ dims, zTopMm, plateColor, woodColor, woodRoughness }) {
+  const data = useMemo(() => {
+    try {
+      return buildTablette(dims, zTopMm, { epaisseurMm: EPAISSEUR_PANNEAU })
+    } catch (e) {
+      console.error('[TabletteMesh]', e)
+      return null
+    }
+  }, [dims.L, dims.W, dims.H, zTopMm])
+
+  if (!data?.plate) return null
 
   return (
     <group>
@@ -493,7 +499,7 @@ export function ModulesMesh({
             <TabletteMesh
               key={mod.id}
               dims={dims}
-              zCenterMm={layout.zMm ?? layout.center[2]}
+              zTopMm={layout.zTopMm ?? layout.zMm ?? layout.center[2]}
               plateColor={shelfColor}
               woodColor={finish.color}
               woodRoughness={0.55}

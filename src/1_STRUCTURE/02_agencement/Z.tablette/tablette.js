@@ -1,8 +1,9 @@
 /**
  * Module tablette — façade géométrie.
- * Implémentation source : matrice_configuration.js
- *   - octogone 8 pts (arêtes Z) extrudé EPAISSEUR_PANNEAU
- *   - 2 traverses (buildTraverse)
+ * Source : matrice_configuration.js
+ *
+ * - Octogone 8 pts (arêtes Z), Z = **haut** du plateau, extrusion −Z
+ * - Traverses : plan = haut plateau, extrusion +Z
  */
 export {
   TABLETTE_OCTOGONE_REFS,
@@ -14,7 +15,6 @@ export {
   buildTablette,
   buildTabletteTraverses,
   TRAVERSE_EXTRUSION_MM,
-  TRAVERSE_OFFSET_X_MM,
   TRAVERSE_PROFILE_6,
   TRAVERSE_PROFILE_6_BACK,
   resolveTraverseRef2D,

@@ -278,13 +278,14 @@ export function createModule(kind, bayIndex = 0, extras = {}) {
 }
 
 /**
- * Z tablette (mm) — clamp dans la zone utile.
- * Si zMm défini, l’utilise ; sinon répartition automatique.
+ * Z tablette (mm) = **haut** de l’octogone (face supérieure).
+ * Clamp pour laisser la place à l’épaisseur (vers le bas) + traverses (vers le haut).
  */
 export function shelfZMm(mod, { H }, moduleList = []) {
   const inset = 22
-  const zMin = inset + EPAISSEUR_PANNEAU / 2
-  const zMax = H - inset - EPAISSEUR_PANNEAU / 2
+  // Bas du plateau ≥ inset ; haut + traverses 40 mm ≤ H − inset
+  const zMin = inset + EPAISSEUR_PANNEAU
+  const zMax = Math.max(zMin, H - inset - 40)
   if (mod.zMm != null && Number.isFinite(Number(mod.zMm))) {
     return Math.min(zMax, Math.max(zMin, Number(mod.zMm)))
   }
@@ -292,8 +293,8 @@ export function shelfZMm(mod, { H }, moduleList = []) {
   const count = Math.max(sameKind.length, 1)
   const index = sameKind.findIndex((m) => m.id === mod.id)
   const i = index >= 0 ? index : mod.bayIndex ?? 0
-  const step = (H - 2 * inset) / (count + 1)
-  return inset + step * (i + 1)
+  const step = (zMax - zMin) / (count + 1)
+  return zMin + step * (i + 1)
 }
 
 export function moduleLayout(mod, { L, W, H }, moduleList = []) {
@@ -311,14 +312,17 @@ export function moduleLayout(mod, { L, W, H }, moduleList = []) {
   const i = index >= 0 ? index : mod.bayIndex
 
   if (mod.kind === 'shelf') {
-    const z = shelfZMm(mod, { H }, moduleList)
+    /** zMm = haut de tablette (octogone) */
+    const zTop = shelfZMm(mod, { H }, moduleList)
+    const zCenter = zTop - EPAISSEUR_PANNEAU / 2
     return {
-      center: [L / 2, W / 2, z],
+      center: [L / 2, W / 2, zCenter],
       size: [innerL, innerW, EPAISSEUR_PANNEAU],
       openOffset: [0, 0, 0],
-      zMm: z,
-      zMin: inset + EPAISSEUR_PANNEAU / 2,
-      zMax: H - inset - EPAISSEUR_PANNEAU / 2,
+      zMm: zTop,
+      zTopMm: zTop,
+      zMin: inset + EPAISSEUR_PANNEAU,
+      zMax: Math.max(inset + EPAISSEUR_PANNEAU, H - inset - 40),
     }
   }
 

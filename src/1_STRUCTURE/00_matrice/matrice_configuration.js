@@ -234,12 +234,19 @@ export function extrudePolygonZ(topPts, epaisseurMm) {
 
 /**
  * Buffers rendu tablette (plateau seul).
- * @returns {{ points: number[][], positions: Float32Array, indices: Uint16Array, wire: Float32Array, zTop: number, zBot: number }}
+ *
+ * @param {{ L: number, W: number, H: number }} dims
+ * @param {number} zTopMm — **haut** de la tablette (face supérieure de l’octogone)
+ * @param {number} [epaisseurMm]
+ * Extrusion du polygone vers le bas (−Z).
  */
-export function buildTablettePlateBuffers(dims, zCenterMm, epaisseurMm = EPAISSEUR_PANNEAU) {
-  const half = epaisseurMm / 2
-  const zTop = zCenterMm + half
-  const zBot = zCenterMm - half
+export function buildTablettePlateBuffers(
+  dims,
+  zTopMm,
+  epaisseurMm = EPAISSEUR_PANNEAU,
+) {
+  const zTop = Number(zTopMm)
+  const zBot = zTop - epaisseurMm
   const top = resolveTabletteOctogone(dims, zTop)
   const points = extrudePolygonZ(top, epaisseurMm)
 
@@ -276,58 +283,99 @@ export function buildTablettePlateBuffers(dims, zCenterMm, epaisseurMm = EPAISSE
     zTop,
     zBot,
     epaisseurMm,
-    /** Couleur filaire = noir (même logique panneau) */
     edgeColor: ARETE_EDGE_COLOR || '#0a0a0a',
   }
 }
 
 // ===========================================================================
-// TRAVERSE — polygone 6 points + extrusion 40 mm (matière arête)
+// TRAVERSE — 6 points 2D (XY depuis arêtes Z) + extrusion 40 mm vers le haut
 // ===========================================================================
 
-/** Épaisseur d’extrusion traverse (mm) — section type arête 40. */
+/** Épaisseur d’extrusion traverse (mm). */
 export const TRAVERSE_EXTRUSION_MM = LARGEUR_ARETE // 40
 
 /**
- * Profil 6 points, parralèle à (plan Z) — sens horaire.
- * les coordonnées X et Y des points des aretes suivantes :
-  { arete: 'Z0', point: 3 },
-  { arete: 'Z0', point: 5 },
-  { arete: 'Z1', point: 5 } + 20 dans le sens X,
-  { arete: 'Z0', point: 5 } + 20 dans le sens X,
-  { arete: 'Z1', point: 3 },
-  { arete: 'Z0', point: 3 },
- * 
+ * Profil traverse côté X min (Z0 — Z2), plan XY.
+ * Refs arête Z → on lit **seulement X,Y** ; Z = haut de tablette.
+ * `dX` / `dY` optionnels (mm).
+ *
+ * @type {{ arete: string, point: number, dX?: number, dY?: number }[]}
  */
-
 export const TRAVERSE_PROFILE_6 = [
   { arete: 'Z0', point: 5 },
   { arete: 'Z0', point: 3 },
   { arete: 'Z2', point: 3 },
   { arete: 'Z2', point: 5 },
-  { arete: 'Z2', point: 5, dX: 20 },   // ← point décalé +20 en X
-  { arete: 'Z0', point: 5, dX: -20 }  // ← point décalé −20 en X
+  { arete: 'Z2', point: 5, dX: 20 },
+  { arete: 'Z0', point: 5, dX: 20 },
 ]
+
 /**
- * Filaire traverse (12 points : 0..5 face A, 6..11 face B).
- * Affinable comme ligne_arete.
+ * 2ᵉ traverse côté X max (Z1 — Z3).
+ * @type {typeof TRAVERSE_PROFILE_6}
  */
+export const TRAVERSE_PROFILE_6_BACK = [
+  { arete: 'Z1', point: 5 },
+  { arete: 'Z1', point: 3 },
+  { arete: 'Z3', point: 3 },
+  { arete: 'Z3', point: 5 },
+  { arete: 'Z3', point: 5, dX: -20 },
+  { arete: 'Z1', point: 5, dX: -20 },
+]
+
+/**
+ * Résout une ref → [x, y] (2D). Le Z d’arête est ignoré.
+ */
+export function resolveTraverseRef2D(byId, ref) {
+  const edge = byId?.[ref?.arete]
+  if (!edge) {
+    throw new Error(`Traverse : arête inconnue "${ref?.arete}"`)
+  }
+  const idx = Number(ref.point)
+  const p = edge.points[idx]
+  if (!p) {
+    throw new Error(
+      `Traverse : point ${ref.point} hors plage sur ${ref.arete} (0..${edge.points.length - 1})`,
+    )
+  }
+  const dX = Number(ref.dX ?? ref.offsetX ?? 0) || 0
+  const dY = Number(ref.dY ?? ref.offsetY ?? 0) || 0
+  return [p[0] + dX, p[1] + dY]
+}
+
+/**
+ * 6 × [x, y] depuis dims + refs.
+ */
+export function resolveTraverseProfile2D(dims, refs = TRAVERSE_PROFILE_6) {
+  if (!Array.isArray(refs) || refs.length !== 6) {
+    throw new Error(
+      `Traverse : 6 refs 2D requises, reçu ${refs?.length ?? 0}`,
+    )
+  }
+  // Accepte encore d’anciens profils numériques [u,v] (ne doit plus arriver)
+  if (Array.isArray(refs[0])) {
+    throw new Error(
+      'Traverse : profil unitaire [u,v] obsolète — utiliser { arete, point, dX? }',
+    )
+  }
+  const { byId } = buildGeometrie(dims)
+  return refs.map((ref) => resolveTraverseRef2D(byId, ref))
+}
+
+/** Filaire traverse (12 points : 0..5 face bas / plan tablette, 6..11 face haut). */
 export const ligne_traverse = [
-  // Face A
   [0, 1],
   [1, 2],
   [2, 3],
   [3, 4],
   [4, 5],
   [5, 0],
-  // Face B
   [6, 7],
   [7, 8],
   [8, 9],
   [9, 10],
   [10, 11],
   [11, 6],
-  // Extrusion
   [0, 6],
   [1, 7],
   [2, 8],
@@ -339,10 +387,10 @@ export const ligne_traverse = [
 /** Triangles traverse (12 points). */
 export const face_traverse = (() => {
   const faces = []
-  // Face A (0..5)
-  for (let i = 1; i < 5; i++) faces.push([0, i, i + 1])
-  // Face B (6..11) winding opposé
-  for (let i = 1; i < 5; i++) faces.push([6, 6 + i + 1, 6 + i])
+  // Face plan tablette (0..5) — normale −Z (dessous des montants)
+  for (let i = 1; i < 5; i++) faces.push([0, i + 1, i])
+  // Face haute (6..11) — normale +Z
+  for (let i = 1; i < 5; i++) faces.push([6, 6 + i, 6 + i + 1])
   // Côtés
   for (let i = 0; i < 6; i++) {
     const j = (i + 1) % 6
@@ -352,80 +400,38 @@ export const face_traverse = (() => {
   return faces
 })()
 
-const AXIS_VEC = {
-  X: [1, 0, 0],
-  Y: [0, 1, 0],
-  Z: [0, 0, 1],
-}
-
 /**
- * Construit une traverse paramétrique.
+ * Construit une traverse.
+ *
+ * Profil 2D (XY) sur le plan Z = zTopMm (haut de l’octogone tablette).
+ * Extrusion vers le **haut** (+Z) de `extrusionMm` (40 mm).
  *
  * @param {object} opts
- * @param {'X'|'Y'|'Z'} opts.direction — axe d’extrusion (épaisseur TRAVERSE_EXTRUSION_MM)
- * @param {number[]} opts.center — centre du profil [x,y,z] mm
- * @param {number} opts.halfLength — demi-portée le long de l’axe long du profil (mm)
- * @param {number} [opts.halfHeight=7] — demi-hauteur du profil (mm)
- * @param {number} [opts.extrusionMm=40]
- * @param {number[][]} [opts.profile6] — profil unitaire override
- * @returns {{
- *   id: string,
- *   direction: string,
- *   points: number[][],
- *   positions: Float32Array,
- *   indices: Uint16Array,
- *   wire: Float32Array,
- *   material: 'arete',
- * }}
+ * @param {{ L: number, W: number, H: number }} opts.dims
+ * @param {number} opts.zTopMm — même Z que le dessus du plateau
+ * @param {'Z'} [opts.direction='Z']
+ * @param {number} [opts.extrusionMm]
+ * @param {typeof TRAVERSE_PROFILE_6} [opts.profileRefs]
+ * @param {string} [opts.id]
  */
 export function buildTraverse({
-  direction = 'X',
-  center = [0, 0, 0],
-  halfLength = 100,
-  halfHeight = 7,
+  dims,
+  zTopMm = 0,
+  direction = 'Z',
   extrusionMm = TRAVERSE_EXTRUSION_MM,
-  profile6 = TRAVERSE_PROFILE_6,
+  profileRefs = TRAVERSE_PROFILE_6,
   id = 'traverse',
 } = {}) {
-  const dir = String(direction).toUpperCase()
-  if (!AXIS_VEC[dir]) {
-    throw new Error(`Traverse : direction invalide "${direction}" (X|Y|Z)`)
-  }
-  if (!profile6 || profile6.length !== 6) {
-    throw new Error('Traverse : profil 6 points requis')
+  if (!dims) {
+    throw new Error('Traverse : dims requis pour résoudre le profil 2D')
   }
 
-  const ex = AXIS_VEC[dir]
-  // Axes locaux du profil : u = long, v = haut (Z meuble), w = extrusion
-  // long = perpendiculaire à extrusion dans le plan horizontal si possible
-  let uAxis
-  let vAxis = [0, 0, 1]
-  if (dir === 'X') {
-    uAxis = [0, 1, 0] // portée en Y
-  } else if (dir === 'Y') {
-    uAxis = [1, 0, 0] // portée en X
-  } else {
-    // Extrusion Z : profil dans XY
-    uAxis = [1, 0, 0]
-    vAxis = [0, 1, 0]
-  }
+  const xy = resolveTraverseProfile2D(dims, profileRefs)
+  const z0 = Number(zTopMm)
 
-  const faceA = profile6.map(([u, v]) => {
-    const uu = u * halfLength
-    const vv = v * halfHeight
-    return [
-      center[0] + uAxis[0] * uu + vAxis[0] * vv - (ex[0] * extrusionMm) / 2,
-      center[1] + uAxis[1] * uu + vAxis[1] * vv - (ex[1] * extrusionMm) / 2,
-      center[2] + uAxis[2] * uu + vAxis[2] * vv - (ex[2] * extrusionMm) / 2,
-    ]
-  })
-
-  const faceB = faceA.map((p) => [
-    p[0] + ex[0] * extrusionMm,
-    p[1] + ex[1] * extrusionMm,
-    p[2] + ex[2] * extrusionMm,
-  ])
-
+  // Face A = plan du dessus de tablette ; face B = extrudée vers +Z
+  const faceA = xy.map(([x, y]) => [x, y, z0])
+  const faceB = xy.map(([x, y]) => [x, y, z0 + extrusionMm])
   const points = [...faceA, ...faceB]
 
   const positions = new Float32Array(points.length * 3)
@@ -455,67 +461,59 @@ export function buildTraverse({
 
   return {
     id,
-    direction: dir,
+    direction: String(direction).toUpperCase(),
     points,
     positions,
     indices,
     wire,
-    /** Même matière que l’ossature / arête */
     material: 'arete',
     extrusionMm,
-    center: [...center],
+    zTopMm: z0,
+    profile2D: xy.map((p) => [...p]),
   }
 }
 
 /**
- * Deux traverses sous la tablette (portée en profondeur Y, extrusion X).
- * Positions à ⅓ et ⅔ de L — répartition stable quand on ajoute des tablettes.
- *
- * @param {{ L: number, W: number, H: number }} dims
- * @param {number} zCenterMm — Z centre plateau
- * @param {number} [epaisseurPlateau=EPAISSEUR_PANNEAU]
+ * Deux traverses **au-dessus** du plateau :
+ *  - plan = haut de l’octogone (zTopMm)
+ *  - extrusion +Z
  */
-export function buildTabletteTraverses(
-  dims,
-  zCenterMm,
-  epaisseurPlateau = EPAISSEUR_PANNEAU,
-) {
-  const { L, W } = dims
-  const inset = 28
-  const halfLen = Math.max(40, (W - 2 * inset) / 2)
-  // Sous le plateau
-  const zTrav = zCenterMm - epaisseurPlateau / 2 - 10
-  const xs = [L * (1 / 3), L * (2 / 3)]
-
-  return xs.map((x, i) =>
+export function buildTabletteTraverses(dims, zTopMm) {
+  return [
     buildTraverse({
-      id: `traverse-${i}`,
-      direction: 'X',
-      center: [x, W / 2, zTrav],
-      halfLength: halfLen,
-      halfHeight: 8,
-      extrusionMm: TRAVERSE_EXTRUSION_MM,
+      id: 'traverse-left',
+      dims,
+      zTopMm,
+      profileRefs: TRAVERSE_PROFILE_6,
     }),
-  )
+    buildTraverse({
+      id: 'traverse-right',
+      dims,
+      zTopMm,
+      profileRefs: TRAVERSE_PROFILE_6_BACK,
+    }),
+  ]
 }
 
 /**
- * Tablette complète : plateau octogonal extrudé + 2 traverses.
- * Conserve le positionnement via zCenterMm (répartition shelfZMm).
+ * Tablette complète.
  *
  * @param {{ L: number, W: number, H: number }} dims
- * @param {number} zCenterMm
+ * @param {number} zTopMm — haut de la tablette (0 < Z < H), face sup. octogone
  * @param {object} [opts]
  */
-export function buildTablette(dims, zCenterMm, opts = {}) {
+export function buildTablette(dims, zTopMm, opts = {}) {
   const epaisseur = opts.epaisseurMm ?? EPAISSEUR_PANNEAU
-  const plate = buildTablettePlateBuffers(dims, zCenterMm, epaisseur)
-  const traverses = buildTabletteTraverses(dims, zCenterMm, epaisseur)
+  const plate = buildTablettePlateBuffers(dims, zTopMm, epaisseur)
+  // Traverses : même plan que le dessus du plateau, extrusion vers le haut
+  const traverses = buildTabletteTraverses(dims, plate.zTop)
   return {
     kind: 'shelf',
     plate,
     traverses,
-    zCenterMm,
+    zTopMm: plate.zTop,
+    /** rétrocompat (centre géométrique du plateau) */
+    zCenterMm: plate.zTop - epaisseur / 2,
     epaisseurMm: epaisseur,
   }
 }
@@ -537,6 +535,9 @@ export default {
   buildTablette,
   TRAVERSE_EXTRUSION_MM,
   TRAVERSE_PROFILE_6,
+  TRAVERSE_PROFILE_6_BACK,
+  resolveTraverseRef2D,
+  resolveTraverseProfile2D,
   ligne_traverse,
   face_traverse,
   buildTraverse,
