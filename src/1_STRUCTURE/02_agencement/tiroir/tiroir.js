@@ -165,73 +165,82 @@ function solidFromBoxPoints(id, pts8) {
 }
 
 /**
- * Rails Dynamoov sur le **dessus** des traverses Y, dans le décroché du tiroir.
+ * Rails Dynamoov fixés **sur le dessus** des traverses Y.
  *
- * Plan technique : 21 mm d’emprise latérale depuis la paroi (face int. traverse)
- * vers l’intérieur du caisson.
+ * La traverse doit **cacher complètement** le rail (fixation mécanique sur la
+ * face supérieure de la traverse) :
+ *  - emprise X entièrement dans bounds2D de la traverse
+ *  - longueur Y = portée de la traverse
+ *  - hauteur Z ≤ décroché type B (sous le fond du tiroir)
  *
- * @param {[object, object]} traversePair
- * @param {object} opts
- * @param {number} opts.zSideBottom — bas des joues tiroir (= zMm)
- * @param {number} [opts.decrocheMm]
- * @param {number} [opts.railBodyHMm]
+ * Dimensions natives STL après normalize : ~54.6 × 550 × 47.2 mm (X×Y×Z).
  */
+/** Largeur / hauteur natives du rail (mm) après normalizeRailGeometry. */
+export const RAIL_NATIVE_WIDTH_X_MM = 54.6
+export const RAIL_NATIVE_HEIGHT_Z_MM = 47.2
+
 export function buildDrawerRails(traversePair, opts = {}) {
   const [left, right] = traversePair
   const decroche = opts.decrocheMm ?? WURTH_DECROCHE_DYNAMOOV_MM
-  const railH = opts.railBodyHMm ?? DYNAMOOV_RAIL_BODY_H_MM
-  const sideSpace = opts.sideSpaceMm ?? DYNAMOOV_SIDE_RAIL_SPACE_MM
+  // Hauteur visuelle du rail : tient dans le décroché, ≤ corps Dynamoov
+  const railH = Math.min(
+    opts.railBodyHMm ?? DYNAMOOV_RAIL_BODY_H_MM,
+    Math.max(6, decroche - 1),
+  )
 
-  // Dessus de traverse = support du rail (violet sur le schéma utilisateur)
+  // Dessus de traverse = plan de fixation du rail
   const zTraverseTop = left.zTopMm + left.extrusionMm
-
-  // Rail posé sur la traverse ; reste dans le décroché sous le fond (≤ 11 mm)
-  // On place le bas du rail sur zTraverseTop (corps vers le haut dans le décroché)
   const zRail = zTraverseTop + (RAIL_MOUNT_OFFSET.z || 0)
 
   const spanY = Math.max(50, left.bounds2D.maxY - left.bounds2D.minY)
   const scaleY = spanY / RAIL_NATIVE_LENGTH_Y_MM
   const y0 = left.bounds2D.minY + (RAIL_MOUNT_OFFSET.y || 0)
 
-  // Gauche : face int. traverse + offset vers le centre (emprise 21 mm)
-  // Le rail s’appuie contre la traverse, s’étend de ~sideSpace vers l’intérieur
-  const leftX =
-    left.innerX + (RAIL_MOUNT_OFFSET.x || 0)
-  const rightX =
-    right.innerX - (RAIL_MOUNT_OFFSET.x || 0)
+  // Largeur traverse (~40 mm) : le rail est centré DESSUS, jamais en débord
+  const travW = Math.max(8, left.bounds2D.maxX - left.bounds2D.minX)
+  // Marge intérieure pour que le bois de traverse reste visible autour du rail
+  const insetX = Math.min(4, travW * 0.12)
+  const targetW = Math.max(6, travW - 2 * insetX)
+  const scaleX = targetW / RAIL_NATIVE_WIDTH_X_MM
+  const scaleZ = railH / RAIL_NATIVE_HEIGHT_Z_MM
+
+  // Origine STL = coin min (0,0,0) après normalize.
+  // Gauche : X = minX + inset (rail entièrement dans [minX, maxX])
+  // Droite : miroir X, position au maxX − inset (origine miroirée)
+  const leftX0 =
+    left.bounds2D.minX + insetX + (RAIL_MOUNT_OFFSET.x || 0)
+  const rightX0 =
+    right.bounds2D.maxX - insetX - (RAIL_MOUNT_OFFSET.x || 0)
+
+  const common = {
+    stlUrl: RAIL_STL_URL,
+    axis: 'Y',
+    scale: { x: scaleX, y: scaleY, z: scaleZ },
+    rotation: [0, 0, 0],
+    spanY,
+    zTraverseTop,
+    zRail,
+    railBodyHMm: railH,
+    decrocheMm: decroche,
+    /** Rail entièrement sur la traverse (pas de débord visible) */
+    hiddenByTraverse: true,
+  }
 
   return [
     {
+      ...common,
       id: 'rail-left',
       side: 'left',
-      stlUrl: RAIL_STL_URL,
-      position: [leftX, y0, zRail],
-      axis: 'Y',
+      position: [leftX0, y0, zRail],
       mirrorX: false,
-      scale: { x: 1, y: scaleY, z: 1 },
-      rotation: [0, 0, 0],
-      spanY,
-      zTraverseTop,
-      zRail,
-      sideSpaceMm: sideSpace,
-      railBodyHMm: railH,
-      decrocheMm: decroche,
     },
     {
+      ...common,
       id: 'rail-right',
       side: 'right',
-      stlUrl: RAIL_STL_URL,
-      position: [rightX, y0, zRail],
-      axis: 'Y',
+      // Miroir X : le mesh s’étend vers −X local → ancré au bord intérieur
+      position: [rightX0, y0, zRail],
       mirrorX: true,
-      scale: { x: 1, y: scaleY, z: 1 },
-      rotation: [0, 0, 0],
-      spanY,
-      zTraverseTop,
-      zRail,
-      sideSpaceMm: sideSpace,
-      railBodyHMm: railH,
-      decrocheMm: decroche,
     },
   ]
 }
@@ -358,16 +367,33 @@ export function normalizeRailGeometry(geometry, scale = RAIL_STL_SCALE) {
 /**
  * meuble (x,y,z) → Three (x, z, −y) × 0.001
  * STL : Y = longueur (axe traverses / profondeur)
+ *
+ * @param {import('three').BufferGeometry} geometryMm
+ * @param {number|{ scaleX?: number, scaleY?: number, scaleZ?: number, mirrorX?: boolean }} scaleYOrOpts
+ * @param {boolean} [mirrorXLegacy]
  */
-export function railGeometryToThree(geometryMm, scaleY = 1, mirrorX = false) {
+export function railGeometryToThree(
+  geometryMm,
+  scaleYOrOpts = 1,
+  mirrorXLegacy = false,
+) {
+  const opts =
+    typeof scaleYOrOpts === 'object' && scaleYOrOpts != null
+      ? scaleYOrOpts
+      : { scaleY: scaleYOrOpts, mirrorX: mirrorXLegacy }
+  const scaleX = opts.scaleX ?? 1
+  const scaleY = opts.scaleY ?? 1
+  const scaleZ = opts.scaleZ ?? 1
+  const mirrorX = Boolean(opts.mirrorX)
+
   const geo = geometryMm.clone()
   const pos = geo.attributes.position
   const SCALE = 0.001
-  const sx = mirrorX ? -1 : 1
+  const sx = (mirrorX ? -1 : 1) * scaleX
   for (let i = 0; i < pos.count; i++) {
     const x = pos.getX(i) * sx
     const y = pos.getY(i) * scaleY
-    const z = pos.getZ(i)
+    const z = pos.getZ(i) * scaleZ
     pos.setXYZ(i, x * SCALE, z * SCALE, -y * SCALE)
   }
   pos.needsUpdate = true
