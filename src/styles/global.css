@@ -442,10 +442,44 @@ a.btn.primary:hover {
 }
 
 .mod-item {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
+  background: #fffef8;
+  border: 1px solid #d4cbb8;
   border-radius: 6px;
   padding: 0.45rem 0.55rem;
+  color: #0a0a0a;
+}
+
+.control-panel .mod-item,
+.control-panel .mod-item span,
+.control-panel .mod-item .field-label,
+.control-panel .mod-item .muted,
+.control-panel .mod-item .hint,
+.control-panel .mod-item strong {
+  color: #0a0a0a;
+}
+
+.control-panel .mod-item select,
+.control-panel .mod-item .field-input,
+.control-panel .mod-item input[type='number'],
+.control-panel .mod-item input[type='text'] {
+  background: #f5f0e6 !important;
+  color: #0a0a0a !important;
+  border: 1px solid #d4cbb8 !important;
+}
+
+.control-panel .mod-item .btn-icon {
+  color: #5a554c;
+}
+
+.control-panel .drawer-warn {
+  margin: 0.35rem 0 0;
+  padding: 0.4rem 0.5rem;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  color: #5c3d00 !important;
+  background: #fff3cd;
+  border: 1px solid #e0c36a;
+  border-radius: 4px;
 }
 
 .mod-head {

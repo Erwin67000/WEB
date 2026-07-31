@@ -554,16 +554,16 @@ function RailMesh({ mount, metalColor = '#8a9099' }) {
   )
 }
 
-/** Tiroir : 2 traverses + 2 rails STL + boîte ouverte 5 faces. */
-function TiroirMesh({ dims, layout, plateColor, woodColor, woodRoughness }) {
+/** Tiroir Würth type B : traverses + rails + boîte ouverte Z-top. */
+function TiroirMesh({ dims, layout, mod, plateColor, woodColor, woodRoughness }) {
   const data = useMemo(() => {
     try {
-      return buildTiroir(dims, layout)
+      return buildTiroir(dims, layout, mod)
     } catch (e) {
       console.error('[TiroirMesh]', e)
       return null
     }
-  }, [dims.L, dims.W, dims.H, layout])
+  }, [dims.L, dims.W, dims.H, layout, mod?.hMm, mod?.id])
 
   if (!data) return null
 
@@ -634,6 +634,7 @@ export function ModulesMesh({
               key={mod.id}
               dims={dims}
               layout={layout}
+              mod={mod}
               plateColor={shelfColor}
               woodColor={finish.color}
               woodRoughness={0.55}

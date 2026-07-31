@@ -20,6 +20,16 @@ import {
   ligne_rectangle,
   computeQuatreRectangles,
 } from '../00_matrice/matrice_panneau_grok.js'
+import {
+  buildTraversePair,
+  TRAVERSE_EXTRUSION_MM,
+} from './traverse.js'
+import {
+  WURTH_HAUTEUR_DEFAUT_MM,
+  WURTH_DECROCHE_DYNAMOOV_MM,
+  computeWurthDrawerDims,
+  clampWurthHeight,
+} from './tiroir/tiroir.js'
 
 /**
  * Rectangle3D : 4 coins 3D pour debug (base / décalé / tolérance / arrière).
@@ -289,18 +299,32 @@ export {
   RAIL_STL_URL,
   RAIL_STL_SCALE,
   RAIL_MOUNT_OFFSET,
+  WURTH_DRAWER_TYPE,
+  WURTH_HAUTEURS_MM,
+  WURTH_HAUTEUR_DEFAUT_MM,
+  WURTH_DECROCHE_DYNAMOOV_MM,
+  WURTH_PROFONDEURS_MM,
+  WURTH_PROFONDEUR_MIN_MM,
+  DRAWER_DEPTH_TOO_SMALL_MSG,
+  computeWurthDrawerDims,
+  clampWurthHeight,
 } from './tiroir/tiroir.js'
 
 export function createModule(kind, bayIndex = 0, extras = {}) {
-  return {
+  const base = {
     id: uid(kind),
     kind,
     bayIndex,
     openFactor: 0,
-    /** Hauteur libre tablette (mm depuis le sol intérieur). null = auto répartie */
+    /** Hauteur libre tablette (mm) — haut octogone. null = auto */
     zMm: null,
     ...extras,
   }
+  // Tiroir Würth : hauteur discrète à l’ajout
+  if (kind === 'drawer' && base.hMm == null) {
+    base.hMm = WURTH_HAUTEUR_DEFAUT_MM
+  }
+  return base
 }
 
 /**
@@ -353,16 +377,50 @@ export function moduleLayout(mod, { L, W, H }, moduleList = []) {
   }
 
   if (mod.kind === 'drawer') {
-    const drawerH = Math.min(180, (innerH - TOLERANCE * count) / count - 4)
-    const gap = 4
-    const z = z0 + i * (drawerH + gap) + drawerH / 2
-    const open = (mod.openFactor || 0) * (innerW * 0.7)
+    // Bornes traverses pour LIC / profondeur
+    const zTraverseGuess = z0 + 8
+    const [trL, trR] = buildTraversePair({ L, W, H }, zTraverseGuess)
+    const traverseBounds = {
+      minX: trL.innerX,
+      maxX: trR.innerX,
+      minY: Math.min(trL.bounds2D.minY, trR.bounds2D.minY),
+      maxY: Math.max(trL.bounds2D.maxY, trR.bounds2D.maxY),
+    }
+    const wurth = computeWurthDrawerDims({ L, W, H }, mod, traverseBounds)
+    const drawerH = wurth.hMm
+    // zMm = bas du tiroir (plan rails / bas des joues), comme Z tablette positionnable
+    const zMin = z0 + TRAVERSE_EXTRUSION_MM
+    const zMax = Math.max(zMin, H - inset - drawerH)
+    let zBottom
+    if (mod.zMm != null && Number.isFinite(Number(mod.zMm))) {
+      zBottom = Math.min(zMax, Math.max(zMin, Number(mod.zMm)))
+    } else {
+      // Auto : empilement si plusieurs tiroirs sans Z forcé
+      const gap = 8
+      const stackH = drawerH + WURTH_DECROCHE_DYNAMOOV_MM + gap
+      zBottom = zMin + i * stackH
+      zBottom = Math.min(zMax, Math.max(zMin, zBottom))
+    }
+    const zCenter = zBottom + drawerH / 2
+    const open = (mod.openFactor || 0) * (Math.max(wurth.depthMm, 1) * 0.55)
     return {
-      center: [L / 2, y0 + innerW / 2 - open, z],
-      size: [innerL - 4, innerW - 8, drawerH],
-      faceSize: [innerL - 4, EPAISSEUR_PORTE, drawerH],
-      faceCenter: [L / 2, y0 - open, z],
+      center: [
+        L / 2,
+        (traverseBounds.minY + traverseBounds.maxY) / 2 - open,
+        zCenter,
+      ],
+      size: [wurth.licMm, Math.max(wurth.depthMm, 1), drawerH],
       openOffset: [0, -open, 0],
+      wurth,
+      zMm: zBottom,
+      zBottomMm: zBottom,
+      zTraverseMm: zBottom - TRAVERSE_EXTRUSION_MM,
+      zMin,
+      zMax,
+      hMm: drawerH,
+      licMm: wurth.licMm,
+      depthMm: wurth.depthMm,
+      depthTooSmall: Boolean(wurth.depthTooSmall),
     }
   }
 
@@ -396,12 +454,11 @@ export function modulePriceHT(mod, dims) {
   return modulePriceBreakdown(mod, dims).total
 }
 
-/** Hauteur tiroir (mm) : module.hMm / heightMm, sinon défaut catalogue. */
+/** Hauteur tiroir Würth (mm) — liste discrète. */
 export function drawerHeightMm(mod) {
-  const raw = mod?.hMm ?? mod?.heightMm ?? PRIX.tiroirHauteurDefautMm
-  const n = Number(raw)
-  if (!Number.isFinite(n) || n <= 0) return PRIX.tiroirHauteurDefautMm
-  return n
+  return clampWurthHeight(
+    mod?.hMm ?? mod?.heightMm ?? WURTH_HAUTEUR_DEFAUT_MM,
+  )
 }
 
 /** Détail ligne devis pour un module. */
@@ -422,17 +479,22 @@ export function modulePriceBreakdown(mod, dims) {
     }
   }
   if (mod.kind === 'drawer') {
-    const hMm = drawerHeightMm(mod)
-    const volumeM3 = (dims.L * dims.W * hMm) / 1e9
+    const layout = moduleLayout(mod, dims, [mod])
+    const hMm = layout.hMm ?? drawerHeightMm(mod)
+    const lic = layout.licMm ?? dims.L
+    const depth = layout.depthMm ?? dims.W
+    const volumeM3 = (lic * depth * hMm) / 1e9
     const forfait = PRIX.tiroirForfait
     const variable = volumeM3 * PRIX.tiroirParM3
     return {
       kind: 'drawer',
-      label: 'Tiroir',
+      label: `Tiroir Würth B H${hMm}`,
       forfait,
       hMm,
+      licMm: lic,
+      depthMm: depth,
       volumeM3,
-      surfaceM2: volumeM3, // rétrocompat champs devis (volume en m³)
+      surfaceM2: volumeM3,
       variable,
       total: forfait + variable,
     }

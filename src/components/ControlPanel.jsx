@@ -11,7 +11,13 @@ import {
   MODULE_KINDS,
   ENVIRONMENTS,
 } from '../1_STRUCTURE/00_matrice/matrice_configuration.js'
-import { shelfZMm } from '../1_STRUCTURE/02_agencement/agencement.js'
+import {
+  shelfZMm,
+  moduleLayout,
+  WURTH_HAUTEURS_MM,
+  DRAWER_DEPTH_TOO_SMALL_MSG,
+  WURTH_PROFONDEUR_MIN_MM,
+} from '../1_STRUCTURE/02_agencement/agencement.js'
 import { DIM_LIMITS } from '../3_INPUT/matrice_input.js'
 import { CLIENT_FIELDS } from '../3_INPUT/matrice_client.js'
 import { FACE_PICK_DEFS } from '../1_STRUCTURE/02_agencement/FacePickPlanes.jsx'
@@ -101,6 +107,7 @@ export default function ControlPanel() {
   const removeModule = useActiveConfigStore((s) => s.removeModule)
   const setModuleOpen = useActiveConfigStore((s) => s.setModuleOpen)
   const setModuleZ = useActiveConfigStore((s) => s.setModuleZ)
+  const setModuleH = useActiveConfigStore((s) => s.setModuleH)
   const togglePanneau = useActiveConfigStore((s) => s.togglePanneau)
   const setEnvironment = useActiveConfigStore((s) => s.setEnvironment)
   const setSun = useActiveConfigStore((s) => s.setSun)
@@ -434,19 +441,30 @@ export default function ControlPanel() {
               )}
               <ul className="mod-list">
                 {unit.modules.map((m) => {
-                  const zLayout =
+                  const shelfZ =
                     m.kind === 'shelf'
                       ? shelfZMm(m, unit.dims, unit.modules)
                       : null
-                  const zMin =
-                    22 + Number(EPAISSEUR_PANNEAU) / 2
-                  const zMax =
-                    unit.dims.H - 22 - Number(EPAISSEUR_PANNEAU) / 2
+                  const shelfZMin = 22 + Number(EPAISSEUR_PANNEAU)
+                  const shelfZMax =
+                    unit.dims.H - 22 - 40
+                  const drawerLayout =
+                    m.kind === 'drawer'
+                      ? moduleLayout(m, unit.dims, unit.modules)
+                      : null
+                  const wurth = drawerLayout?.wurth
+                  const drawerZ = drawerLayout?.zBottomMm ?? drawerLayout?.zMm
+                  const drawerZMin = drawerLayout?.zMin ?? 40
+                  const drawerZMax = drawerLayout?.zMax ?? unit.dims.H - 100
+                  const depthTooSmall = Boolean(
+                    drawerLayout?.depthTooSmall || wurth?.depthTooSmall,
+                  )
                   return (
                     <li key={m.id} className="mod-item">
                       <div className="mod-head">
                         <span>
                           {MODULE_KINDS[m.kind]?.label || m.kind}
+                          {m.kind === 'drawer' ? ' · Würth B' : ''}
                         </span>
                         <button
                           type="button"
@@ -459,15 +477,76 @@ export default function ControlPanel() {
                       </div>
                       {m.kind === 'shelf' && (
                         <SliderDim
-                          label="Position Z tablette"
-                          value={Math.round(zLayout)}
-                          min={Math.round(zMin)}
-                          max={Math.round(zMax)}
+                          label="Position Z"
+                          value={Math.round(shelfZ)}
+                          min={Math.round(shelfZMin)}
+                          max={Math.round(shelfZMax)}
                           step={5}
                           onChange={(z) => setModuleZ(m.id, z)}
                         />
                       )}
-                      {(m.kind === 'drawer' || m.kind === 'door') && (
+                      {m.kind === 'drawer' && (
+                        <>
+                          {depthTooSmall ? (
+                            <p className="drawer-warn" role="alert">
+                              {wurth?.depthWarn ||
+                                DRAWER_DEPTH_TOO_SMALL_MSG ||
+                                `Profondeur inférieure à la limite pour ajout de tiroir : ${WURTH_PROFONDEUR_MIN_MM} mm`}
+                            </p>
+                          ) : null}
+                          <SliderDim
+                            label="Position Z"
+                            value={Math.round(
+                              m.zMm != null ? m.zMm : drawerZ ?? drawerZMin,
+                            )}
+                            min={Math.round(drawerZMin)}
+                            max={Math.round(drawerZMax)}
+                            step={5}
+                            onChange={(z) => setModuleZ(m.id, z)}
+                          />
+                          <label className="field compact">
+                            <span className="field-label">Hauteur</span>
+                            <select
+                              className="field-input"
+                              value={m.hMm ?? wurth?.hMm ?? 110}
+                              onChange={(e) =>
+                                setModuleH(m.id, Number(e.target.value))
+                              }
+                            >
+                              {WURTH_HAUTEURS_MM.map((h) => (
+                                <option key={h} value={h}>
+                                  {h} mm
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                          <p className="muted drawer-dims-hint">
+                            Profondeur auto{' '}
+                            <strong>
+                              {depthTooSmall
+                                ? `${wurth?.depthAvailableMm ?? 0} mm`
+                                : `${wurth?.depthMm ?? '—'} mm`}
+                            </strong>
+                            {' · '}
+                            LIC auto{' '}
+                            <strong>{wurth?.licMm ?? '—'} mm</strong>
+                          </p>
+                          <label className="field compact">
+                            <span className="field-label">Ouverture</span>
+                            <input
+                              type="range"
+                              min={0}
+                              max={1}
+                              step={0.05}
+                              value={m.openFactor || 0}
+                              onChange={(e) =>
+                                setModuleOpen(m.id, Number(e.target.value))
+                              }
+                            />
+                          </label>
+                        </>
+                      )}
+                      {m.kind === 'door' && (
                         <label className="field compact">
                           <span className="field-label">Ouverture</span>
                           <input

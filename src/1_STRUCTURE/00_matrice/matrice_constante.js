@@ -51,15 +51,15 @@ export const PRIX = {
   tabletteParM2: 100,
 
   /**
-   * Tiroir : volume en m³ = L × W × H_tiroir (mm → /1e9)
-   * H_tiroir au choix : 200 | 300 | 400 mm
+   * Tiroir Würth type B : volume m³ = LIC × profondeur × H (mm → /1e9)
+   * H parmi hauteurs Würth ASTUCIO (voir tiroir/wurth.js)
    */
   tiroirForfait: 250,
   tiroirParM3: 1000,
-  /** Hauteur tiroir par défaut (mm) si non précisée sur le module */
-  tiroirHauteurDefautMm: 200,
-  /** Hauteurs tiroir proposées (mm) */
-  tiroirHauteursMm: [200, 300, 400],
+  /** @deprecated → WURTH_HAUTEUR_DEFAUT_MM */
+  tiroirHauteurDefautMm: 110,
+  /** @deprecated → WURTH_HAUTEURS_MM */
+  tiroirHauteursMm: [58, 84, 110, 136, 162, 188, 214, 240, 266],
 
   /** Porte (module) */
   porteForfait: 250,

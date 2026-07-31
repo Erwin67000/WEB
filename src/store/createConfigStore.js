@@ -366,7 +366,7 @@ export function createConfigStore(opts = {}) {
       }))
     },
 
-    /** Position Z (mm) d’une tablette — depuis le sol du meuble. */
+    /** Position Z (mm) d’une tablette — haut de l’octogone. */
     setModuleZ: (modId, zMm) => {
       const id = get().activeUnitId
       set((s) => ({
@@ -385,6 +385,33 @@ export function createConfigStore(opts = {}) {
         dirty: true,
       }))
     },
+
+    /** Hauteur tiroir Würth (mm) — une des WURTH_HAUTEURS_MM. */
+    setModuleH: (modId, hMm) => {
+      const id = get().activeUnitId
+      const n = Number(hMm)
+      set((s) => ({
+        units: s.units.map((u) =>
+          u.id !== id
+            ? u
+            : {
+                ...u,
+                modules: u.modules.map((m) =>
+                  m.id === modId && m.kind === 'drawer'
+                    ? { ...m, hMm: Number.isFinite(n) ? n : m.hMm }
+                    : m,
+                ),
+              },
+        ),
+        dirty: true,
+      }))
+    },
+
+    /**
+     * Position Z (mm) tablette ou tiroir.
+     * Tablette : haut de l’octogone · Tiroir : bas du caisson (plan rails).
+     */
+    // setModuleZ déjà gère tout kind via zMm — tiroir inclus
 
     togglePanneau: (nom) => {
       const id = get().activeUnitId

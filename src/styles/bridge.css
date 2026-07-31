@@ -555,6 +555,22 @@ a.site-brand {
   line-height: 1.35;
 }
 
+/* Chips panneaux : ivoire + texte noir (lisibilité panneau contrôle) */
+.control-panel .panneau-chip {
+  background: #fffef8 !important;
+  border-color: #d4cbb8 !important;
+  color: #0a0a0a !important;
+}
+
+.control-panel .panneau-chip span {
+  color: #0a0a0a !important;
+}
+
+.control-panel .panneaux-game .muted,
+.control-panel .panneaux-game .hint {
+  color: #3a352c !important;
+}
+
 .panneau-chips {
   display: flex;
   flex-wrap: wrap;

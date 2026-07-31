@@ -7,14 +7,29 @@
  * Origine STL Onshape non fiable → normalisation auto (µm→mm + min corner → 0).
  * Longueur STL brute ~550 mm sur Y → re-scale pour coller à la portée Y des traverses.
  */
-import {
-  EPAISSEUR_PANNEAU,
-  PRIX,
-} from '../../00_matrice/matrice_constante.js'
+import { EPAISSEUR_PANNEAU } from '../../00_matrice/matrice_constante.js'
 import {
   buildTraversePair,
   TRAVERSE_EXTRUSION_MM,
 } from '../traverse.js'
+import {
+  WURTH_DRAWER_TYPE,
+  WURTH_DECROCHE_DYNAMOOV_MM,
+  WURTH_HAUTEUR_DEFAUT_MM,
+  computeWurthDrawerDims,
+} from './wurth.js'
+
+export {
+  WURTH_DRAWER_TYPE,
+  WURTH_HAUTEURS_MM,
+  WURTH_HAUTEUR_DEFAUT_MM,
+  WURTH_DECROCHE_DYNAMOOV_MM,
+  WURTH_PROFONDEURS_MM,
+  WURTH_PROFONDEUR_MIN_MM,
+  DRAWER_DEPTH_TOO_SMALL_MSG,
+  computeWurthDrawerDims,
+  clampWurthHeight,
+} from './wurth.js'
 
 /** URL du rail gauche (public). */
 export const RAIL_STL_URL = '/structure/agencement/rail-gauche.stl'
@@ -33,21 +48,25 @@ export const RAIL_INSET_FROM_TRAVERSE = 2
 export const RAIL_NATIVE_LENGTH_Y_MM = 550
 
 /**
- * Boîte ouverte 5 panneaux — **face ouverte = Z top** (pas de dessus).
- * Faces : dessous, fond (Y min), arrière (Y max), joue G, joue D.
+ * Boîte ouverte 5 panneaux — **face ouverte = Z top**.
+ * Type B Würth : décroché bas `decrocheMm` (11 mm) sous le fond pour rails DYNAMOOV.
+ * Les côtés descendent jusqu’à oz ; le fond est surélevé de decrocheMm.
  *
- * @param {{ L: number, W: number, H: number }} outer — dimensions extérieures mm
- * @param {number[]} origin — coin min [x,y,z] mm
+ * @param {{ L: number, W: number, H: number }} outer — dims extérieures (LIC × profondeur × H Würth)
+ * @param {number[]} origin — coin min [x,y,z] mm (bas des joues = plan rails)
  * @param {number} [epaisseur=EPAISSEUR_PANNEAU]
+ * @param {number} [decrocheMm=WURTH_DECROCHE_DYNAMOOV_MM]
  */
 export function buildDrawerOpenBox(
   outer,
   origin,
   epaisseur = EPAISSEUR_PANNEAU,
+  decrocheMm = WURTH_DECROCHE_DYNAMOOV_MM,
 ) {
   const [ox, oy, oz] = origin
   const { L, W, H } = outer
   const e = epaisseur
+  const d = Math.max(0, decrocheMm)
   const panels = []
 
   const plate = (id, x0, y0, z0, sx, sy, sz) => {
@@ -64,28 +83,23 @@ export function buildDrawerOpenBox(
     return solidFromBoxPoints(id, pts)
   }
 
-  // Dessous (Z min) — sol du tiroir
-  panels.push(plate('dessous', ox, oy, oz, L, W, e))
+  // Fond surélevé (décroché type B) — laisse le passage rails sous le tiroir
+  const zFond = oz + d
+  panels.push(plate('dessous', ox, oy, zFond, L, W, e))
 
-  // Fond (Y min)
-  panels.push(plate('fond', ox, oy, oz + e, L, e, H - e))
-
-  // Arrière (Y max)
-  panels.push(plate('arriere', ox, oy + W - e, oz + e, L, e, H - e))
-
-  // Joue gauche (X min)
-  panels.push(plate('joue_g', ox, oy + e, oz + e, e, W - 2 * e, H - e))
-
-  // Joue droite (X max)
-  panels.push(
-    plate('joue_d', ox + L - e, oy + e, oz + e, e, W - 2 * e, H - e),
-  )
-
-  // Pas de panneau dessus → ouverture Z top
+  // Côtés pleine hauteur H depuis oz (décroché visible en bas)
+  // Fond / arrière / joues : de oz jusqu’à oz+H (ouverture Z top)
+  const sideH = H
+  panels.push(plate('fond', ox, oy, oz, L, e, sideH))
+  panels.push(plate('arriere', ox, oy + W - e, oz, L, e, sideH))
+  panels.push(plate('joue_g', ox, oy + e, oz, e, W - 2 * e, sideH))
+  panels.push(plate('joue_d', ox + L - e, oy + e, oz, e, W - 2 * e, sideH))
 
   return {
     kind: 'drawer-box',
     openFace: 'Z_top',
+    type: WURTH_DRAWER_TYPE,
+    decrocheMm: d,
     origin: [ox, oy, oz],
     outer: { L, W, H },
     epaisseur: e,
@@ -208,53 +222,80 @@ export function buildDrawerRails(traversePair, opts = {}) {
 }
 
 /**
- * Tiroir complet.
+ * Tiroir Würth type B complet.
  *
  * @param {{ L: number, W: number, H: number }} dims
- * @param {object} layout — moduleLayout(drawer)
+ * @param {object} layout — moduleLayout(drawer) avec wurth / size
+ * @param {object} [mod] — module store (hMm)
  */
-export function buildTiroir(dims, layout, opts = {}) {
+export function buildTiroir(dims, layout, mod = {}, opts = {}) {
   const ep = opts.epaisseurMm ?? EPAISSEUR_PANNEAU
-  const drawerH =
-    layout.size?.[2] || opts.hMm || PRIX.tiroirHauteurDefautMm || 200
   const open = layout.openOffset?.[1] || 0
 
-  // Traverses sous le volume tiroir, plan = bas boîte − petit jeu
-  const zBoxBottom =
-    (layout.center?.[2] ?? drawerH / 2) - drawerH / 2
-  const zTraverse = Math.max(20, zBoxBottom - 4)
+  // zMm module = bas du tiroir ; traverses juste en dessous
+  const zBottom =
+    layout.zBottomMm ??
+    layout.zMm ??
+    Math.max(20, (layout.center?.[2] ?? 100) - (layout.hMm ?? 110) / 2)
+  const zTraverse =
+    layout.zTraverseMm ?? Math.max(8, zBottom - TRAVERSE_EXTRUSION_MM)
 
   const traverses = buildTraversePair(dims, zTraverse, {
     leftId: 'drawer-traverse-left',
     rightId: 'drawer-traverse-right',
   })
 
-  // Rails alignés Y sur les traverses (sur le dessus des traverses)
+  const [trL, trR] = traverses
+  const traverseBounds = {
+    minX: trL.innerX,
+    maxX: trR.innerX,
+    minY: Math.min(trL.bounds2D.minY, trR.bounds2D.minY),
+    maxY: Math.max(trL.bounds2D.maxY, trR.bounds2D.maxY),
+  }
+
+  const wurth =
+    layout.wurth ||
+    computeWurthDrawerDims(dims, mod, traverseBounds)
+
+  // Pas de géométrie utile si profondeur < 250 mm
+  if (wurth.depthTooSmall || wurth.depthMm < 250) {
+    return {
+      kind: 'drawer',
+      type: WURTH_DRAWER_TYPE,
+      wurth,
+      traverses: [],
+      rails: [],
+      box: { panels: [], openFace: 'Z_top' },
+      depthTooSmall: true,
+      openOffset: layout.openOffset || [0, 0, 0],
+      layout,
+    }
+  }
+
   const rails = buildDrawerRails(traverses, {
-    zLift: TRAVERSE_EXTRUSION_MM + 1,
+    zLift: TRAVERSE_EXTRUSION_MM,
   })
 
-  const [trL, trR] = traverses
-  const boxL = Math.max(
-    80,
-    trR.innerX - trL.innerX - 2 * RAIL_INSET_FROM_TRAVERSE - 8,
-  )
-  // Profondeur = portée Y des traverses
-  const boxW = Math.max(80, trL.bounds2D.maxY - trL.bounds2D.minY - 4)
-  const boxH = Math.max(40, drawerH - 8)
-  const originX = trL.innerX + RAIL_INSET_FROM_TRAVERSE + 4
-  const originY = trL.bounds2D.minY + 2 - open
-  // Boîte posée au-dessus des traverses
-  const originZ = zTraverse + TRAVERSE_EXTRUSION_MM + 2
+  const originX =
+    (traverseBounds.minX + traverseBounds.maxX) / 2 - wurth.licMm / 2
+  const originY =
+    (traverseBounds.minY + traverseBounds.maxY) / 2 -
+    wurth.depthMm / 2 -
+    open
+  // Bas des joues = position Z choisie
+  const originZ = zBottom
 
   const box = buildDrawerOpenBox(
-    { L: boxL, W: boxW, H: boxH },
+    { L: wurth.licMm, W: wurth.depthMm, H: wurth.hMm },
     [originX, originY, originZ],
     ep,
+    wurth.decrocheMm,
   )
 
   return {
     kind: 'drawer',
+    type: WURTH_DRAWER_TYPE,
+    wurth,
     traverses,
     rails,
     box,
