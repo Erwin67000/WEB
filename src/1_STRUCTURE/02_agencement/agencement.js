@@ -377,7 +377,7 @@ export function moduleLayout(mod, { L, W, H }, moduleList = []) {
   }
 
   if (mod.kind === 'drawer') {
-    // Bornes traverses pour LIC / profondeur
+    // Bornes traverses pour LWK / profondeur (profil à Z provisoire)
     const zTraverseGuess = z0 + 8
     const [trL, trR] = buildTraversePair({ L, W, H }, zTraverseGuess)
     const traverseBounds = {
@@ -388,20 +388,22 @@ export function moduleLayout(mod, { L, W, H }, moduleList = []) {
     }
     const wurth = computeWurthDrawerDims({ L, W, H }, mod, traverseBounds)
     const drawerH = wurth.hMm
-    // zMm = bas du tiroir (plan rails / bas des joues), comme Z tablette positionnable
+    /**
+     * zMm = bas des joues du tiroir (= dessus des traverses Y / plan rails).
+     * Traverses extrudées vers le bas sous ce plan.
+     */
     const zMin = z0 + TRAVERSE_EXTRUSION_MM
     const zMax = Math.max(zMin, H - inset - drawerH)
-    let zBottom
+    let zSideBottom
     if (mod.zMm != null && Number.isFinite(Number(mod.zMm))) {
-      zBottom = Math.min(zMax, Math.max(zMin, Number(mod.zMm)))
+      zSideBottom = Math.min(zMax, Math.max(zMin, Number(mod.zMm)))
     } else {
-      // Auto : empilement si plusieurs tiroirs sans Z forcé
       const gap = 8
-      const stackH = drawerH + WURTH_DECROCHE_DYNAMOOV_MM + gap
-      zBottom = zMin + i * stackH
-      zBottom = Math.min(zMax, Math.max(zMin, zBottom))
+      const stackH = drawerH + gap
+      zSideBottom = zMin + i * stackH
+      zSideBottom = Math.min(zMax, Math.max(zMin, zSideBottom))
     }
-    const zCenter = zBottom + drawerH / 2
+    const zCenter = zSideBottom + drawerH / 2
     const open = (mod.openFactor || 0) * (Math.max(wurth.depthMm, 1) * 0.55)
     return {
       center: [
@@ -412,13 +414,15 @@ export function moduleLayout(mod, { L, W, H }, moduleList = []) {
       size: [wurth.licMm, Math.max(wurth.depthMm, 1), drawerH],
       openOffset: [0, -open, 0],
       wurth,
-      zMm: zBottom,
-      zBottomMm: zBottom,
-      zTraverseMm: zBottom - TRAVERSE_EXTRUSION_MM,
+      zMm: zSideBottom,
+      zBottomMm: zSideBottom,
+      /** Bas d’extrusion des traverses (dessous) */
+      zTraverseMm: zSideBottom - TRAVERSE_EXTRUSION_MM,
       zMin,
       zMax,
       hMm: drawerH,
       licMm: wurth.licMm,
+      lwkMm: wurth.lwkMm,
       depthMm: wurth.depthMm,
       depthTooSmall: Boolean(wurth.depthTooSmall),
     }

@@ -528,8 +528,16 @@ export default function ControlPanel() {
                                 : `${wurth?.depthMm ?? '—'} mm`}
                             </strong>
                             {' · '}
-                            LIC auto{' '}
+                            LWS{' '}
                             <strong>{wurth?.licMm ?? '—'} mm</strong>
+                            {wurth?.lwkMm != null && (
+                              <>
+                                {' '}
+                                <span className="hint">
+                                  (LWK {wurth.lwkMm} − 42)
+                                </span>
+                              </>
+                            )}
                           </p>
                           <label className="field compact">
                             <span className="field-label">Ouverture</span>

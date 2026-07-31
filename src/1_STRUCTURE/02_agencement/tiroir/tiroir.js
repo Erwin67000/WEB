@@ -1,11 +1,18 @@
 /**
- * Tiroir paramétrique :
- *  1. Paire de traverses (identiques tablette) — buildTraversePair
- *  2. 2 rails symétriques, alignés axe Y avec les traverses (STL Onshape)
- *  3. Cadre = boîte ouverte 5 faces (épaisseur panneau), **ouverture Z top**
+ * Tiroir Würth type B + coulisses Dynamoov (basse).
  *
- * Origine STL Onshape non fiable → normalisation auto (µm→mm + min corner → 0).
- * Longueur STL brute ~550 mm sur Y → re-scale pour coller à la portée Y des traverses.
+ * Empilement Z (bas → haut), avec traverses Y en support des rails :
+ *
+ *   zTraverseTop  ─────── dessus traverse Y (violet sur le schéma)
+ *   zRail         ─────── rail posé SUR la traverse (corps ~10–13 mm)
+ *   zSideBottom   ─────── bas des joues du tiroir (= zMm utilisateur)
+ *                    ↕ décroché type B 11 mm (rail dans le volume sous le fond)
+ *   zFond         ─────── panneau de fond du tiroir
+ *   zSideTop      ─────── haut des joues (ouverture Z top)
+ *
+ * Largeur (plan Dynamoov) :
+ *   LWK = distance faces int. traverses
+ *   LWS = LWK − 42  (21 mm / côté pour la coulisse)
  */
 import { EPAISSEUR_PANNEAU } from '../../00_matrice/matrice_constante.js'
 import {
@@ -15,7 +22,8 @@ import {
 import {
   WURTH_DRAWER_TYPE,
   WURTH_DECROCHE_DYNAMOOV_MM,
-  WURTH_HAUTEUR_DEFAUT_MM,
+  DYNAMOOV_SIDE_RAIL_SPACE_MM,
+  DYNAMOOV_RAIL_BODY_H_MM,
   computeWurthDrawerDims,
 } from './wurth.js'
 
@@ -27,35 +35,27 @@ export {
   WURTH_PROFONDEURS_MM,
   WURTH_PROFONDEUR_MIN_MM,
   DRAWER_DEPTH_TOO_SMALL_MSG,
+  DYNAMOOV_LWK_MINUS_LWS_MM,
+  DYNAMOOV_SIDE_RAIL_SPACE_MM,
+  DYNAMOOV_RAIL_BODY_H_MM,
   computeWurthDrawerDims,
   clampWurthHeight,
 } from './wurth.js'
 
-/** URL du rail gauche (public). */
 export const RAIL_STL_URL = '/structure/agencement/rail-gauche.stl'
-
-/**
- * Correction d’origine / échelle du STL Onshape.
- * Mesure brute : size ~ [54600, 550000, 47200] → microns → mm (×0.001).
- * Après normalize : long axe = +Y (aligné traverses).
- */
 export const RAIL_STL_SCALE = 0.001
-/** Offset mm après normalisation (repère meuble). */
+/** Fine-tune mm (repère meuble) après normalize STL. */
 export const RAIL_MOUNT_OFFSET = { x: 0, y: 0, z: 0 }
-/** Marge intérieure face traverse → rail (mm). */
-export const RAIL_INSET_FROM_TRAVERSE = 2
-/** Longueur native du rail après scale µm→mm (axe Y). */
+/** Longueur native rail après µm→mm (axe Y CAD). */
 export const RAIL_NATIVE_LENGTH_Y_MM = 550
 
 /**
- * Boîte ouverte 5 panneaux — **face ouverte = Z top**.
- * Type B Würth : décroché bas `decrocheMm` (11 mm) sous le fond pour rails DYNAMOOV.
- * Les côtés descendent jusqu’à oz ; le fond est surélevé de decrocheMm.
+ * Boîte type B — ouverture Z top, décroché bas pour Dynamoov.
  *
- * @param {{ L: number, W: number, H: number }} outer — dims extérieures (LIC × profondeur × H Würth)
- * @param {number[]} origin — coin min [x,y,z] mm (bas des joues = plan rails)
- * @param {number} [epaisseur=EPAISSEUR_PANNEAU]
- * @param {number} [decrocheMm=WURTH_DECROCHE_DYNAMOOV_MM]
+ * @param {{ L: number, W: number, H: number }} outer — LWS × profondeur × H
+ * @param {number[]} origin — [x,y,z] bas des joues (z = zSideBottom)
+ * @param {number} [epaisseur]
+ * @param {number} [decrocheMm] — surélévation du fond (11 mm type B)
  */
 export function buildDrawerOpenBox(
   outer,
@@ -83,17 +83,18 @@ export function buildDrawerOpenBox(
     return solidFromBoxPoints(id, pts)
   }
 
-  // Fond surélevé (décroché type B) — laisse le passage rails sous le tiroir
+  // Fond surélevé (décroché B) — le rail Dynamoov passe dessous
   const zFond = oz + d
-  panels.push(plate('dessous', ox, oy, zFond, L, W, e))
+  panels.push(plate('dessous', ox + e, oy + e, zFond, L - 2 * e, W - 2 * e, e))
 
-  // Côtés pleine hauteur H depuis oz (décroché visible en bas)
-  // Fond / arrière / joues : de oz jusqu’à oz+H (ouverture Z top)
-  const sideH = H
-  panels.push(plate('fond', ox, oy, oz, L, e, sideH))
-  panels.push(plate('arriere', ox, oy + W - e, oz, L, e, sideH))
-  panels.push(plate('joue_g', ox, oy + e, oz, e, W - 2 * e, sideH))
-  panels.push(plate('joue_d', ox + L - e, oy + e, oz, e, W - 2 * e, sideH))
+  // Flancs pleine hauteur H depuis oz (ouverture Z top)
+  // Joues : épaisseur e, s’arrêtent au-dessus du rail en laissant le décroché
+  panels.push(plate('fond', ox, oy, oz + d, L, e, H - d))
+  panels.push(plate('arriere', ox, oy + W - e, oz + d, L, e, H - d))
+  // Joues latérales : du bas (oz) pour le décroché visible, ou depuis oz+d
+  // Type B : joues descendent bas pour guider ; fond à +11
+  panels.push(plate('joue_g', ox, oy, oz, e, W, H))
+  panels.push(plate('joue_d', ox + L - e, oy, oz, e, W, H))
 
   return {
     kind: 'drawer-box',
@@ -104,6 +105,8 @@ export function buildDrawerOpenBox(
     outer: { L, W, H },
     epaisseur: e,
     panels,
+    /** Z dessus du fond (appui charge) */
+    zFond,
   }
 }
 
@@ -162,85 +165,102 @@ function solidFromBoxPoints(id, pts8) {
 }
 
 /**
- * 2 rails alignés **axe Y** avec les traverses (portée profondeur).
- * STL normalisé : long axe = +Y.
+ * Rails Dynamoov sur le **dessus** des traverses Y, dans le décroché du tiroir.
  *
- * @param {[object, object]} traversePair — [left, right]
- * @param {object} [opts]
+ * Plan technique : 21 mm d’emprise latérale depuis la paroi (face int. traverse)
+ * vers l’intérieur du caisson.
+ *
+ * @param {[object, object]} traversePair
+ * @param {object} opts
+ * @param {number} opts.zSideBottom — bas des joues tiroir (= zMm)
+ * @param {number} [opts.decrocheMm]
+ * @param {number} [opts.railBodyHMm]
  */
 export function buildDrawerRails(traversePair, opts = {}) {
   const [left, right] = traversePair
-  const inset = opts.inset ?? RAIL_INSET_FROM_TRAVERSE
-  // Rail posé sur le plan haut des traverses (même Z base + petit lift)
-  const z = left.zTopMm + (opts.zLift ?? 1)
+  const decroche = opts.decrocheMm ?? WURTH_DECROCHE_DYNAMOOV_MM
+  const railH = opts.railBodyHMm ?? DYNAMOOV_RAIL_BODY_H_MM
+  const sideSpace = opts.sideSpaceMm ?? DYNAMOOV_SIDE_RAIL_SPACE_MM
 
-  const spanY = Math.max(
-    50,
-    left.bounds2D.maxY - left.bounds2D.minY,
-  )
-  // Scale Y pour coller la longueur du rail à la traverse
+  // Dessus de traverse = support du rail (violet sur le schéma utilisateur)
+  const zTraverseTop = left.zTopMm + left.extrusionMm
+
+  // Rail posé sur la traverse ; reste dans le décroché sous le fond (≤ 11 mm)
+  // On place le bas du rail sur zTraverseTop (corps vers le haut dans le décroché)
+  const zRail = zTraverseTop + (RAIL_MOUNT_OFFSET.z || 0)
+
+  const spanY = Math.max(50, left.bounds2D.maxY - left.bounds2D.minY)
   const scaleY = spanY / RAIL_NATIVE_LENGTH_Y_MM
-
   const y0 = left.bounds2D.minY + (RAIL_MOUNT_OFFSET.y || 0)
 
-  const leftMount = {
-    id: 'rail-left',
-    side: 'left',
-    stlUrl: RAIL_STL_URL,
-    /** Origine STL normalisée (min corner) → début de la traverse en Y */
-    position: [
-      left.innerX + inset + (RAIL_MOUNT_OFFSET.x || 0),
-      y0,
-      z + (RAIL_MOUNT_OFFSET.z || 0),
-    ],
-    /** Alignement long axe = Y (traverses) */
-    axis: 'Y',
-    mirrorX: false,
-    /** Facteurs d’échelle locaux (géométrie déjà en mm) */
-    scale: { x: 1, y: scaleY, z: 1 },
-    rotation: [0, 0, 0],
-    spanY,
-  }
+  // Gauche : face int. traverse + offset vers le centre (emprise 21 mm)
+  // Le rail s’appuie contre la traverse, s’étend de ~sideSpace vers l’intérieur
+  const leftX =
+    left.innerX + (RAIL_MOUNT_OFFSET.x || 0)
+  const rightX =
+    right.innerX - (RAIL_MOUNT_OFFSET.x || 0)
 
-  const rightMount = {
-    id: 'rail-right',
-    side: 'right',
-    stlUrl: RAIL_STL_URL,
-    position: [
-      right.innerX - inset - (RAIL_MOUNT_OFFSET.x || 0),
-      y0,
-      z + (RAIL_MOUNT_OFFSET.z || 0),
-    ],
-    axis: 'Y',
-    mirrorX: true,
-    scale: { x: 1, y: scaleY, z: 1 },
-    rotation: [0, 0, 0],
-    spanY,
-  }
-
-  return [leftMount, rightMount]
+  return [
+    {
+      id: 'rail-left',
+      side: 'left',
+      stlUrl: RAIL_STL_URL,
+      position: [leftX, y0, zRail],
+      axis: 'Y',
+      mirrorX: false,
+      scale: { x: 1, y: scaleY, z: 1 },
+      rotation: [0, 0, 0],
+      spanY,
+      zTraverseTop,
+      zRail,
+      sideSpaceMm: sideSpace,
+      railBodyHMm: railH,
+      decrocheMm: decroche,
+    },
+    {
+      id: 'rail-right',
+      side: 'right',
+      stlUrl: RAIL_STL_URL,
+      position: [rightX, y0, zRail],
+      axis: 'Y',
+      mirrorX: true,
+      scale: { x: 1, y: scaleY, z: 1 },
+      rotation: [0, 0, 0],
+      spanY,
+      zTraverseTop,
+      zRail,
+      sideSpaceMm: sideSpace,
+      railBodyHMm: railH,
+      decrocheMm: decroche,
+    },
+  ]
 }
 
 /**
- * Tiroir Würth type B complet.
+ * Tiroir Würth type B + Dynamoov complet.
  *
- * @param {{ L: number, W: number, H: number }} dims
- * @param {object} layout — moduleLayout(drawer) avec wurth / size
- * @param {object} [mod] — module store (hMm)
+ * zMm utilisateur = bas des joues du tiroir (plan de référence Z).
+ * Traverses : leur **dessus** est à zMm (support rails), extrusion vers le bas.
  */
 export function buildTiroir(dims, layout, mod = {}, opts = {}) {
   const ep = opts.epaisseurMm ?? EPAISSEUR_PANNEAU
   const open = layout.openOffset?.[1] || 0
 
-  // zMm module = bas du tiroir ; traverses juste en dessous
-  const zBottom =
+  // Bas des joues = position Z choisie
+  const zSideBottom =
     layout.zBottomMm ??
     layout.zMm ??
     Math.max(20, (layout.center?.[2] ?? 100) - (layout.hMm ?? 110) / 2)
-  const zTraverse =
-    layout.zTraverseMm ?? Math.max(8, zBottom - TRAVERSE_EXTRUSION_MM)
 
-  const traverses = buildTraversePair(dims, zTraverse, {
+  /**
+   * Traverses Y sous les rails :
+   *   dessus traverse = bas des joues (zSideBottom)
+   *   → zTopMm traverse = zSideBottom − TRAVERSE_EXTRUSION (extrusion +Z)
+   *   faceA à zTopMm, faceB à zTopMm+40 = zSideBottom
+   */
+  const zTraverseBottom = Math.max(0, zSideBottom - TRAVERSE_EXTRUSION_MM)
+
+  const traverses = buildTraversePair(dims, zTraverseBottom, {
     leftId: 'drawer-traverse-left',
     rightId: 'drawer-traverse-right',
   })
@@ -254,10 +274,8 @@ export function buildTiroir(dims, layout, mod = {}, opts = {}) {
   }
 
   const wurth =
-    layout.wurth ||
-    computeWurthDrawerDims(dims, mod, traverseBounds)
+    layout.wurth || computeWurthDrawerDims(dims, mod, traverseBounds)
 
-  // Pas de géométrie utile si profondeur < 250 mm
   if (wurth.depthTooSmall || wurth.depthMm < 250) {
     return {
       kind: 'drawer',
@@ -269,21 +287,25 @@ export function buildTiroir(dims, layout, mod = {}, opts = {}) {
       depthTooSmall: true,
       openOffset: layout.openOffset || [0, 0, 0],
       layout,
+      zSideBottom,
     }
   }
 
   const rails = buildDrawerRails(traverses, {
-    zLift: TRAVERSE_EXTRUSION_MM,
+    zSideBottom,
+    decrocheMm: wurth.decrocheMm,
+    railBodyHMm: wurth.railBodyHMm,
+    sideSpaceMm: wurth.railSideSpaceMm,
   })
 
-  const originX =
-    (traverseBounds.minX + traverseBounds.maxX) / 2 - wurth.licMm / 2
+  // Centrage LWS dans LWK (jeu 21 mm / côté déjà dans LWS = LWK−42)
+  const LWK = traverseBounds.maxX - traverseBounds.minX
+  const originX = traverseBounds.minX + (LWK - wurth.licMm) / 2
   const originY =
     (traverseBounds.minY + traverseBounds.maxY) / 2 -
     wurth.depthMm / 2 -
     open
-  // Bas des joues = position Z choisie
-  const originZ = zBottom
+  const originZ = zSideBottom
 
   const box = buildDrawerOpenBox(
     { L: wurth.licMm, W: wurth.depthMm, H: wurth.hMm },
@@ -302,17 +324,18 @@ export function buildTiroir(dims, layout, mod = {}, opts = {}) {
     openFace: 'Z_top',
     openOffset: layout.openOffset || [0, 0, 0],
     layout,
+    /** Cotes Z de référence */
+    z: {
+      traverseBottom: zTraverseBottom,
+      traverseTop: zSideBottom,
+      sideBottom: zSideBottom,
+      fond: zSideBottom + wurth.decrocheMm,
+      sideTop: zSideBottom + wurth.hMm,
+      rail: rails[0]?.zRail,
+    },
   }
 }
 
-/**
- * Normalise la géométrie rail (mm, origine min) :
- *  - µm → mm si besoin
- *  - coin min → (0,0,0)
- *  - conserve repère CAD : X=largeur, **Y=longueur (axe traverses)**, Z=hauteur
- *
- * @param {import('three').BufferGeometry} geometry
- */
 export function normalizeRailGeometry(geometry, scale = RAIL_STL_SCALE) {
   geometry.computeBoundingBox()
   const box = geometry.boundingBox
@@ -333,14 +356,8 @@ export function normalizeRailGeometry(geometry, scale = RAIL_STL_SCALE) {
 }
 
 /**
- * Convertit une géométrie rail (mm, Y=longueur) vers le repère Three du site :
- *   meuble (x,y,z) → Three (x, z, −y)  × 0.001
- * avec scaleY optionnel pour coller à la portée de la traverse.
- *
- * @param {import('three').BufferGeometry} geometryMm — déjà normalisée
- * @param {number} [scaleY=1]
- * @param {boolean} [mirrorX=false]
- * @returns {import('three').BufferGeometry}
+ * meuble (x,y,z) → Three (x, z, −y) × 0.001
+ * STL : Y = longueur (axe traverses / profondeur)
  */
 export function railGeometryToThree(geometryMm, scaleY = 1, mirrorX = false) {
   const geo = geometryMm.clone()
@@ -351,7 +368,6 @@ export function railGeometryToThree(geometryMm, scaleY = 1, mirrorX = false) {
     const x = pos.getX(i) * sx
     const y = pos.getY(i) * scaleY
     const z = pos.getZ(i)
-    // meuble → Three
     pos.setXYZ(i, x * SCALE, z * SCALE, -y * SCALE)
   }
   pos.needsUpdate = true
