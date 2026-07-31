@@ -210,43 +210,46 @@ export const FINITIONS_OSSATURE_CLIENT = [
  * 5 couleurs panneau — tons site (or / ivoire / bois), contrastent légèrement.
  * Appliquées à tous les panneaux d’une configuration.
  */
+/** Contours filaires panneaux : toujours noir (indépendant de la teinte de face). */
+const PANNEAU_EDGE_HEX = '#000000'
+
 export const PANNEAU_COULEURS = {
   terracotta: {
     id: 'terracotta',
     label: 'Terracotta',
     color: '#c4785a',
-    edge: '#9a5a42',
+    edge: PANNEAU_EDGE_HEX,
   },
   olive: {
     id: 'olive',
     label: 'Olive',
     color: '#7a8f5c',
-    edge: '#5a6b42',
+    edge: PANNEAU_EDGE_HEX,
   },
   bleu_poudre: {
     id: 'bleu_poudre',
     label: 'Bleu clair poudré',
     color: '#a8c4d4',
-    edge: '#7a9aab',
+    edge: PANNEAU_EDGE_HEX,
   },
   gris_cendre: {
     id: 'gris_cendre',
     label: 'Gris cendre blanc',
     color: '#d4d0c8',
-    edge: '#a8a49c',
+    edge: PANNEAU_EDGE_HEX,
   },
   jaune_orange: {
     id: 'jaune_orange',
     label: 'Jaune orangé clair',
     color: '#e8b86d',
-    edge: '#c49448',
+    edge: PANNEAU_EDGE_HEX,
   },
   /** Couleur libre (spectre) — le hex est dans unit.panneauCouleurHex */
   surmesure: {
     id: 'surmesure',
     label: 'Sur mesure',
     color: '#c9a227',
-    edge: '#8a7020',
+    edge: PANNEAU_EDGE_HEX,
   },
 }
 
@@ -263,7 +266,7 @@ export function resolvePanneauColor(panneauCouleur, panneauCouleurHex) {
       id: 'surmesure',
       label: 'Sur mesure',
       color: hex,
-      edge: shadeEdge(hex),
+      edge: PANNEAU_EDGE_HEX,
     }
   }
   return (

@@ -240,16 +240,17 @@ export function PanneauView({
   const { base, decale, tolerance, arriere } = data.rectangles
   const palette = resolvePanneauColor(panneauCouleur, panneauCouleurHex)
   const solidColor = palette.color
-  const edgeColor = palette.edge || finish.edge
+  // Contours panneaux toujours noirs (pas la teinte olive / edge palette)
+  const edgeColor = PANNEAU_EDGE_COLOR
 
   return (
     <group>
       {showRectangles && (
         <group>
-          <RectangleWire rectangle={base} />
-          <RectangleWire rectangle={decale} />
-          <RectangleWire rectangle={tolerance} />
-          <RectangleWire rectangle={arriere} />
+          <RectangleWire rectangle={{ ...base, color: edgeColor }} />
+          <RectangleWire rectangle={{ ...decale, color: edgeColor }} />
+          <RectangleWire rectangle={{ ...tolerance, color: edgeColor }} />
+          <RectangleWire rectangle={{ ...arriere, color: edgeColor }} />
           {showRectFaces && (
             <>
               <RectangleFace rectangle={base} opacity={0.08} />

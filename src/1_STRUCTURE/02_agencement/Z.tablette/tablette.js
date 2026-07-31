@@ -166,6 +166,12 @@ export function buildTablettePlateBuffers(
 }
 
 /**
+ * Décalage Z des traverses Y par rapport au haut du plateau (mm).
+ * 0 = assises sur le plateau ; +40 = relevées de 40 mm.
+ */
+export const TABLETTE_TRAVERSE_Z_LIFT_MM = 40
+
+/**
  * Tablette complète : plateau + paire de traverses.
  * @param {{ L: number, W: number, H: number }} dims
  * @param {number} zTopMm — haut de l’octogone
@@ -173,7 +179,9 @@ export function buildTablettePlateBuffers(
 export function buildTablette(dims, zTopMm, opts = {}) {
   const epaisseur = opts.epaisseurMm ?? EPAISSEUR_PANNEAU
   const plate = buildTablettePlateBuffers(dims, zTopMm, epaisseur)
-  const traverses = buildTraversePair(dims, plate.zTop)
+  const lift = opts.traverseZLiftMm ?? TABLETTE_TRAVERSE_Z_LIFT_MM
+  // Traverses relevées de `lift` mm au-dessus du haut du plateau
+  const traverses = buildTraversePair(dims, plate.zTop + lift)
   return {
     kind: 'shelf',
     plate,
@@ -181,5 +189,6 @@ export function buildTablette(dims, zTopMm, opts = {}) {
     zTopMm: plate.zTop,
     zCenterMm: plate.zTop - epaisseur / 2,
     epaisseurMm: epaisseur,
+    traverseZLiftMm: lift,
   }
 }
