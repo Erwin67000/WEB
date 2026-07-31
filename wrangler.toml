@@ -1,11 +1,11 @@
 # Cloudflare Worker + assets SPA (Vite dist)
-# Deploy : npm run deploy
+# Deploy : npm run deploy  (ou pipeline Cloudflare : npm run build && npx wrangler deploy)
 name = "philaedesign2"
 main = "worker/index.js"
 compatibility_date = "2025-03-01"
 workers_dev = true
 
-# Secrets (ne pas mettre dans ce fichier) :
+# Secrets Stripe (plus tard, quand tu actives le paiement) :
 #   wrangler secret put STRIPE_SECRET_KEY
 #   wrangler secret put STRIPE_WEBHOOK_SECRET
 #   wrangler secret put SITE_URL
@@ -19,12 +19,18 @@ not_found_handling = "single-page-application"
 html_handling = "auto-trailing-slash"
 run_worker_first = ["/api/*"]
 
-# Base commandes — créer avec :
-#   npx wrangler d1 create philae-orders
-# puis coller database_id ci-dessous.
-[[d1_databases]]
-binding = "DB"
-database_name = "philae-orders"
-# Remplacer après `wrangler d1 create philae-orders` :
-database_id = "00000000-0000-0000-0000-000000000000"
-preview_database_id = "local-philae-orders"
+# ---------------------------------------------------------------------------
+# D1 commandes — DÉSACTIVÉ tant que Stripe / commandes ne sont pas activés.
+# Sans binding DB, le site statique + Worker API se déploient normalement ;
+# /api/checkout renverra 503 tant que STRIPE_SECRET_KEY n’est pas configuré.
+#
+# Pour activer plus tard :
+#   1. npx wrangler d1 create philae-orders
+#   2. coller le database_id ci-dessous
+#   3. décommenter le bloc [[d1_databases]]
+#   4. npm run db:init:remote
+# ---------------------------------------------------------------------------
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "philae-orders"
+# database_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"

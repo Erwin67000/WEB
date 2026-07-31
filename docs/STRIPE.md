@@ -61,11 +61,14 @@ Front Vite (optionnel) : `.env` / `.env.local`
 VITE_STRIPE_PUBLISHABLE_KEY=pk_test_...
 ```
 
-## Base D1
+## Base D1 (plus tard — désactivée par défaut)
+
+Le binding D1 est **commenté** dans `wrangler.toml` tant que Stripe n’est pas activé
+(sinon le deploy échoue sur un `database_id` placeholder).
 
 ```bash
 npx wrangler d1 create philae-orders
-# coller database_id dans wrangler.toml
+# coller database_id dans wrangler.toml + décommenter [[d1_databases]]
 
 npm run db:init:local
 npm run db:init:remote
