@@ -167,9 +167,9 @@ export function buildTablettePlateBuffers(
 
 /**
  * Décalage Z des traverses Y par rapport au haut du plateau (mm).
- * 0 = assises sur le plateau ; +40 = relevées de 40 mm.
+ * 0 = assises sur le plateau (position correcte d’origine).
  */
-export const TABLETTE_TRAVERSE_Z_LIFT_MM = 40
+export const TABLETTE_TRAVERSE_Z_LIFT_MM = 0
 
 /**
  * Tablette complète : plateau + paire de traverses.
@@ -180,7 +180,7 @@ export function buildTablette(dims, zTopMm, opts = {}) {
   const epaisseur = opts.epaisseurMm ?? EPAISSEUR_PANNEAU
   const plate = buildTablettePlateBuffers(dims, zTopMm, epaisseur)
   const lift = opts.traverseZLiftMm ?? TABLETTE_TRAVERSE_Z_LIFT_MM
-  // Traverses relevées de `lift` mm au-dessus du haut du plateau
+  // Traverses au niveau du haut du plateau (+ lift optionnel)
   const traverses = buildTraversePair(dims, plate.zTop + lift)
   return {
     kind: 'shelf',
