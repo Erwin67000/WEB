@@ -513,7 +513,10 @@ function loadNormalizedRailMm(url) {
  * Rail aligné axe Y des traverses.
  * position = origine meuble mm (début traverse en Y, face intérieure en X).
  */
-function RailMesh({ mount, metalColor = '#3a3a3a' }) {
+/** Aspect coulisse acier brossé (gris métallique, pas noir). */
+const RAIL_METAL_COLOR = '#b4b8bc'
+
+function RailMesh({ mount }) {
   const [geo, setGeo] = useState(null)
   const scaleX = mount.scale?.x ?? 1
   const scaleY = mount.scale?.y ?? 1
@@ -555,9 +558,10 @@ function RailMesh({ mount, metalColor = '#3a3a3a' }) {
       renderOrder={1}
     >
       <meshStandardMaterial
-        color={metalColor}
-        metalness={0.6}
-        roughness={0.35}
+        color={RAIL_METAL_COLOR}
+        metalness={0.92}
+        roughness={0.28}
+        envMapIntensity={1.15}
       />
     </mesh>
   )
