@@ -513,7 +513,7 @@ function loadNormalizedRailMm(url) {
  * Rail aligné axe Y des traverses.
  * position = origine meuble mm (début traverse en Y, face intérieure en X).
  */
-function RailMesh({ mount, metalColor = '#4a4a4a' }) {
+function RailMesh({ mount, metalColor = '#3a3a3a' }) {
   const [geo, setGeo] = useState(null)
   const scaleX = mount.scale?.x ?? 1
   const scaleY = mount.scale?.y ?? 1
@@ -525,7 +525,6 @@ function RailMesh({ mount, metalColor = '#4a4a4a' }) {
     loadNormalizedRailMm(mount.stlUrl)
       .then((gMm) => {
         if (cancelled) return
-        // scale X/Y/Z : rail entièrement sur l’emprise de la traverse
         setGeo(
           railGeometryToThree(gMm, {
             scaleX,
@@ -544,26 +543,21 @@ function RailMesh({ mount, metalColor = '#4a4a4a' }) {
   if (!geo) return null
 
   const [x, y, z] = mount.position
-  // Origine rail en repère meuble → Three
   const pos = [x * SCALE, z * SCALE, -y * SCALE]
 
-  // renderOrder bas : la traverse (solide) masque le rail depuis le dessous
+  // Au-dessus de la traverse, sous le panneau (coin L)
   return (
     <mesh
       geometry={geo}
       position={pos}
       castShadow
       receiveShadow
-      renderOrder={0}
+      renderOrder={1}
     >
       <meshStandardMaterial
         color={metalColor}
-        metalness={0.55}
-        roughness={0.4}
-        // Légèrement en retrait Z-buffer pour rester sous le volume traverse au bord
-        polygonOffset
-        polygonOffsetFactor={1}
-        polygonOffsetUnits={1}
+        metalness={0.6}
+        roughness={0.35}
       />
     </mesh>
   )
@@ -584,10 +578,7 @@ function TiroirMesh({ dims, layout, mod, plateColor, woodColor, woodRoughness })
 
   return (
     <group>
-      {/* Rails d’abord : masqués par les traverses (fixation sur le dessus) */}
-      {data.rails.map((r) => (
-        <RailMesh key={r.id} mount={r} />
-      ))}
+      {/* Traverses d’abord (support bas) */}
       {data.traverses.map((tr) => (
         <SolidWireMesh
           key={tr.id}
@@ -601,6 +592,11 @@ function TiroirMesh({ dims, layout, mod, plateColor, woodColor, woodRoughness })
           metalness={0.05}
         />
       ))}
+      {/* Rails sur le dessus de traverse, dans le coin L sous les joues */}
+      {data.rails.map((r) => (
+        <RailMesh key={r.id} mount={r} />
+      ))}
+      {/* Caisson tiroir par-dessus */}
       {data.box.panels.map((p) => (
         <SolidWireMesh
           key={p.id}

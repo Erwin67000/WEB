@@ -165,30 +165,32 @@ function solidFromBoxPoints(id, pts8) {
 }
 
 /**
- * Rails Dynamoov fixés **sur le dessus** des traverses Y.
+ * Rails Dynamoov entre **traverse Y (dessous)** et **panneau bois du tiroir (dessus)**.
  *
- * La traverse doit **cacher complètement** le rail (fixation mécanique sur la
- * face supérieure de la traverse) :
- *  - emprise X entièrement dans bounds2D de la traverse
- *  - longueur Y = portée de la traverse
- *  - hauteur Z ≤ décroché type B (sous le fond du tiroir)
+ * Coin en L (croquis rose) :
+ *   - bras horizontal = dessus de la traverse (appui mécanique)
+ *   - bras vertical   = face ext. de la joue du tiroir
+ *   - le rail occupe ce coin, dans le décroché type B (sous le fond)
+ *
+ * Largeur cible ≈ 21 mm (Dynamoov LWK−LWS = 42 → 21 / côté).
+ * Hauteur cible ≈ min(13, décroché−1) mm.
  *
  * Dimensions natives STL après normalize : ~54.6 × 550 × 47.2 mm (X×Y×Z).
  */
-/** Largeur / hauteur natives du rail (mm) après normalizeRailGeometry. */
 export const RAIL_NATIVE_WIDTH_X_MM = 54.6
 export const RAIL_NATIVE_HEIGHT_Z_MM = 47.2
 
 export function buildDrawerRails(traversePair, opts = {}) {
   const [left, right] = traversePair
   const decroche = opts.decrocheMm ?? WURTH_DECROCHE_DYNAMOOV_MM
-  // Hauteur visuelle du rail : tient dans le décroché, ≤ corps Dynamoov
+  const sideSpace = opts.sideSpaceMm ?? DYNAMOOV_SIDE_RAIL_SPACE_MM // 21 mm
+  // Hauteur rail dans le décroché, sous le fond du tiroir
   const railH = Math.min(
     opts.railBodyHMm ?? DYNAMOOV_RAIL_BODY_H_MM,
     Math.max(6, decroche - 1),
   )
 
-  // Dessus de traverse = plan de fixation du rail
+  // Dessus de traverse = plan d’appui (inchangé — position traverse correcte)
   const zTraverseTop = left.zTopMm + left.extrusionMm
   const zRail = zTraverseTop + (RAIL_MOUNT_OFFSET.z || 0)
 
@@ -196,21 +198,18 @@ export function buildDrawerRails(traversePair, opts = {}) {
   const scaleY = spanY / RAIL_NATIVE_LENGTH_Y_MM
   const y0 = left.bounds2D.minY + (RAIL_MOUNT_OFFSET.y || 0)
 
-  // Largeur traverse (~40 mm) : le rail est centré DESSUS, jamais en débord
-  const travW = Math.max(8, left.bounds2D.maxX - left.bounds2D.minX)
-  // Marge intérieure pour que le bois de traverse reste visible autour du rail
-  const insetX = Math.min(4, travW * 0.12)
-  const targetW = Math.max(6, travW - 2 * insetX)
-  const scaleX = targetW / RAIL_NATIVE_WIDTH_X_MM
+  // Largeur rail ≈ emprise Dynamoov 21 mm (entre face int. traverse et joue tiroir)
+  const scaleX = sideSpace / RAIL_NATIVE_WIDTH_X_MM
   const scaleZ = railH / RAIL_NATIVE_HEIGHT_Z_MM
 
-  // Origine STL = coin min (0,0,0) après normalize.
-  // Gauche : X = minX + inset (rail entièrement dans [minX, maxX])
-  // Droite : miroir X, position au maxX − inset (origine miroirée)
-  const leftX0 =
-    left.bounds2D.minX + insetX + (RAIL_MOUNT_OFFSET.x || 0)
-  const rightX0 =
-    right.bounds2D.maxX - insetX - (RAIL_MOUNT_OFFSET.x || 0)
+  /**
+   * Ancrage sur la face intérieure de la traverse, rail vers le centre
+   * (sous la joue du tiroir, dans le coin L rose).
+   * Gauche : origin à innerX, mesh en +X (vers le caisson / sous le tiroir).
+   * Droite : origin à innerX, mirror → mesh en −X.
+   */
+  const leftX = left.innerX + (RAIL_MOUNT_OFFSET.x || 0)
+  const rightX = right.innerX - (RAIL_MOUNT_OFFSET.x || 0)
 
   const common = {
     stlUrl: RAIL_STL_URL,
@@ -222,8 +221,7 @@ export function buildDrawerRails(traversePair, opts = {}) {
     zRail,
     railBodyHMm: railH,
     decrocheMm: decroche,
-    /** Rail entièrement sur la traverse (pas de débord visible) */
-    hiddenByTraverse: true,
+    sideSpaceMm: sideSpace,
   }
 
   return [
@@ -231,15 +229,14 @@ export function buildDrawerRails(traversePair, opts = {}) {
       ...common,
       id: 'rail-left',
       side: 'left',
-      position: [leftX0, y0, zRail],
+      position: [leftX, y0, zRail],
       mirrorX: false,
     },
     {
       ...common,
       id: 'rail-right',
       side: 'right',
-      // Miroir X : le mesh s’étend vers −X local → ancré au bord intérieur
-      position: [rightX0, y0, zRail],
+      position: [rightX, y0, zRail],
       mirrorX: true,
     },
   ]
