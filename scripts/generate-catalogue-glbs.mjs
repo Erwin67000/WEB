@@ -1,9 +1,11 @@
 /**
- * Génère un GLB par ligne active de matrice_catalogue.xlsx.
+ * Génère un GLB par ligne active de modele_boutique.csv.
+ * Source : public/catalogue/modele_boutique.csv (après sync)
+ *          ou src/1_STRUCTURE/03_bibliotheque/modele_boutique.csv
  * Tablettes = octogone + 2 traverses (buildTablette).
  * Sortie : public/catalogue/glb/<id>.glb
  *
- * Usage : node scripts/generate-catalogue-glbs.mjs
+ * Usage : npm run build:catalogue-glbs
  */
 import fs from 'node:fs'
 import path from 'node:path'
@@ -33,8 +35,12 @@ if (typeof globalThis.FileReader === 'undefined') {
 }
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
+const modelePath = path.join(root, 'public/catalogue/modele_boutique.csv')
+const modeleSrc = path.join(
+  root,
+  'src/1_STRUCTURE/03_bibliotheque/modele_boutique.csv',
+)
 const xlsxPath = path.join(root, 'public/catalogue/matrice_catalogue.xlsx')
-const xlsPath = path.join(root, 'public/catalogue/matrice_catalogue.xls')
 const csvPath = path.join(root, 'public/catalogue/matrice_catalogue.csv')
 const outDir = path.join(root, 'public/catalogue/glb')
 
@@ -61,21 +67,24 @@ const { buildTablette } = await import(
   ).href
 )
 
-/** Couleur panneau des préconfigs boutique (vignettes GLB) */
+/** Couleur panneau par défaut (si non spécifiée dans le modèle) */
 const BOUTIQUE_PANNEAU_COULEUR = 'olive'
 const { parseMatriceCatalogue, parseMatriceCatalogueWorkbook } = await import(
   pathToFileURL(path.join(root, 'src/1_STRUCTURE/00_matrice/matrice_catalogue.js')).href
 )
 
 function loadCatalogueRows() {
+  for (const p of [modelePath, modeleSrc, csvPath]) {
+    if (fs.existsSync(p) && p.endsWith('.csv')) {
+      const rows = parseMatriceCatalogue(fs.readFileSync(p, 'utf8'))
+      if (rows?.length) {
+        console.log('[generate-glbs] source CSV', path.relative(root, p))
+        return rows
+      }
+    }
+  }
   if (fs.existsSync(xlsxPath)) {
     return parseMatriceCatalogueWorkbook(fs.readFileSync(xlsxPath))
-  }
-  if (fs.existsSync(xlsPath)) {
-    return parseMatriceCatalogueWorkbook(fs.readFileSync(xlsPath))
-  }
-  if (fs.existsSync(csvPath)) {
-    return parseMatriceCatalogue(fs.readFileSync(csvPath, 'utf8'))
   }
   return null
 }
@@ -183,8 +192,12 @@ function buildRowGroup(row) {
   )
   const surf = FINITIONS_OSSATURE[ossId] || FINITIONS_OSSATURE.brut
   const woodColor = shadeHex(finish.color, surf.shade ?? 1)
+  const panneauId =
+    row.panneau_couleur ||
+    row.panneauCouleur ||
+    BOUTIQUE_PANNEAU_COULEUR
   const panneauColor =
-    PANNEAU_COULEURS[BOUTIQUE_PANNEAU_COULEUR]?.color ||
+    PANNEAU_COULEURS[panneauId]?.color ||
     PANNEAU_COULEURS.olive?.color ||
     '#7a8f5c'
 
@@ -408,5 +421,17 @@ fs.writeFileSync(
   path.join(outDir, 'manifest.json'),
   JSON.stringify({ generatedAt: new Date().toISOString(), items: manifest }, null, 2),
 )
+
+// Supprime les GLB orphelins (anciens ids hors modele_boutique)
+const keep = new Set(rows.map((r) => `${r.id}.glb`))
+keep.add('manifest.json')
+let removed = 0
+for (const f of fs.readdirSync(outDir)) {
+  if (!keep.has(f)) {
+    fs.unlinkSync(path.join(outDir, f))
+    removed++
+  }
+}
+if (removed) console.log(`[generate-glbs] ${removed} ancien(s) GLB supprimé(s)`)
 
 console.log(`[generate-glbs] terminé : ${ok}/${rows.length} GLB + manifest.json`)

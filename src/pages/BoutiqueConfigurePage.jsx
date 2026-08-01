@@ -27,7 +27,7 @@ function ViewportFallback() {
 }
 
 /**
- * Configurateur isolé d’une ligne matrice_catalogue.
+ * Configurateur isolé d’une ligne modele_boutique.
  * - repart toujours de la base CSV (env vide)
  * - n’écrit le main qu’après « Sauvegarder »
  */
@@ -47,7 +47,7 @@ export default function BoutiqueConfigurePage() {
       .then((found) => {
         if (cancelled) return
         if (!found) {
-          setError('Configuration introuvable dans matrice_catalogue.')
+          setError('Configuration introuvable dans modele_boutique.')
           return
         }
         setRow(found)
@@ -77,7 +77,7 @@ export default function BoutiqueConfigurePage() {
   if (!row) {
     return (
       <div className="page page-site page-pad-x" style={{ padding: '2rem' }}>
-        <p className="hint">Chargement de la base matrice…</p>
+        <p className="hint">Chargement du catalogue boutique…</p>
       </div>
     )
   }
@@ -111,7 +111,7 @@ export default function BoutiqueConfigurePage() {
               ← Retour
             </button>
             <div className="session-title">
-              <span className="section-kicker">Session · matrice_catalogue</span>
+              <span className="section-kicker">Session · modele_boutique</span>
               <strong>{row.name}</strong>
               <span className="hint">
                 Dimensions L×P×H figées · finitions &amp; aménagements libres ·

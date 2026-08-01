@@ -1,101 +1,45 @@
 {
-  "generatedAt": "2026-07-30T20:47:35.005Z",
+  "generatedAt": "2026-08-01T13:29:38.640Z",
   "items": [
     {
-      "id": "table-basse-petite",
-      "glb": "/catalogue/glb/table-basse-petite.glb"
+      "id": "001-table-chevet-petite",
+      "glb": "/catalogue/glb/001-table-chevet-petite.glb"
     },
     {
-      "id": "table-basse-moyenne",
-      "glb": "/catalogue/glb/table-basse-moyenne.glb"
+      "id": "002-table-chevet-moyenne",
+      "glb": "/catalogue/glb/002-table-chevet-moyenne.glb"
     },
     {
-      "id": "table-basse-grande",
-      "glb": "/catalogue/glb/table-basse-grande.glb"
+      "id": "003-table-chevet-grande",
+      "glb": "/catalogue/glb/003-table-chevet-grande.glb"
     },
     {
-      "id": "etagere-grande",
-      "glb": "/catalogue/glb/etagere-grande.glb"
+      "id": "004-commode-petite",
+      "glb": "/catalogue/glb/004-commode-petite.glb"
     },
     {
-      "id": "etagere-moyenne",
-      "glb": "/catalogue/glb/etagere-moyenne.glb"
+      "id": "005-commode-moyenne",
+      "glb": "/catalogue/glb/005-commode-moyenne.glb"
     },
     {
-      "id": "bibliotheque-300",
-      "glb": "/catalogue/glb/bibliotheque-300.glb"
+      "id": "006-commode-grande",
+      "glb": "/catalogue/glb/006-commode-grande.glb"
     },
     {
-      "id": "bureau-500",
-      "glb": "/catalogue/glb/bureau-500.glb"
+      "id": "007-dressing-petite",
+      "glb": "/catalogue/glb/007-dressing-petite.glb"
     },
     {
-      "id": "bureau-800",
-      "glb": "/catalogue/glb/bureau-800.glb"
+      "id": "008-dressing-moyenne",
+      "glb": "/catalogue/glb/008-dressing-moyenne.glb"
     },
     {
-      "id": "bureau-1200",
-      "glb": "/catalogue/glb/bureau-1200.glb"
+      "id": "009-dressing-grande",
+      "glb": "/catalogue/glb/009-dressing-grande.glb"
     },
     {
-      "id": "banc-petit",
-      "glb": "/catalogue/glb/banc-petit.glb"
-    },
-    {
-      "id": "banc-moyen",
-      "glb": "/catalogue/glb/banc-moyen.glb"
-    },
-    {
-      "id": "banc-grand",
-      "glb": "/catalogue/glb/banc-grand.glb"
-    },
-    {
-      "id": "buffet-600",
-      "glb": "/catalogue/glb/buffet-600.glb"
-    },
-    {
-      "id": "console-300",
-      "glb": "/catalogue/glb/console-300.glb"
-    },
-    {
-      "id": "servante-moyenne",
-      "glb": "/catalogue/glb/servante-moyenne.glb"
-    },
-    {
-      "id": "servante-petite",
-      "glb": "/catalogue/glb/servante-petite.glb"
-    },
-    {
-      "id": "servante-grande",
-      "glb": "/catalogue/glb/servante-grande.glb"
-    },
-    {
-      "id": "meuble-cuisine-600",
-      "glb": "/catalogue/glb/meuble-cuisine-600.glb"
-    },
-    {
-      "id": "meuble-haut-cuisine-600",
-      "glb": "/catalogue/glb/meuble-haut-cuisine-600.glb"
-    },
-    {
-      "id": "dressing-1200",
-      "glb": "/catalogue/glb/dressing-1200.glb"
-    },
-    {
-      "id": "dressing-600",
-      "glb": "/catalogue/glb/dressing-600.glb"
-    },
-    {
-      "id": "cube-400",
-      "glb": "/catalogue/glb/cube-400.glb"
-    },
-    {
-      "id": "cube-1000",
-      "glb": "/catalogue/glb/cube-1000.glb"
-    },
-    {
-      "id": "cube-2000",
-      "glb": "/catalogue/glb/cube-2000.glb"
+      "id": "010-coffre",
+      "glb": "/catalogue/glb/010-coffre.glb"
     }
   ]
 }

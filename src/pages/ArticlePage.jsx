@@ -1,5 +1,5 @@
 /**
- * Page produit boutique — fiche auto depuis la ligne matrice_catalogue.
+ * Page produit boutique — fiche auto depuis la ligne modele_boutique.
  * Toutes les infos (dims, finition, modules, panneaux, prix…) sont dérivées
  * du CSV, sans saisie manuelle par fiche.
  */
@@ -337,7 +337,7 @@ export default function ArticlePage() {
     getCatalogItem(productId)
       .then((found) => {
         if (cancelled) return
-        if (!found) setError('Configuration introuvable dans matrice_catalogue.')
+        if (!found) setError('Configuration introuvable dans modele_boutique.')
         else {
           setRow(found)
           setError(null)
