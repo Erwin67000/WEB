@@ -1,5 +1,5 @@
 /** Constantes de fabrication Philae (mm). */
-export const LARGEUR_ARETE = 40
+export const LARGEUR_ARETE = 30
 export const HAUTEUR_ARETE = 40
 export const TOLERANCE = 1
 /** Épaisseur figée fabrication (mm) — plus de choix UI client. */
