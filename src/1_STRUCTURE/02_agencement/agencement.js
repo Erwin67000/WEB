@@ -333,9 +333,9 @@ export function createModule(kind, bayIndex = 0, extras = {}) {
  */
 export function shelfZMm(mod, { H }, moduleList = []) {
   const inset = 22
-  // Bas du plateau ≥ inset ; haut + traverses 40 mm ≤ H − inset
+  // Bas du plateau ≥ inset ; haut + extrusion traverses (section arête) ≤ H − inset
   const zMin = inset + EPAISSEUR_PANNEAU
-  const zMax = Math.max(zMin, H - inset - 40)
+  const zMax = Math.max(zMin, H - inset - TRAVERSE_EXTRUSION_MM)
   if (mod.zMm != null && Number.isFinite(Number(mod.zMm))) {
     return Math.min(zMax, Math.max(zMin, Number(mod.zMm)))
   }
@@ -372,7 +372,10 @@ export function moduleLayout(mod, { L, W, H }, moduleList = []) {
       zMm: zTop,
       zTopMm: zTop,
       zMin: inset + EPAISSEUR_PANNEAU,
-      zMax: Math.max(inset + EPAISSEUR_PANNEAU, H - inset - 40),
+      zMax: Math.max(
+        inset + EPAISSEUR_PANNEAU,
+        H - inset - TRAVERSE_EXTRUSION_MM,
+      ),
     }
   }
 

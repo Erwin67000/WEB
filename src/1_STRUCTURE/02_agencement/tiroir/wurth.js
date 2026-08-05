@@ -10,6 +10,10 @@
  *   eshop.wurth.fr … Coulisse Dynamoov Tipmatic sortie totale
  */
 
+import {
+  LARGEUR_ARETE,
+  HAUTEUR_ARETE,
+} from '../../00_matrice/matrice_constante.js'
 import { TRAVERSE_EXTRUSION_MM } from '../traverse.js'
 
 /** Type construction Würth : B = décroché bas pour rails dynamiques. */
@@ -97,23 +101,26 @@ export function clampWurthHeight(hMm, maxAvailable = Infinity) {
 export function computeWurthDrawerDims(dims, mod, traverseBounds) {
   const maxH = Math.max(
     WURTH_HAUTEURS_MM[0],
-    (dims.H || 0) - 40 - TRAVERSE_EXTRUSION_MM - DYNAMOOV_RAIL_BODY_H_MM,
+    (dims.H || 0) -
+      HAUTEUR_ARETE -
+      TRAVERSE_EXTRUSION_MM -
+      DYNAMOOV_RAIL_BODY_H_MM,
   )
   const hMm = clampWurthHeight(mod?.hMm ?? WURTH_HAUTEUR_DEFAUT_MM, maxH)
 
   // LWK = largeur intérieure entre traverses (faces int.)
   const LWK = Math.max(
     0,
-    (traverseBounds?.maxX ?? dims.L - 40) -
-      (traverseBounds?.minX ?? 40),
+    (traverseBounds?.maxX ?? dims.L - LARGEUR_ARETE) -
+      (traverseBounds?.minX ?? LARGEUR_ARETE),
   )
   // LWS = (LWK − 42)  — plan Dynamoov
   const licRaw = LWK - DYNAMOOV_LWK_MINUS_LWS_MM
   const licMm = Math.max(DYNAMOOV_LWS_MIN_MM, Math.round(licRaw))
 
   const depthAvail =
-    (traverseBounds?.maxY ?? dims.W - 20) -
-    (traverseBounds?.minY ?? 20) -
+    (traverseBounds?.maxY ?? dims.W - LARGEUR_ARETE) -
+    (traverseBounds?.minY ?? LARGEUR_ARETE) -
     2 * DRAWER_CLEARANCE_Y_MM
   const depthAvailableMm = Math.round(Math.max(0, depthAvail))
   const depthTooSmall = depthAvailableMm < WURTH_PROFONDEUR_MIN_MM

@@ -39,7 +39,7 @@ export class Meuble {
     return 4 * L + 4 * W + 4 * H
   }
 
-  /** Volume approximatif section 40×40 (m³). */
+  /** Volume approximatif section arête (LARGEUR×HAUTEUR, m³). */
   get woodVolumeM3() {
     const section = (LARGEUR_ARETE / 1000) * (HAUTEUR_ARETE / 1000)
     return (this.totalEdgeLengthMm / 1000) * section

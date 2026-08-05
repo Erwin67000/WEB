@@ -5,7 +5,7 @@
 import { LARGEUR_ARETE } from '../00_matrice/matrice_constante.js'
 import { buildGeometrie } from '../00_matrice/matrice_geometrie.js'
 
-/** Épaisseur d’extrusion (mm) — section type arête 40. */
+/** Épaisseur d’extrusion (mm) — égale à la section d’arête (30×30). */
 export const TRAVERSE_EXTRUSION_MM = LARGEUR_ARETE
 
 /**

@@ -36,7 +36,7 @@ export const TVA = 0.2
  * Porte (module) : forfait + variable × façade L×H (m²)
  */
 export const PRIX = {
-  /** Ossature bois 40×40 */
+  /** Ossature bois 30×30 */
   ossatureForfait: 900,
   /** € HT / m de longueur cumulée 4×(L+W+H) */
   ossatureParMetre: 50,

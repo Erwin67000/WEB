@@ -262,7 +262,7 @@ export function buildTiroir(dims, layout, mod = {}, opts = {}) {
    * Traverses Y sous les rails :
    *   dessus traverse = bas des joues (zSideBottom)
    *   → zTopMm traverse = zSideBottom − TRAVERSE_EXTRUSION (extrusion +Z)
-   *   faceA à zTopMm, faceB à zTopMm+40 = zSideBottom
+   *   faceA à zTopMm, faceB à zTopMm+TRAVERSE_EXTRUSION = zSideBottom
    */
   const zTraverseBottom = Math.max(0, zSideBottom - TRAVERSE_EXTRUSION_MM)
 

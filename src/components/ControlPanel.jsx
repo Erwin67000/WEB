@@ -18,6 +18,7 @@ import {
   DRAWER_DEPTH_TOO_SMALL_MSG,
   WURTH_PROFONDEUR_MIN_MM,
 } from '../1_STRUCTURE/02_agencement/agencement.js'
+import { TRAVERSE_EXTRUSION_MM } from '../1_STRUCTURE/02_agencement/traverse.js'
 import { DIM_LIMITS } from '../3_INPUT/matrice_input.js'
 import { CLIENT_FIELDS } from '../3_INPUT/matrice_client.js'
 import { FACE_PICK_DEFS } from '../1_STRUCTURE/02_agencement/FacePickPlanes.jsx'
@@ -447,14 +448,15 @@ export default function ControlPanel() {
                       : null
                   const shelfZMin = 22 + Number(EPAISSEUR_PANNEAU)
                   const shelfZMax =
-                    unit.dims.H - 22 - 40
+                    unit.dims.H - 22 - TRAVERSE_EXTRUSION_MM
                   const drawerLayout =
                     m.kind === 'drawer'
                       ? moduleLayout(m, unit.dims, unit.modules)
                       : null
                   const wurth = drawerLayout?.wurth
                   const drawerZ = drawerLayout?.zBottomMm ?? drawerLayout?.zMm
-                  const drawerZMin = drawerLayout?.zMin ?? 40
+                  const drawerZMin =
+                    drawerLayout?.zMin ?? 22 + TRAVERSE_EXTRUSION_MM
                   const drawerZMax = drawerLayout?.zMax ?? unit.dims.H - 100
                   const depthTooSmall = Boolean(
                     drawerLayout?.depthTooSmall || wurth?.depthTooSmall,
