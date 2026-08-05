@@ -62,11 +62,16 @@
   z-index: 0;
 }
 
-/* Footer au-dessus du stage une fois le récit passé (stage opacity 0) */
+/* Footer + playground au-dessus du stage une fois le récit passé */
 .site-root.is-story-mode .site-footer {
   position: relative;
   z-index: 20;
   /* footer garde son style sombre en bandeau bas */
+}
+
+.site-root.is-story-mode .playground {
+  position: relative;
+  z-index: 15;
 }
 
 /* Mode sticky (legacy) */
@@ -567,6 +572,723 @@ body.story-mode {
   }
   .path-steps-2 {
     grid-template-columns: 1fr;
+  }
+}
+
+/* ——— HUD scrollytelling (gamification) ——— */
+.home-story-hud {
+  position: absolute;
+  top: clamp(0.75rem, 2vh, 1.25rem);
+  right: clamp(1rem, 3vw, 2rem);
+  width: min(11.5rem, 38vw);
+  pointer-events: none;
+  z-index: 5;
+  padding: 0.55rem 0.7rem 0.65rem;
+  border: 1px solid rgba(26, 22, 16, 0.12);
+  border-radius: 4px;
+  background: rgba(245, 240, 230, 0.78);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 8px 28px rgba(20, 16, 10, 0.06);
+}
+
+.home-story-hud-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.home-story-hud-label {
+  font-family: var(--philae-font-display, 'Stardos Stencil', system-ui, sans-serif);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #5a554c;
+}
+
+.home-story-hud-pct {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #12100c;
+}
+
+.home-story-hud-bar {
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(26, 22, 16, 0.1);
+  overflow: hidden;
+}
+
+.home-story-hud-bar > i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #c9a227, #7a8f5c);
+  border-radius: 2px;
+  transition: width 0.12s linear;
+}
+
+.home-story-hud-pips {
+  display: flex;
+  gap: 4px;
+  margin-top: 0.45rem;
+}
+
+.home-story-hud-pips span {
+  flex: 1;
+  height: 3px;
+  border-radius: 1px;
+  background: rgba(26, 22, 16, 0.12);
+  transition: background 0.25s;
+}
+
+.home-story-hud-pips span.done {
+  background: #8a857a;
+}
+
+.home-story-hud-pips span.active {
+  background: var(--gold, #c9a227);
+  box-shadow: 0 0 8px rgba(201, 162, 39, 0.45);
+}
+
+.home-story-next-hint {
+  margin: 0.85rem 0 0;
+  font-size: clamp(0.85rem, 1.4vw, 1rem);
+  letter-spacing: 0.06em;
+  color: #5a554c;
+  animation: home-hint-bob 2.2s ease-in-out infinite;
+}
+
+@keyframes home-hint-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.75;
+  }
+  50% {
+    transform: translateY(4px);
+    opacity: 1;
+  }
+}
+
+/* ——— Terrain de jeu (post-scroll) ——— */
+.page-playground {
+  background: var(--ivory, #f5f0e6);
+}
+
+.playground {
+  position: relative;
+  z-index: 15;
+  width: 100%;
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: clamp(3rem, 8vw, 5.5rem) clamp(1.25rem, 4vw, 2.5rem)
+    clamp(4rem, 10vw, 6rem);
+  pointer-events: auto;
+  background:
+    radial-gradient(
+      ellipse 80% 50% at 50% -10%,
+      rgba(201, 162, 39, 0.12),
+      transparent 55%
+    ),
+    var(--ivory, #f5f0e6);
+}
+
+.playground-hero {
+  display: grid;
+  grid-template-columns: 1.4fr 0.85fr;
+  gap: clamp(1.5rem, 4vw, 3rem);
+  align-items: end;
+  margin-bottom: clamp(2.5rem, 6vw, 4rem);
+}
+
+.playground-kicker {
+  margin-bottom: 0.75rem !important;
+}
+
+.playground-title {
+  font-family: var(--philae-font-display, 'Stardos Stencil', system-ui, sans-serif);
+  font-size: clamp(2.4rem, 5.5vw, 3.8rem);
+  font-weight: 400;
+  line-height: 1.05;
+  letter-spacing: 0.03em;
+  color: #12100c;
+  margin: 0 0 1rem;
+}
+
+.playground-lead {
+  font-size: clamp(1.05rem, 1.7vw, 1.25rem);
+  line-height: 1.55;
+  color: #5a554c;
+  max-width: 36rem;
+  margin: 0 0 1.75rem;
+}
+
+.playground-xp {
+  max-width: 28rem;
+}
+
+.playground-xp-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 0.4rem;
+}
+
+.playground-rank {
+  font-family: var(--philae-font-display, 'Stardos Stencil', system-ui, sans-serif);
+  font-size: 1rem;
+  letter-spacing: 0.06em;
+  color: #12100c;
+}
+
+.playground-xp-num {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.95rem;
+  color: #5a554c;
+}
+
+.playground-xp-num abbr {
+  text-decoration: none;
+  letter-spacing: 0.08em;
+  font-size: 0.75rem;
+}
+
+.playground-xp-track {
+  position: relative;
+  height: 10px;
+  border-radius: 5px;
+  background: rgba(26, 22, 16, 0.1);
+  overflow: hidden;
+  border: 1px solid rgba(26, 22, 16, 0.08);
+}
+
+.playground-xp-fill {
+  height: 100%;
+  border-radius: 5px;
+  background: linear-gradient(90deg, #c9a227 0%, #7a8f5c 55%, #6b8cae 100%);
+  transition: width 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  box-shadow: 0 0 16px rgba(201, 162, 39, 0.35);
+}
+
+.playground-xp-ticks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.playground-xp-ticks i {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(245, 240, 230, 0.55);
+}
+
+.playground-xp-hint {
+  margin: 0.45rem 0 0;
+  font-size: 0.82rem;
+  color: #8a857a;
+  letter-spacing: 0.02em;
+}
+
+.playground-dual {
+  border: 1px solid rgba(26, 22, 16, 0.12);
+  border-radius: 6px;
+  padding: 1.25rem 1.35rem;
+  background: #12100c;
+  color: #f5f0e6;
+  min-height: 9.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  box-shadow: 0 18px 40px rgba(10, 8, 5, 0.18);
+}
+
+.playground-dual-kicker {
+  margin: 0 0 0.65rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(245, 240, 230, 0.55);
+}
+
+.playground-dual-pair {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  font-family: var(--philae-font-display, 'Stardos Stencil', system-ui, sans-serif);
+  font-size: clamp(1.15rem, 2vw, 1.45rem);
+  letter-spacing: 0.04em;
+  animation: dual-in 0.55s ease;
+}
+
+.playground-dual-a {
+  color: var(--gold, #c9a227);
+}
+
+.playground-dual-arrow {
+  color: rgba(245, 240, 230, 0.45);
+  font-size: 1rem;
+}
+
+.playground-dual-b {
+  color: #f5f0e6;
+}
+
+.playground-dual-note {
+  margin: 0.75rem 0 0;
+  font-size: 0.88rem;
+  color: rgba(245, 240, 230, 0.6);
+}
+
+@keyframes dual-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.playground-section {
+  margin-bottom: clamp(2.75rem, 6vw, 4rem);
+}
+
+.playground-section-head {
+  margin-bottom: 1.35rem;
+}
+
+.playground-section-title {
+  font-family: var(--philae-font-display, 'Stardos Stencil', system-ui, sans-serif);
+  font-size: clamp(1.65rem, 3.2vw, 2.25rem);
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  color: #12100c;
+  margin: 0.35rem 0 0.5rem;
+}
+
+.playground-section-lead {
+  margin: 0;
+  max-width: 36rem;
+  color: #5a554c;
+  font-size: 1.02rem;
+  line-height: 1.5;
+}
+
+.playground-missions {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+.playground-mission {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 1.15rem 1.15rem 1.25rem;
+  border-radius: 6px;
+  border: 1px solid rgba(26, 22, 16, 0.12);
+  background: rgba(255, 252, 246, 0.7);
+  min-height: 14.5rem;
+  transition:
+    transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.25s,
+    border-color 0.25s;
+}
+
+.playground-mission:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 36px rgba(20, 16, 10, 0.1);
+  border-color: rgba(201, 162, 39, 0.45);
+}
+
+.playground-mission.tone-ink {
+  background: #12100c;
+  border-color: #12100c;
+  color: #f5f0e6;
+}
+
+.playground-mission.tone-ink h4,
+.playground-mission.tone-ink .playground-mission-rank {
+  color: var(--gold, #c9a227);
+}
+
+.playground-mission.tone-ink p {
+  color: rgba(245, 240, 230, 0.72);
+}
+
+.playground-mission.tone-olive {
+  background: linear-gradient(
+    160deg,
+    rgba(122, 143, 92, 0.18),
+    rgba(255, 252, 246, 0.9)
+  );
+}
+
+.playground-mission.tone-gold {
+  background: linear-gradient(
+    160deg,
+    rgba(201, 162, 39, 0.16),
+    rgba(255, 252, 246, 0.92)
+  );
+}
+
+.playground-mission-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.playground-mission-rank {
+  font-family: var(--philae-font-display, 'Stardos Stencil', system-ui, sans-serif);
+  font-size: 0.95rem;
+  letter-spacing: 0.1em;
+  color: #8a857a;
+}
+
+.playground-mission-xp {
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gold, #c9a227);
+  font-weight: 600;
+}
+
+.playground-mission h4 {
+  margin: 0;
+  font-family: var(--philae-font-display, 'Stardos Stencil', system-ui, sans-serif);
+  font-size: 1.25rem;
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  color: #12100c;
+}
+
+.playground-mission p {
+  margin: 0;
+  flex: 1;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  color: #5a554c;
+}
+
+.playground-mission-cta {
+  align-self: flex-start;
+  margin-top: 0.35rem;
+  border: 1px solid rgba(26, 22, 16, 0.2);
+  background: transparent;
+  color: #12100c;
+  font: inherit;
+  font-size: 0.88rem;
+  letter-spacing: 0.04em;
+  padding: 0.5rem 0.75rem;
+  border-radius: 3px;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    color 0.2s,
+    border-color 0.2s;
+}
+
+.playground-mission-cta:hover {
+  background: #12100c;
+  color: #f5f0e6;
+  border-color: #12100c;
+}
+
+.playground-mission.tone-ink .playground-mission-cta {
+  border-color: rgba(245, 240, 230, 0.35);
+  color: #f5f0e6;
+}
+
+.playground-mission.tone-ink .playground-mission-cta:hover {
+  background: var(--gold, #c9a227);
+  border-color: var(--gold, #c9a227);
+  color: #12100c;
+}
+
+.playground-mission.is-done {
+  outline: 1px solid rgba(122, 143, 92, 0.45);
+}
+
+.playground-mission.is-pulse {
+  animation: mission-pulse 0.85s ease;
+}
+
+.playground-mission-stamp {
+  position: absolute;
+  top: 0.85rem;
+  right: 0.85rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: #7a8f5c;
+  color: #f5f0e6;
+  font-size: 0.85rem;
+  display: grid;
+  place-items: center;
+}
+
+@keyframes mission-pulse {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.03);
+    box-shadow: 0 0 0 4px rgba(201, 162, 39, 0.25);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.playground-worlds {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+.playground-world {
+  --world-accent: #c9a227;
+  position: relative;
+  padding: 1.25rem 1.15rem 1.35rem;
+  border-radius: 8px;
+  border: 1px solid rgba(26, 22, 16, 0.12);
+  background: #fffcf6;
+  min-height: 15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  overflow: hidden;
+  transition:
+    transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.25s;
+}
+
+.playground-world::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: var(--world-accent);
+}
+
+.playground-world.is-open:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 18px 40px rgba(20, 16, 10, 0.12);
+}
+
+.playground-world.is-locked {
+  opacity: 0.72;
+  background: repeating-linear-gradient(
+    -45deg,
+    #fffcf6,
+    #fffcf6 8px,
+    #f3ede3 8px,
+    #f3ede3 16px
+  );
+}
+
+.playground-world-badge {
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--world-accent);
+  font-weight: 600;
+}
+
+.playground-world-icon {
+  font-size: 1.75rem;
+  line-height: 1;
+  margin: 0.35rem 0 0.15rem;
+  color: #12100c;
+}
+
+.playground-world h4 {
+  margin: 0;
+  font-family: var(--philae-font-display, 'Stardos Stencil', system-ui, sans-serif);
+  font-size: 1.35rem;
+  font-weight: 400;
+  color: #12100c;
+}
+
+.playground-world-tag {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #8a857a;
+  font-style: italic;
+}
+
+.playground-world-blurb {
+  margin: 0.35rem 0 0;
+  flex: 1;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: #5a554c;
+}
+
+.playground-world-cta {
+  margin-top: 0.75rem;
+  border: none;
+  background: #12100c;
+  color: #f5f0e6;
+  font: inherit;
+  font-size: 0.88rem;
+  letter-spacing: 0.04em;
+  padding: 0.6rem 0.85rem;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.playground-world-cta:hover {
+  background: var(--world-accent);
+  color: #12100c;
+}
+
+.playground-world-lock {
+  margin-top: 0.75rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #8a857a;
+}
+
+.playground-paths {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 2.5rem;
+}
+
+.playground-path {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 1.5rem 1.5rem 1.35rem;
+  border-radius: 8px;
+  text-decoration: none;
+  transition:
+    transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.25s;
+  min-height: 11rem;
+}
+
+.playground-path:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 36px rgba(20, 16, 10, 0.12);
+}
+
+.playground-path-shop {
+  background: #fffcf6;
+  border: 1px solid rgba(26, 22, 16, 0.14);
+  color: #12100c;
+}
+
+.playground-path-forge {
+  background: #12100c;
+  border: 1px solid #12100c;
+  color: #f5f0e6;
+}
+
+.playground-path-kicker {
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.65;
+}
+
+.playground-path strong {
+  font-family: var(--philae-font-display, 'Stardos Stencil', system-ui, sans-serif);
+  font-size: clamp(1.6rem, 3vw, 2rem);
+  font-weight: 400;
+  letter-spacing: 0.04em;
+}
+
+.playground-path-shop strong {
+  color: #12100c;
+}
+
+.playground-path-forge strong {
+  color: var(--gold, #c9a227);
+}
+
+.playground-path-desc {
+  font-size: 0.95rem;
+  line-height: 1.45;
+  opacity: 0.8;
+  flex: 1;
+}
+
+.playground-path-go {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  letter-spacing: 0.06em;
+}
+
+.playground-path-shop .playground-path-go {
+  color: var(--gold, #c9a227);
+}
+
+.playground-path-forge .playground-path-go {
+  color: #f5f0e6;
+}
+
+.playground-footer-note {
+  text-align: center;
+  margin: 0;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  color: #8a857a;
+}
+
+.site-root.theme-ivory .playground-title,
+.site-root.theme-ivory .playground-section-title,
+.site-root.theme-ivory .playground-mission h4,
+.site-root.theme-ivory .playground-world h4 {
+  color: #12100c !important;
+}
+
+.site-root.theme-ivory .playground-lead,
+.site-root.theme-ivory .playground-section-lead,
+.site-root.theme-ivory .playground-mission p,
+.site-root.theme-ivory .playground-world-blurb {
+  color: #5a554c !important;
+}
+
+@media (max-width: 1100px) {
+  .playground-missions,
+  .playground-worlds {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 720px) {
+  .home-story-hud {
+    width: min(9.5rem, 42vw);
+    padding: 0.4rem 0.5rem;
+  }
+  .playground-hero {
+    grid-template-columns: 1fr;
+  }
+  .playground-missions,
+  .playground-worlds,
+  .playground-paths {
+    grid-template-columns: 1fr;
+  }
+  .playground-mission {
+    min-height: 0;
   }
 }
 

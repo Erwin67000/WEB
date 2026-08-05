@@ -71,39 +71,39 @@ const REST_EDGE_IDS = [
 const STORY = [
   {
     id: 'one',
-    kicker: '01 · Origine',
+    kicker: 'LVL 01 · Origine',
     title: 'L’intention',
-    text: 'Deux points créent une dimension',
+    text: 'Deux points. Une dimension. Le jeu commence ici.',
   },
   {
     id: 'assemble',
-    kicker: '02 · Formation',
-    title: 'L’arête',
-    text: 'Le sommet est la rencontre de 3 arêtes perpendiculaires entre elles',
+    kicker: 'LVL 02 · Sommet',
+    title: 'Triple rencontre',
+    text: 'Trois arêtes se percutent — le premier sommet naît.',
   },
   {
     id: 'stretch',
-    kicker: '03 · Volume',
-    title: '3 arêtes → 3 dimensions',
-    text: 'Semblables entre elles',
+    kicker: 'LVL 03 · Volume',
+    title: 'Étire le monde',
+    text: 'L, P, H : trois axes, une seule signature géométrique.',
   },
   {
     id: 'frame',
-    kicker: '04 · Structure',
-    title: '12 arêtes',
-    text: 'S’assemblent pour former l’ossature',
+    kicker: 'LVL 04 · Ossature',
+    title: 'Boss fight · 12 arêtes',
+    text: 'Le squelette complet. La structure avant la peau.',
   },
   {
     id: 'shelves',
-    kicker: '05 · Fonctions',
-    title: 'Ajout de fonctionnalités',
-    text: 'Selon vos besoins',
+    kicker: 'LVL 05 · Pouvoirs',
+    title: 'Fonctions débloquées',
+    text: 'Tablettes, usages, modules — tu équipe ton meuble.',
   },
   {
     id: 'panels',
-    kicker: '06 · Finitions',
-    title: 'Panneaux',
-    text: 'Habillent la structure, et lui donne du caractère',
+    kicker: 'LVL 06 · Habillage',
+    title: 'Caractère',
+    text: 'Les panneaux donnent le visage. Olive, terracotta, ton terrain.',
   },
 ]
 
@@ -994,12 +994,16 @@ const TEXT_FADE_OUT_SCROLLS = 0.35
 export default function HomeScrollStory({
   mode = 'fixed',
   showExit = false,
+  onProgress,
 }) {
   const trackRef = useRef(null)
   const stageRef = useRef(null)
   const progressRef = useRef(0)
   const copyRef = useRef(null)
+  const onProgressRef = useRef(onProgress)
+  onProgressRef.current = onProgress
   const [chapter, setChapter] = useState(0)
+  const [hudP, setHudP] = useState(0)
   const isFixed = mode === 'fixed'
 
   useEffect(() => {
@@ -1009,13 +1013,14 @@ export default function HomeScrollStory({
     let raf = 0
     let alive = true
     let lastCh = -1
+    let lastHudBucket = -1
 
     const loop = () => {
       if (!alive) return
       const p = getTrackProgress(el)
       progressRef.current = p
 
-      // Libérer l’écran une fois le track passé → footer visible
+      // Libérer l’écran une fois le track passé → footer / playground visibles
       const stage = stageRef.current
       if (stage) {
         const rect = el.getBoundingClientRect()
@@ -1043,6 +1048,14 @@ export default function HomeScrollStory({
       if (ch !== lastCh) {
         lastCh = ch
         setChapter(ch)
+      }
+
+      // HUD + callback parent (throttle ~2 %)
+      const bucket = Math.floor(p * 50)
+      if (bucket !== lastHudBucket) {
+        lastHudBucket = bucket
+        setHudP(p)
+        onProgressRef.current?.({ chapter: ch, progress: p })
       }
 
       // Fondu : visible plus longtemps au centre de l’étape
@@ -1121,6 +1134,29 @@ export default function HomeScrollStory({
       </div>
 
       <div className="home-story-overlay">
+        {/* HUD gamifié — coin haut droit */}
+        <div className="home-story-hud" aria-hidden>
+          <div className="home-story-hud-row">
+            <span className="home-story-hud-label">Assemblage</span>
+            <span className="home-story-hud-pct">
+              {Math.round(hudP * 100)}%
+            </span>
+          </div>
+          <div className="home-story-hud-bar">
+            <i style={{ width: `${Math.round(hudP * 100)}%` }} />
+          </div>
+          <div className="home-story-hud-pips">
+            {STORY.map((s, i) => (
+              <span
+                key={s.id}
+                className={
+                  i < chapter ? 'done' : i === chapter ? 'active' : ''
+                }
+              />
+            ))}
+          </div>
+        </div>
+
         {/* Timeline gauche, milieu vertical */}
         <ol className="home-story-chapters" aria-label="Étapes du récit">
           {STORY.map((s, i) => (
@@ -1152,6 +1188,11 @@ export default function HomeScrollStory({
           <p className="section-kicker home-story-kicker">{ch.kicker}</p>
           <h2 className="home-story-title">{ch.title}</h2>
           <p className="home-story-text">{ch.text}</p>
+          {chapter === STORY.length - 1 && (
+            <p className="home-story-next-hint">
+              Continue de scroller · le terrain de jeu t’attend ↓
+            </p>
+          )}
         </div>
       </div>
 
