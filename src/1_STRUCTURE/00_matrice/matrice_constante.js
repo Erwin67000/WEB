@@ -1,6 +1,43 @@
 /** Constantes de fabrication Philae (mm). */
-export const LARGEUR_ARETE = 30
-export const HAUTEUR_ARETE = 30
+
+/**
+ * Section d’arête selon l’encombrement du meuble :
+ *   max(L, P/W, H) < 1000 mm  →  30×30
+ *   max(L, P/W, H) ≥ 1000 mm  →  40×40
+ */
+export const ARETE_SEUIL_GRANDE_MM = 1000
+export const ARETE_SECTION_PETITE = Object.freeze({ largeur: 30, hauteur: 30 })
+export const ARETE_SECTION_GRANDE = Object.freeze({ largeur: 40, hauteur: 40 })
+
+/**
+ * Résout la section d’arête pour un meuble.
+ * @param {{ L?: number, W?: number, P?: number, H?: number } | null} dims
+ * @returns {{ largeur: number, hauteur: number, maxDim: number, grande: boolean, label: string }}
+ */
+export function resolveAreteSection(dims = {}) {
+  const L = Number(dims?.L) || 0
+  const W = Number(dims?.W ?? dims?.P) || 0
+  const H = Number(dims?.H) || 0
+  const maxDim = Math.max(L, W, H)
+  const grande = maxDim >= ARETE_SEUIL_GRANDE_MM
+  const sec = grande ? ARETE_SECTION_GRANDE : ARETE_SECTION_PETITE
+  return {
+    largeur: sec.largeur,
+    hauteur: sec.hauteur,
+    maxDim,
+    grande,
+    label: `${sec.largeur}×${sec.hauteur}`,
+  }
+}
+
+/** Largeur de section (= extrusion traverses) pour un meuble. */
+export function areteExtrusionMm(dims) {
+  return resolveAreteSection(dims).largeur
+}
+
+/** Défaut rétrocompat (petit meuble 30×30). Préférer resolveAreteSection(dims). */
+export const LARGEUR_ARETE = ARETE_SECTION_PETITE.largeur
+export const HAUTEUR_ARETE = ARETE_SECTION_PETITE.hauteur
 export const TOLERANCE = 1
 /** Épaisseur figée fabrication (mm) — plus de choix UI client. */
 export const EPAISSEUR_PANNEAU = 14
@@ -36,7 +73,7 @@ export const TVA = 0.2
  * Porte (module) : forfait + variable × façade L×H (m²)
  */
 export const PRIX = {
-  /** Ossature bois 30×30 */
+  /** Ossature bois (section 30×30 ou 40×40 selon max dim) */
   ossatureForfait: 900,
   /** € HT / m de longueur cumulée 4×(L+W+H) */
   ossatureParMetre: 50,
@@ -329,6 +366,11 @@ export function resolveOssatureFinish(raw) {
 export default {
   LARGEUR_ARETE,
   HAUTEUR_ARETE,
+  ARETE_SEUIL_GRANDE_MM,
+  ARETE_SECTION_PETITE,
+  ARETE_SECTION_GRANDE,
+  resolveAreteSection,
+  areteExtrusionMm,
   TOLERANCE,
   EPAISSEUR_PANNEAU,
   EPAISSEUR_PORTE,

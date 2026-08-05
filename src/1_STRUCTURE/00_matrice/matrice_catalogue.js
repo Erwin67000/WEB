@@ -215,8 +215,11 @@ function estimatePriceTtc({ L, W, H, modules, panneaux }) {
 
 /**
  * Ligne modele_boutique → objet catalogue interne.
+ * @param {object} obj — cellules CSV
+ * @param {number} index — index ligne data
+ * @param {{ lastType?: string, lastIdNum?: number }} ctx — héritage Type / n° auto
  */
-export function normalizeModeleBoutiqueRow(obj, index = 0) {
+export function normalizeModeleBoutiqueRow(obj, index = 0, ctx = {}) {
   // Accès colonnes avec variantes d’en-têtes
   const get = (...keys) => {
     for (const k of keys) {
@@ -231,7 +234,10 @@ export function normalizeModeleBoutiqueRow(obj, index = 0) {
   }
 
   const rawId = cellStr(get('ID', 'id'))
-  const type = cellStr(get('Type', 'type', 'category'))
+  const typeCell = cellStr(get('Type', 'type', 'category'))
+  // Type hérité seulement pour les lignes sans ID (variantes du même modèle)
+  const type =
+    typeCell || (!rawId ? cellStr(ctx.lastType) : '') || ''
   const nom = cellStr(get('Nom', 'nom', 'name'))
   const L = Number(get('L', 'L_mm')) || 0
   const P = Number(get('P', 'W_mm', 'W')) || 0 // P = profondeur = W meuble
@@ -249,14 +255,26 @@ export function normalizeModeleBoutiqueRow(obj, index = 0) {
   const hasDims = L > 0 && P > 0 && H > 0
   const hasName = Boolean(nom)
   if (!hasDims || !hasName) {
+    // Mettre à jour le contexte même pour les stubs (Type seul)
+    if (type) ctx.lastType = type
     return null
   }
 
   // id URL / GLB stable
   const tailleSlug = slugify(taille.replace(/^#/, ''))
   const nomSlug = slugify(nom)
-  const idNum = rawId.padStart(3, '0')
-  const id = [idNum, nomSlug, tailleSlug].filter(Boolean).join('-')
+  let id
+  let idNum = ''
+  if (rawId) {
+    idNum = rawId.padStart(3, '0')
+    const n = Number(rawId)
+    if (Number.isFinite(n)) ctx.lastIdNum = n
+    id = [idNum, nomSlug, tailleSlug].filter(Boolean).join('-')
+  } else {
+    // Ligne sans ID (variante taille) : slug sans n° pour éviter collisions
+    id = [nomSlug, tailleSlug || `${L}x${P}x${H}`].filter(Boolean).join('-')
+  }
+  if (type) ctx.lastType = type
 
   // Modules
   const modParts = []
@@ -346,9 +364,9 @@ export function normalizeModeleBoutiqueRow(obj, index = 0) {
     short_description: short,
     featured: index < 3,
     active: true,
-    sort_order: Number(rawId) || index + 1,
+    sort_order: Number(rawId) || (ctx.lastIdNum || 0) * 10 + index + 1,
     docs_ready: false,
-    sku: `PHL-${idNum}`,
+    sku: `PHL-${idNum || id.toUpperCase().slice(0, 12)}`,
     options,
     source: 'modele_boutique',
   }
@@ -421,6 +439,7 @@ export function parseMatriceCatalogue(text) {
   const boutique = isModeleBoutiqueHeaders(headers)
 
   const rows = []
+  const ctx = { lastType: '', lastIdNum: 0 }
   lines.slice(1).forEach((line, i) => {
     const cols = splitCsvLine(line)
     const obj = {}
@@ -428,7 +447,7 @@ export function parseMatriceCatalogue(text) {
       obj[h] = (cols[j] ?? '').trim()
     })
     if (boutique) {
-      const row = normalizeModeleBoutiqueRow(obj, i)
+      const row = normalizeModeleBoutiqueRow(obj, i, ctx)
       if (row) rows.push(row)
     } else {
       const row = normalizeCatalogueRow(obj)
@@ -453,9 +472,12 @@ export function parseMatriceCatalogueWorkbook(data) {
   if (!rawRows.length) return []
   const headers = Object.keys(rawRows[0])
   const boutique = isModeleBoutiqueHeaders(headers)
+  const ctx = { lastType: '', lastIdNum: 0 }
   const rows = rawRows
     .map((obj, i) =>
-      boutique ? normalizeModeleBoutiqueRow(obj, i) : normalizeCatalogueRow(obj),
+      boutique
+        ? normalizeModeleBoutiqueRow(obj, i, ctx)
+        : normalizeCatalogueRow(obj),
     )
     .filter(Boolean)
   return finalizeRows(rows)

@@ -14,11 +14,11 @@
  *   LWK = distance faces int. traverses
  *   LWS = LWK − 42  (21 mm / côté pour la coulisse)
  */
-import { EPAISSEUR_PANNEAU } from '../../00_matrice/matrice_constante.js'
 import {
-  buildTraversePair,
-  TRAVERSE_EXTRUSION_MM,
-} from '../traverse.js'
+  EPAISSEUR_PANNEAU,
+  areteExtrusionMm,
+} from '../../00_matrice/matrice_constante.js'
+import { buildTraversePair } from '../traverse.js'
 import {
   WURTH_DRAWER_TYPE,
   WURTH_DECROCHE_DYNAMOOV_MM,
@@ -261,14 +261,16 @@ export function buildTiroir(dims, layout, mod = {}, opts = {}) {
   /**
    * Traverses Y sous les rails :
    *   dessus traverse = bas des joues (zSideBottom)
-   *   → zTopMm traverse = zSideBottom − TRAVERSE_EXTRUSION (extrusion +Z)
-   *   faceA à zTopMm, faceB à zTopMm+TRAVERSE_EXTRUSION = zSideBottom
+   *   → zTopMm traverse = zSideBottom − extrusion section (30 ou 40)
+   *   faceA à zTopMm, faceB à zTopMm+extrusion = zSideBottom
    */
-  const zTraverseBottom = Math.max(0, zSideBottom - TRAVERSE_EXTRUSION_MM)
+  const extrusion = areteExtrusionMm(dims)
+  const zTraverseBottom = Math.max(0, zSideBottom - extrusion)
 
   const traverses = buildTraversePair(dims, zTraverseBottom, {
     leftId: 'drawer-traverse-left',
     rightId: 'drawer-traverse-right',
+    extrusionMm: extrusion,
   })
 
   const [trL, trR] = traverses

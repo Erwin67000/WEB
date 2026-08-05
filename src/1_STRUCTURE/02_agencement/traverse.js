@@ -2,11 +2,22 @@
  * Traverses paramétriques (profil 6 pts en plan XY, extrusion +Z).
  * Toujours utilisées **par paire** (gauche / droite) — tablette & tiroir.
  */
-import { LARGEUR_ARETE } from '../00_matrice/matrice_constante.js'
+import {
+  LARGEUR_ARETE,
+  areteExtrusionMm,
+} from '../00_matrice/matrice_constante.js'
 import { buildGeometrie } from '../00_matrice/matrice_geometrie.js'
 
-/** Épaisseur d’extrusion (mm) — égale à la section d’arête (30×30). */
+/**
+ * Épaisseur d’extrusion par défaut (mm) — petit meuble 30×30.
+ * Préférer areteExtrusionMm(dims) ou buildTraversePair(dims, z) (auto).
+ */
 export const TRAVERSE_EXTRUSION_MM = LARGEUR_ARETE
+
+/** Extrusion traverses = largeur de section d’arête du meuble. */
+export function traverseExtrusionForDims(dims) {
+  return areteExtrusionMm(dims)
+}
 
 /**
  * Profil gauche (X min) : Z0 — Z2, plan XY.
@@ -104,16 +115,18 @@ export function resolveTraverseProfile2D(dims, refs = TRAVERSE_PROFILE_LEFT) {
 export function buildTraverse({
   dims,
   zTopMm = 0,
-  extrusionMm = TRAVERSE_EXTRUSION_MM,
+  extrusionMm,
   profileRefs = TRAVERSE_PROFILE_LEFT,
   id = 'traverse',
   side = 'left',
 } = {}) {
   if (!dims) throw new Error('Traverse : dims requis')
+  const ext =
+    extrusionMm != null ? Number(extrusionMm) : areteExtrusionMm(dims)
   const xy = resolveTraverseProfile2D(dims, profileRefs)
   const z0 = Number(zTopMm)
   const faceA = xy.map(([x, y]) => [x, y, z0])
-  const faceB = xy.map(([x, y]) => [x, y, z0 + extrusionMm])
+  const faceB = xy.map(([x, y]) => [x, y, z0 + ext])
   const points = [...faceA, ...faceB]
 
   const positions = new Float32Array(points.length * 3)
@@ -162,9 +175,9 @@ export function buildTraverse({
     indices,
     wire,
     material: 'arete',
-    extrusionMm,
+    extrusionMm: ext,
     zTopMm: z0,
-    zTop: z0 + extrusionMm,
+    zTop: z0 + ext,
     profile2D: xy.map((p) => [...p]),
     bounds2D: { minX, maxX, minY, maxY },
     /** Face intérieure (vers le centre meuble) pour coller le rail */
@@ -182,7 +195,10 @@ export function buildTraverse({
  * @returns {[object, object]} [left, right]
  */
 export function buildTraversePair(dims, zTopMm, opts = {}) {
-  const extrusionMm = opts.extrusionMm ?? TRAVERSE_EXTRUSION_MM
+  const extrusionMm =
+    opts.extrusionMm != null
+      ? Number(opts.extrusionMm)
+      : areteExtrusionMm(dims)
   const left = buildTraverse({
     id: opts.leftId || 'traverse-left',
     side: 'left',

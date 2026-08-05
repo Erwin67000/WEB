@@ -2,27 +2,55 @@
  * Matrice géométrie Philae
  * 12 arêtes × 12 points = 144 points 3D (mm)
  * Formules paramétriques issues de master_geometrie.
+ *
+ * Section d’arête variable selon max(L,W,H) — voir resolveAreteSection.
  */
 import {
   LARGEUR_ARETE,
   HAUTEUR_ARETE,
   ANGLE_GEOMETRIE,
+  resolveAreteSection,
 } from './matrice_constante.js'
 
-const l = LARGEUR_ARETE
-const h = HAUTEUR_ARETE
-const angle = ANGLE_GEOMETRIE
+/**
+ * Dérivés géométriques pour une section d’arête (largeur × hauteur).
+ * @param {number} [l=LARGEUR_ARETE]
+ * @param {number} [h=HAUTEUR_ARETE]
+ */
+export function areteGeomParams(l = LARGEUR_ARETE, h = HAUTEUR_ARETE) {
+  const angle = ANGLE_GEOMETRIE
+  const delta_x = (Math.tan(angle) * l) / 2
+  const delta_hx = h * Math.tan(angle)
+  const R3 = Math.sqrt(h ** 2 + (l / 2) ** 2)
+  const acosVal = R3 > 0 ? Math.acos(l / 2 / R3) : 0
+  const Rot3_y = R3 * Math.cos(acosVal - Math.PI / 4)
+  const Rot3_z = R3 * Math.sin(acosVal - Math.PI / 4)
+  return { l, h, angle, delta_x, delta_hx, R3, Rot3_y, Rot3_z }
+}
 
-const delta_x = (Math.tan(angle) * l) / 2
-const delta_hx = h * Math.tan(angle)
-
-const R3 = Math.sqrt(h ** 2 + (l / 2) ** 2)
-const acosVal = R3 > 0 ? Math.acos(l / 2 / R3) : 0
-const Rot3_y = R3 * Math.cos(acosVal - Math.PI / 4)
-const Rot3_z = R3 * Math.sin(acosVal - Math.PI / 4)
+function resolveSectionInput(sectionOrDims) {
+  if (!sectionOrDims) {
+    return { largeur: LARGEUR_ARETE, hauteur: HAUTEUR_ARETE }
+  }
+  if (
+    sectionOrDims.largeur != null &&
+    sectionOrDims.hauteur != null
+  ) {
+    return {
+      largeur: Number(sectionOrDims.largeur) || LARGEUR_ARETE,
+      hauteur: Number(sectionOrDims.hauteur) || HAUTEUR_ARETE,
+    }
+  }
+  return resolveAreteSection(sectionOrDims)
+}
 
 /** 12 points d'une arête selon X (longueur L). */
-export function calcAreteX(L) {
+export function calcAreteX(L, sectionOrDims) {
+  const sec = resolveSectionInput(sectionOrDims)
+  const { delta_x, delta_hx, Rot3_y, Rot3_z } = areteGeomParams(
+    sec.largeur,
+    sec.hauteur,
+  )
   return [
     [0, 0, 0],
     [delta_hx, delta_hx, delta_hx],
@@ -40,7 +68,12 @@ export function calcAreteX(L) {
 }
 
 /** 12 points d'une arête selon Y (profondeur W). */
-export function calcAreteY(W) {
+export function calcAreteY(W, sectionOrDims) {
+  const sec = resolveSectionInput(sectionOrDims)
+  const { delta_x, delta_hx, Rot3_y, Rot3_z } = areteGeomParams(
+    sec.largeur,
+    sec.hauteur,
+  )
   return [
     [0, 0, 0],
     [delta_hx, delta_hx, delta_hx],
@@ -58,7 +91,12 @@ export function calcAreteY(W) {
 }
 
 /** 12 points d'une arête selon Z (hauteur H). */
-export function calcAreteZ(H) {
+export function calcAreteZ(H, sectionOrDims) {
+  const sec = resolveSectionInput(sectionOrDims)
+  const { delta_x, delta_hx, Rot3_y, Rot3_z } = areteGeomParams(
+    sec.largeur,
+    sec.hauteur,
+  )
   return [
     [0, 0, 0],
     [delta_hx, delta_hx, delta_hx],
@@ -93,8 +131,8 @@ export const ligne_arete = [
   [4, 5],
   [10, 11],
   [8, 9],
-  [0,1],
-  [6,7],
+  [0, 1],
+  [6, 7],
 ]
 
 /** 12 triangles par arête (indices dans les 12 points). */
@@ -131,9 +169,6 @@ export function symetrie(points, axis, dim) {
   })
 }
 
-
-
-
 /**
  * Classe arête : 12 points 3D + axes.
  */
@@ -154,15 +189,16 @@ export class Arete {
   }
 }
 
-/** Classe geometrie : 12 arêtes
- Construit les 12 arêtes d'un meuble à partir de L, W, H (mm).
- @returns {{ aretes: Arete[], vertices: number[][], byId: Record<string, Arete> }}
+/**
+ * Construit les 12 arêtes d'un meuble à partir de L, W, H (mm).
+ * Section d’arête auto : 30×30 si max&lt;1000, 40×40 si max≥1000.
+ * @returns {{ aretes: Arete[], vertices: number[][], byId: Record<string, Arete>, dimensions: object, section: object }}
  */
-
 export function buildGeometrie({ L, W, H }) {
-  const baseX = calcAreteX(L)
-  const baseY = calcAreteY(W)
-  const baseZ = calcAreteZ(H)
+  const section = resolveAreteSection({ L, W, H })
+  const baseX = calcAreteX(L, section)
+  const baseY = calcAreteY(W, section)
+  const baseZ = calcAreteZ(H, section)
 
   const map = {
     X0: new Arete('X0', baseX, 'X'),
@@ -185,18 +221,29 @@ export function buildGeometrie({ L, W, H }) {
   const aretes = order.map((id) => map[id])
   const vertices = aretes.flatMap((a) => a.points)
 
-  return { aretes, vertices, byId: map, dimensions: { L, W, H } }
+  return {
+    aretes,
+    vertices,
+    byId: map,
+    dimensions: { L, W, H },
+    section,
+  }
 }
 
 /**
  * Export JSON ossature (compatible formats précédents).
  */
 export function toOssatureJson({ L, W, H }) {
-  const { vertices, aretes } = buildGeometrie({ L, W, H })
+  const { vertices, aretes, section } = buildGeometrie({ L, W, H })
   return {
     kind: 'philae-ossature',
     unit: 'mm',
     dimensions: { L, W, H },
+    section: {
+      largeur: section.largeur,
+      hauteur: section.hauteur,
+      label: section.label,
+    },
     areteCount: aretes.length,
     pointsPerArete: 12,
     vertices,
@@ -204,6 +251,7 @@ export function toOssatureJson({ L, W, H }) {
 }
 
 export default {
+  areteGeomParams,
   calcAreteX,
   calcAreteY,
   calcAreteZ,

@@ -7,7 +7,7 @@ import {
   face_arete,
   toOssatureJson,
 } from '../00_matrice/matrice_geometrie.js'
-import { LARGEUR_ARETE, HAUTEUR_ARETE } from '../00_matrice/matrice_constante.js'
+import { resolveAreteSection } from '../00_matrice/matrice_constante.js'
 
 /**
  * Classe Meuble : 12 arêtes + métriques.
@@ -39,10 +39,15 @@ export class Meuble {
     return 4 * L + 4 * W + 4 * H
   }
 
-  /** Volume approximatif section arête (LARGEUR×HAUTEUR, m³). */
+  /** Volume approximatif section arête (largeur×hauteur, m³). */
   get woodVolumeM3() {
-    const section = (LARGEUR_ARETE / 1000) * (HAUTEUR_ARETE / 1000)
+    const sec = resolveAreteSection(this.dims)
+    const section = (sec.largeur / 1000) * (sec.hauteur / 1000)
     return (this.totalEdgeLengthMm / 1000) * section
+  }
+
+  get areteSection() {
+    return resolveAreteSection(this.dims)
   }
 
   toJSON() {
@@ -98,16 +103,19 @@ export function buildOssature({ L, W, H }) {
     ...areteToBuffers(arete.points),
   }))
 
+  const section = meuble.areteSection
   return {
     meuble,
     aretes,
     vertices,
     byId,
     dimensions,
+    section,
     meshes,
     metrics: {
       totalEdgeLengthMm: meuble.totalEdgeLengthMm,
       woodVolumeM3: meuble.woodVolumeM3,
+      areteSection: section.label,
     },
   }
 }

@@ -9,6 +9,7 @@ import {
   TOLERANCE,
   DECALAGE_PANNEAU,
   PRIX,
+  areteExtrusionMm,
 } from '../00_matrice/matrice_constante.js'
 import { uid } from '../00_matrice/matrice_configuration.js'
 import { buildGeometrie } from '../00_matrice/matrice_geometrie.js'
@@ -20,10 +21,7 @@ import {
   ligne_rectangle,
   computeQuatreRectangles,
 } from '../00_matrice/matrice_panneau_grok.js'
-import {
-  buildTraversePair,
-  TRAVERSE_EXTRUSION_MM,
-} from './traverse.js'
+import { buildTraversePair } from './traverse.js'
 import {
   WURTH_HAUTEUR_DEFAUT_MM,
   WURTH_DECROCHE_DYNAMOOV_MM,
@@ -272,6 +270,7 @@ export {
   buildTraversePair,
   buildTabletteTraverses,
   TRAVERSE_EXTRUSION_MM,
+  traverseExtrusionForDims,
   TRAVERSE_PROFILE_LEFT,
   TRAVERSE_PROFILE_RIGHT,
   TRAVERSE_PROFILE_6,
@@ -331,11 +330,13 @@ export function createModule(kind, bayIndex = 0, extras = {}) {
  * Z tablette (mm) = **haut** de l’octogone (face supérieure).
  * Clamp pour laisser la place à l’épaisseur (vers le bas) + traverses (vers le haut).
  */
-export function shelfZMm(mod, { H }, moduleList = []) {
+export function shelfZMm(mod, dims, moduleList = []) {
+  const { H } = dims
   const inset = 22
+  const extrusion = areteExtrusionMm(dims)
   // Bas du plateau ≥ inset ; haut + extrusion traverses (section arête) ≤ H − inset
   const zMin = inset + EPAISSEUR_PANNEAU
-  const zMax = Math.max(zMin, H - inset - TRAVERSE_EXTRUSION_MM)
+  const zMax = Math.max(zMin, H - inset - extrusion)
   if (mod.zMm != null && Number.isFinite(Number(mod.zMm))) {
     return Math.min(zMax, Math.max(zMin, Number(mod.zMm)))
   }
@@ -361,9 +362,12 @@ export function moduleLayout(mod, { L, W, H }, moduleList = []) {
   const index = sameKind.findIndex((m) => m.id === mod.id)
   const i = index >= 0 ? index : mod.bayIndex
 
+  const dims = { L, W, H }
+  const extrusion = areteExtrusionMm(dims)
+
   if (mod.kind === 'shelf') {
     /** zMm = haut de tablette (octogone) */
-    const zTop = shelfZMm(mod, { H }, moduleList)
+    const zTop = shelfZMm(mod, dims, moduleList)
     const zCenter = zTop - EPAISSEUR_PANNEAU / 2
     return {
       center: [L / 2, W / 2, zCenter],
@@ -372,30 +376,28 @@ export function moduleLayout(mod, { L, W, H }, moduleList = []) {
       zMm: zTop,
       zTopMm: zTop,
       zMin: inset + EPAISSEUR_PANNEAU,
-      zMax: Math.max(
-        inset + EPAISSEUR_PANNEAU,
-        H - inset - TRAVERSE_EXTRUSION_MM,
-      ),
+      zMax: Math.max(inset + EPAISSEUR_PANNEAU, H - inset - extrusion),
+      areteExtrusionMm: extrusion,
     }
   }
 
   if (mod.kind === 'drawer') {
     // Bornes traverses pour LWK / profondeur (profil à Z provisoire)
     const zTraverseGuess = z0 + 8
-    const [trL, trR] = buildTraversePair({ L, W, H }, zTraverseGuess)
+    const [trL, trR] = buildTraversePair(dims, zTraverseGuess)
     const traverseBounds = {
       minX: trL.innerX,
       maxX: trR.innerX,
       minY: Math.min(trL.bounds2D.minY, trR.bounds2D.minY),
       maxY: Math.max(trL.bounds2D.maxY, trR.bounds2D.maxY),
     }
-    const wurth = computeWurthDrawerDims({ L, W, H }, mod, traverseBounds)
+    const wurth = computeWurthDrawerDims(dims, mod, traverseBounds)
     const drawerH = wurth.hMm
     /**
      * zMm = bas des joues du tiroir (= dessus des traverses Y / plan rails).
      * Traverses extrudées vers le bas sous ce plan.
      */
-    const zMin = z0 + TRAVERSE_EXTRUSION_MM
+    const zMin = z0 + extrusion
     const zMax = Math.max(zMin, H - inset - drawerH)
     let zSideBottom
     if (mod.zMm != null && Number.isFinite(Number(mod.zMm))) {
@@ -420,7 +422,7 @@ export function moduleLayout(mod, { L, W, H }, moduleList = []) {
       zMm: zSideBottom,
       zBottomMm: zSideBottom,
       /** Bas d’extrusion des traverses (dessous) */
-      zTraverseMm: zSideBottom - TRAVERSE_EXTRUSION_MM,
+      zTraverseMm: zSideBottom - extrusion,
       zMin,
       zMax,
       hMm: drawerH,
@@ -428,6 +430,7 @@ export function moduleLayout(mod, { L, W, H }, moduleList = []) {
       lwkMm: wurth.lwkMm,
       depthMm: wurth.depthMm,
       depthTooSmall: Boolean(wurth.depthTooSmall),
+      areteExtrusionMm: extrusion,
     }
   }
 

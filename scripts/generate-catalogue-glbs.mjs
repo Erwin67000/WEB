@@ -73,10 +73,21 @@ const { parseMatriceCatalogue, parseMatriceCatalogueWorkbook } = await import(
   pathToFileURL(path.join(root, 'src/1_STRUCTURE/00_matrice/matrice_catalogue.js')).href
 )
 
+function readCsvText(p) {
+  const raw = fs.readFileSync(p)
+  let text = raw.toString('utf8')
+  const looksBroken =
+    text.includes('\uFFFD') ||
+    (/Biblioth.|entr.|Etag./.test(text) &&
+      !/Bibliothèque|entrée|Etagère/.test(text))
+  if (looksBroken) text = raw.toString('latin1')
+  return text
+}
+
 function loadCatalogueRows() {
   for (const p of [modelePath, modeleSrc, csvPath]) {
     if (fs.existsSync(p) && p.endsWith('.csv')) {
-      const rows = parseMatriceCatalogue(fs.readFileSync(p, 'utf8'))
+      const rows = parseMatriceCatalogue(readCsvText(p))
       if (rows?.length) {
         console.log('[generate-glbs] source CSV', path.relative(root, p))
         return rows

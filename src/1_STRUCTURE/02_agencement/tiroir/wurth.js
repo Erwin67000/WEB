@@ -11,10 +11,9 @@
  */
 
 import {
-  LARGEUR_ARETE,
-  HAUTEUR_ARETE,
+  resolveAreteSection,
+  areteExtrusionMm,
 } from '../../00_matrice/matrice_constante.js'
-import { TRAVERSE_EXTRUSION_MM } from '../traverse.js'
 
 /** Type construction Würth : B = décroché bas pour rails dynamiques. */
 export const WURTH_DRAWER_TYPE = 'B'
@@ -99,28 +98,27 @@ export function clampWurthHeight(hMm, maxAvailable = Infinity) {
  *   faces intérieures des traverses Y (LWK en X, profondeur max en Y)
  */
 export function computeWurthDrawerDims(dims, mod, traverseBounds) {
+  const sec = resolveAreteSection(dims)
+  const extrusion = areteExtrusionMm(dims)
   const maxH = Math.max(
     WURTH_HAUTEURS_MM[0],
-    (dims.H || 0) -
-      HAUTEUR_ARETE -
-      TRAVERSE_EXTRUSION_MM -
-      DYNAMOOV_RAIL_BODY_H_MM,
+    (dims.H || 0) - sec.hauteur - extrusion - DYNAMOOV_RAIL_BODY_H_MM,
   )
   const hMm = clampWurthHeight(mod?.hMm ?? WURTH_HAUTEUR_DEFAUT_MM, maxH)
 
   // LWK = largeur intérieure entre traverses (faces int.)
   const LWK = Math.max(
     0,
-    (traverseBounds?.maxX ?? dims.L - LARGEUR_ARETE) -
-      (traverseBounds?.minX ?? LARGEUR_ARETE),
+    (traverseBounds?.maxX ?? dims.L - sec.largeur) -
+      (traverseBounds?.minX ?? sec.largeur),
   )
   // LWS = (LWK − 42)  — plan Dynamoov
   const licRaw = LWK - DYNAMOOV_LWK_MINUS_LWS_MM
   const licMm = Math.max(DYNAMOOV_LWS_MIN_MM, Math.round(licRaw))
 
   const depthAvail =
-    (traverseBounds?.maxY ?? dims.W - LARGEUR_ARETE) -
-    (traverseBounds?.minY ?? LARGEUR_ARETE) -
+    (traverseBounds?.maxY ?? dims.W - sec.largeur) -
+    (traverseBounds?.minY ?? sec.largeur) -
     2 * DRAWER_CLEARANCE_Y_MM
   const depthAvailableMm = Math.round(Math.max(0, depthAvail))
   const depthTooSmall = depthAvailableMm < WURTH_PROFONDEUR_MIN_MM

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-01T13:29:38.640Z",
+  "generatedAt": "2026-08-05T14:32:05.160Z",
   "items": [
     {
       "id": "001-table-chevet-petite",
@@ -40,6 +40,30 @@
     {
       "id": "010-coffre",
       "glb": "/catalogue/glb/010-coffre.glb"
+    },
+    {
+      "id": "012-servante-petite",
+      "glb": "/catalogue/glb/012-servante-petite.glb"
+    },
+    {
+      "id": "013-bibliotheque-petite",
+      "glb": "/catalogue/glb/013-bibliotheque-petite.glb"
+    },
+    {
+      "id": "servante-moyenne",
+      "glb": "/catalogue/glb/servante-moyenne.glb"
+    },
+    {
+      "id": "servante-grande",
+      "glb": "/catalogue/glb/servante-grande.glb"
+    },
+    {
+      "id": "bibliotheque-moyenne",
+      "glb": "/catalogue/glb/bibliotheque-moyenne.glb"
+    },
+    {
+      "id": "bibliotheque-grande",
+      "glb": "/catalogue/glb/bibliotheque-grande.glb"
     }
   ]
 }

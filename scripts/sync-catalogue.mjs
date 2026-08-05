@@ -23,12 +23,26 @@ if (!fs.existsSync(source)) {
 }
 
 fs.mkdirSync(targetDir, { recursive: true })
-fs.copyFileSync(source, target)
+
+// Source parfois en Latin-1 (LibreOffice Windows) — normalise en UTF-8 + BOM
+const raw = fs.readFileSync(source)
+let text = raw.toString('utf8')
+const looksBroken =
+  text.includes('\uFFFD') ||
+  (/Biblioth.|entr.|Etag.|Si.ge|Ext.rieur/.test(text) &&
+    !/Bibliothèque|entrée|Etagère|Siège|Extérieur/.test(text))
+if (looksBroken) {
+  text = raw.toString('latin1')
+  console.log('[sync:catalogue] reconversion Latin-1 → UTF-8')
+}
+text = '\uFEFF' + text.replace(/^\uFEFF/, '')
+fs.writeFileSync(target, text, 'utf8')
 console.log(
   '[sync:catalogue]',
   path.relative(root, source),
   '→',
   path.relative(root, target),
+  '(UTF-8)',
 )
 
 // Nettoyage anciens doublons structure
