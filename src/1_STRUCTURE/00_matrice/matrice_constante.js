@@ -40,12 +40,12 @@ export const LARGEUR_ARETE = ARETE_SECTION_PETITE.largeur
 export const HAUTEUR_ARETE = ARETE_SECTION_PETITE.hauteur
 export const TOLERANCE = 1
 /** Épaisseur figée fabrication (mm) — plus de choix UI client. */
-export const EPAISSEUR_PANNEAU = 14
-export const EPAISSEUR_PORTE = 14
-/** @deprecated figé à 14 mm */
-export const EPAISSEURS_PANNEAU = [14]
-/** @deprecated figé à 14 mm */
-export const EPAISSEURS_PORTE = [14]
+export const EPAISSEUR_PANNEAU = 15
+export const EPAISSEUR_PORTE = 15
+/** @deprecated figé à 15 mm */
+export const EPAISSEURS_PANNEAU = [15]
+/** @deprecated figé à 15 mm */
+export const EPAISSEURS_PORTE = [15]
 /** Décalage face panneau depuis le point d’arête (mm) — fixe, plus de slider. */
 export const DECALAGE_PANNEAU = 0
 
