@@ -45,6 +45,7 @@ export function I18nProvider({ children }) {
 
   useEffect(() => {
     document.documentElement.lang = lang
+    document.documentElement.setAttribute('xml:lang', lang)
   }, [lang])
 
   const t = useCallback(

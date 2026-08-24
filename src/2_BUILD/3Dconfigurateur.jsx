@@ -330,9 +330,16 @@ function CameraFloorClamp({ pickMode }) {
 
 function ViewportHint({ pickMode }) {
   const { t } = useI18n()
+  const touch =
+    typeof window !== 'undefined' &&
+    window.matchMedia?.('(pointer: coarse)').matches
   return (
     <div className="viewport-hint">
-      {pickMode ? t('config.hintPick') : t('config.hintOrbit')}
+      {pickMode
+        ? t('config.hintPick')
+        : touch
+          ? t('config.hintTouch')
+          : t('config.hintOrbit')}
     </div>
   )
 }

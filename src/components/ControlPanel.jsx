@@ -94,7 +94,6 @@ export default function ControlPanel() {
   const sunIntensity = useActiveConfigStore((s) => s.sunIntensity)
   const wireframe = useActiveConfigStore((s) => s.wireframe)
   const notes = useActiveConfigStore((s) => s.notes)
-  const quoteRef = useActiveConfigStore((s) => s.quoteRef)
   const contact = useActiveConfigStore((s) => s.contact)
   const panneauPickMode = useActiveConfigStore((s) => s.panneauPickMode)
   const dimsLocked = useActiveConfigStore((s) => s.dimsLocked)
@@ -120,7 +119,6 @@ export default function ControlPanel() {
   const setContact = useActiveConfigStore((s) => s.setContact)
   const requestModele3D = useActiveConfigStore((s) => s.requestModele3D)
   const requestAcheter = useActiveConfigStore((s) => s.requestAcheter)
-  const refreshQuoteRef = useActiveConfigStore((s) => s.refreshQuoteRef)
 
   const storeApi = useActiveConfigStoreApi()
 
@@ -132,11 +130,6 @@ export default function ControlPanel() {
   const pricing = useMemo(
     () => storeApi.getState().getPricing(),
     [units, storeApi],
-  )
-
-  const impact = useMemo(
-    () => storeApi.getState().getImpact(),
-    [unit, storeApi],
   )
 
   const { t } = useI18n()
@@ -326,7 +319,7 @@ export default function ControlPanel() {
                     mm
                     <span className="muted"> {t('config.lwh')}</span>
                   </p>
-                  <p className="muted" style={{ fontSize: '0.68rem', margin: 0 }}>
+                  <p className="muted" style={{ fontSize: '0.8125rem', margin: 0 }}>
                     {t('config.dimsLockedHint')}
                   </p>
                 </div>
@@ -379,17 +372,20 @@ export default function ControlPanel() {
                 </>
               )}
               {!dimsLocked && (
-                <NumFieldInline
-                  label={t('config.rotZ')}
-                  value={unit.rotationZ}
-                  min={-180}
-                  max={180}
-                  step={5}
-                  unit="°"
-                  onChange={(rotationZ) =>
-                    updateUnit(unit.id, { rotationZ })
-                  }
-                />
+                <>
+                  <p className="muted config-dims-help">{t('config.dimsHelp')}</p>
+                  <NumFieldInline
+                    label={t('config.rotZ')}
+                    value={unit.rotationZ}
+                    min={-180}
+                    max={180}
+                    step={5}
+                    unit="°"
+                    onChange={(rotationZ) =>
+                      updateUnit(unit.id, { rotationZ })
+                    }
+                  />
+                </>
               )}
 
               <p className="field-label" style={{ marginTop: '0.35rem' }}>
@@ -786,95 +782,56 @@ export default function ControlPanel() {
           )}
         </section>
 
-        {/* Achat / export */}
-        <section className="panel-section">
-          <button type="button" className="section-head" onClick={() => toggle('devis')}>
-            <span>{t('config.buy')}</span>
-            <span className="chev">{openSections.devis ? '▾' : '▸'}</span>
-          </button>
-          {openSections.devis && (
-            <div className="section-body">
-              <div className="quote-ref">
-                <span>{t('config.ref')}</span>
-                <strong>{quoteRef}</strong>
-                <button type="button" className="btn-icon" onClick={refreshQuoteRef} title={t('config.newRef')}>
-                  ↻
-                </button>
-              </div>
-              <div className="price-block">
-                <div>
-                  <span>{t('config.totalHt')}</span>
-                  <strong>{pricing.ht.toFixed(2)} €</strong>
-                </div>
-                <div>
-                  <span>{t('config.vat')}</span>
-                  <strong>{pricing.tva.toFixed(2)} €</strong>
-                </div>
-                <div className="ttc">
-                  <span>{t('config.ttc')}</span>
-                  <strong>{pricing.ttc.toFixed(2)} €</strong>
-                </div>
-              </div>
-              {impact && (
-                <div className="impact-block">
-                  <p className="impact-title">{t('config.impact')}</p>
-                  <p>
-                    {t('config.impactLine1', {
-                      wood: impact.woodKg.toFixed(1),
-                      caisson: impact.caissonKg.toFixed(1),
-                    })}
-                  </p>
-                  <p>
-                    {t('config.impactLine2', {
-                      gain: impact.gainKg.toFixed(1),
-                      co2: impact.gainCO2.toFixed(1),
-                    })}
-                  </p>
-                </div>
-              )}
-              <div className="row-actions col client-actions">
-                <PayButton
-                  disabled={checkoutBusy || pricing.ttc < 0.5}
-                  onClick={async () => {
-                    setCheckoutBusy(true)
-                    notify(t('config.preparingPay'))
-                    try {
-                      const result = await requestAcheter()
-                      if (result?.error) {
-                        notify(result.error)
-                        return
-                      }
-                      if (result?.url) {
-                        notify(t('config.redirectStripe'))
-                        return
-                      }
-                      notify(t('config.payUnavailable'))
-                    } finally {
-                      setCheckoutBusy(false)
-                    }
-                  }}
-                >
-                  {checkoutBusy
-                    ? t('config.redirecting')
-                    : t('config.buyPrice', { price: pricing.ttc.toFixed(0) })}
-                </PayButton>
-                <button
-                  type="button"
-                  className="btn"
-                  onClick={async () => {
-                    await requestModele3D()
-                    notify(t('config.model3dDone'))
-                  }}
-                >
-                  {t('config.model3d')}
-                </button>
-              </div>
-              <p className="legal-hint">
-                {t('config.legal')}
-              </p>
-            </div>
-          )}
-        </section>
+      </div>
+      <div className="panel-buy-bar">
+        <div className="panel-buy-price">
+          <span>{t('config.ttc')}</span>
+          <strong>{pricing.ttc.toFixed(2)} €</strong>
+        </div>
+        <PayButton
+          disabled={
+            checkoutBusy ||
+            pricing.ttc < 0.5 ||
+            !contact.email ||
+            !contact.firstName ||
+            !contact.lastName
+          }
+          onClick={async () => {
+            setCheckoutBusy(true)
+            notify(t('config.preparingPay'))
+            try {
+              const result = await requestAcheter()
+              if (result?.error) {
+                notify(result.error)
+                return
+              }
+              if (result?.url) {
+                notify(t('config.redirectStripe'))
+                return
+              }
+              notify(t('config.payUnavailable'))
+            } finally {
+              setCheckoutBusy(false)
+            }
+          }}
+        >
+          {checkoutBusy
+            ? t('config.redirecting')
+            : t('config.buyPrice', { price: pricing.ttc.toFixed(0) })}
+        </PayButton>
+        {(!contact.email || !contact.firstName || !contact.lastName) && (
+          <p className="panel-buy-hint">{t('config.buyNeedContact')}</p>
+        )}
+        <button
+          type="button"
+          className="panel-buy-secondary"
+          onClick={async () => {
+            await requestModele3D()
+            notify(t('config.model3dDone'))
+          }}
+        >
+          {t('config.model3d')}
+        </button>
       </div>
       {flash && <div className="panel-flash">{flash}</div>}
     </aside>

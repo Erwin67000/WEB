@@ -46,8 +46,8 @@ const SCALE = 0.001
 const WOOD = FINITIONS.chene.color
 const PANEL = PANNEAU_COULEURS.olive.color
 const PANEL_EDGE = PANNEAU_COULEURS.olive.edge
-/** ~1.5 viewports par phase narrative (6 phases → ~9 écrans, ~1.5× plus court) */
-const SCROLL_PAGES = 9
+/** 1 viewport par phase (6 phases) — plus de course crème vide */
+const SCROLL_PAGES = 6
 /** Aligné sur STORY.length */
 const N_PHASES = 6
 const UNIT_MM = 200
@@ -1156,36 +1156,10 @@ export default function HomeScrollStory({
           </div>
         </div>
 
-        {/* Timeline gauche, milieu vertical */}
-        <ol className="home-story-chapters" aria-label={t('story.chaptersAria')}>
-          {STORY.map((s, i) => {
-            const kicker = t(`story.${s.id}.kicker`)
-            return (
-              <li
-                key={s.id}
-                className={
-                  i === chapter ? 'active' : i < chapter ? 'done' : ''
-                }
-              >
-                <button
-                  type="button"
-                  className="home-story-chapter-btn"
-                  onClick={() => goToChapter(i)}
-                  aria-current={i === chapter ? 'step' : undefined}
-                  title={t('story.goTo', { kicker })}
-                >
-                  {kicker}
-                </button>
-              </li>
-            )
-          })}
-        </ol>
-
-        {/* Texte bas centre : fondu simple */}
         <div
           key={chapter}
           ref={copyRef}
-          className="home-story-copy"
+          className="home-story-copy home-story-copy-stack"
         >
           <p className="section-kicker home-story-kicker">{chKicker}</p>
           <h2 className="home-story-title">{chTitle}</h2>

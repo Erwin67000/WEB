@@ -197,6 +197,7 @@ export default function FurniturePreview3D({
   forceLive = false,
   /** Orbit large (page produit) */
   freeOrbit = false,
+  interactive = true,
 }) {
   const productId = productIdProp || catalogRow?.id || unitProp?.id
   const glbUrl = productId ? catalogGlbUrl(productId) : null
@@ -212,6 +213,7 @@ export default function FurniturePreview3D({
         eager={eager}
         dpr={dpr}
         freeOrbit={freeOrbit}
+        interactive={interactive}
       />
     )
   }

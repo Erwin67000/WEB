@@ -1,8 +1,17 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useConfigStore } from '../store/useConfigStore.js'
-import { CLIENT_FIELDS } from '../3_INPUT/matrice_client.js'
 import { useI18n } from '@texte/I18nProvider.jsx'
+
+const IDENTITY = ['firstName', 'lastName', 'email', 'phone']
+const ADDRESS = [
+  'addressLine1',
+  'addressLine2',
+  'postalCode',
+  'city',
+  'country',
+]
+const REQUIRED = ['firstName', 'lastName', 'email']
 
 export default function ContactPage() {
   const { t } = useI18n()
@@ -10,15 +19,42 @@ export default function ContactPage() {
   const setContact = useConfigStore((s) => s.setContact)
   const notes = useConfigStore((s) => s.notes)
   const setNotes = useConfigStore((s) => s.setNotes)
-  const quoteRef = useConfigStore((s) => s.quoteRef)
-  const requestDevis = useConfigStore((s) => s.requestDevis)
   const [sent, setSent] = useState(false)
+  const [error, setError] = useState('')
+
+  const fieldType = (key) => {
+    if (key === 'email') return 'email'
+    if (key === 'phone') return 'tel'
+    return 'text'
+  }
 
   const onSubmit = (e) => {
     e.preventDefault()
-    requestDevis()
+    const missing = REQUIRED.some((k) => !String(contact[k] || '').trim())
+    if (missing) {
+      setError(t('contact.errorRequired'))
+      setSent(false)
+      return
+    }
+    setError('')
     setSent(true)
   }
+
+  const renderField = (key) => (
+    <label key={key} className="field">
+      <span className="field-label">
+        {t(`client.${key}`)}
+        {REQUIRED.includes(key) ? ' *' : ''}
+      </span>
+      <input
+        type={fieldType(key)}
+        required={REQUIRED.includes(key)}
+        value={contact[key] || ''}
+        onChange={(e) => setContact({ [key]: e.target.value })}
+        aria-required={REQUIRED.includes(key)}
+      />
+    </label>
+  )
 
   return (
     <div className="page page-contact page-site">
@@ -29,18 +65,17 @@ export default function ContactPage() {
       </header>
 
       <div className="contact-grid-site">
-        <form className="contact-form-site" onSubmit={onSubmit}>
-          {CLIENT_FIELDS.map((f) => (
-            <label key={f.key} className="field">
-              <span className="field-label">{t(`client.${f.key}`)}</span>
-              <input
-                type={f.type}
-                required={['firstName', 'lastName', 'email'].includes(f.key)}
-                value={contact[f.key] || ''}
-                onChange={(e) => setContact({ [f.key]: e.target.value })}
-              />
-            </label>
-          ))}
+        <form className="contact-form-site" onSubmit={onSubmit} noValidate>
+          <div className="contact-form-cols">
+            <div>
+              <p className="field-label contact-col-head">{t('config.client')}</p>
+              {IDENTITY.map(renderField)}
+            </div>
+            <div>
+              <p className="field-label contact-col-head">{t('client.addressLine1')}</p>
+              {ADDRESS.map(renderField)}
+            </div>
+          </div>
           <label className="field">
             <span className="field-label">{t('contact.message')}</span>
             <textarea
@@ -53,9 +88,10 @@ export default function ContactPage() {
           <button type="submit" className="btn btn-primary">
             {t('contact.send')}
           </button>
+          {error && <p className="form-error">{error}</p>}
           {sent && (
             <p className="form-success">
-              {t('contact.sentLead')}{' '}
+              {t('contact.sentOk')} {t('contact.sentLead')}{' '}
               <a href="mailto:contact@philae.design">contact@philae.design</a>.
             </p>
           )}
@@ -77,11 +113,8 @@ export default function ContactPage() {
             </p>
           </div>
           <div className="home-card">
-            <h3>{t('contact.matrixTitle')}</h3>
-            <p>
-              {t('contact.quoteRefLabel')} <strong>{quoteRef}</strong>
-            </p>
-            <p className="hint">{t('contact.matrixHint')}</p>
+            <h3>{t('contact.workshopTitle')}</h3>
+            <p>{t('contact.workshopText')}</p>
           </div>
         </aside>
       </div>

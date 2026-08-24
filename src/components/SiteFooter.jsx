@@ -10,7 +10,7 @@ export default function SiteFooter() {
     <footer className="site-footer">
       <div className="site-footer-inner">
         <div className="footer-brand">
-          <img src="/logo-philae.jpg" alt="" className="footer-logo" />
+          <img src="/logo-philae.svg" alt="" className="footer-logo" />
           <div>
             <p className="footer-name">Philae</p>
             <p className="footer-tag">{t('footer.tag')}</p>
@@ -42,10 +42,10 @@ export default function SiteFooter() {
 
           <div className="footer-col">
             <h4>{t('footer.info')}</h4>
-            <Link to="/contact">{t('footer.legal')}</Link>
-            <Link to="/contact">{t('footer.terms')}</Link>
-            <Link to="/contact">{t('footer.privacy')}</Link>
-            <Link to="/contact">{t('footer.shipping')}</Link>
+            <Link to="/mentions-legales">{t('footer.legal')}</Link>
+            <Link to="/cgv">{t('footer.terms')}</Link>
+            <Link to="/confidentialite">{t('footer.privacy')}</Link>
+            <Link to="/livraison">{t('footer.shipping')}</Link>
           </div>
         </div>
       </div>

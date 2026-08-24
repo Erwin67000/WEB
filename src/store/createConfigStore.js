@@ -176,7 +176,10 @@ export function snapshotFromState(s) {
  * @param {{ name?: string }} opts
  */
 export function createConfigStore(opts = {}) {
-  const first = defaultUnit()
+  const first = defaultUnit({
+    modules: [createModule('shelf', 0)],
+    panneaux: ['fond', 'dessus_exterieur', 'dessous'],
+  })
 
   return create((set, get) => ({
     /** Identifiant logique : 'main' | 'boutique-session' */
@@ -187,7 +190,7 @@ export function createConfigStore(opts = {}) {
     environmentId: 'none',
     sunEnabled: false,
     sunIntensity: 2.5,
-    showGrid: true,
+    showGrid: false,
     wireframe: false,
     showPanneauRectangles: false,
     showPanneauRectFaces: false,

@@ -11,7 +11,6 @@ const NAV = [
   { to: '/contact', key: 'nav.contact' },
 ]
 
-/** Dès le premier pixel de scroll → version compacte */
 const COMPACT_AFTER = 12
 
 function getScrollY() {
@@ -62,11 +61,16 @@ export default function SiteHeader() {
   const isHome = location.pathname === '/'
 
   const [compact, setCompact] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+
+  useEffect(() => {
+    setMenuOpen(false)
+  }, [location.pathname])
 
   useEffect(() => {
     if (isConfig) {
       setCompact(false)
-      document.documentElement.style.setProperty('--header-current-h', '72px')
+      document.documentElement.style.setProperty('--header-current-h', '64px')
       return
     }
 
@@ -95,7 +99,7 @@ export default function SiteHeader() {
   }, [isConfig, location.pathname])
 
   useEffect(() => {
-    const h = !isConfig && compact ? '52px' : '72px'
+    const h = !isConfig && compact ? '56px' : '64px'
     document.documentElement.style.setProperty('--header-current-h', h)
   }, [compact, isConfig])
 
@@ -103,18 +107,31 @@ export default function SiteHeader() {
     <header
       className={`site-header${compact ? ' is-compact' : ''}${
         isConfig ? ' is-config' : ''
-      }${isHome ? ' is-home' : ''}`}
+      }${isHome ? ' is-home' : ''}${menuOpen ? ' is-menu-open' : ''}`}
     >
       <div className="site-header-inner">
         <div className="site-header-left">
           <LangSwitch />
           <NavLink to="/" className="site-brand" end>
-            <img src="/logo-philae.jpg" alt="" className="site-logo-img" />
+            <img src="/logo-philae.svg" alt="" className="site-logo-img" />
             <span className="site-logo-word">PHILAE</span>
           </NavLink>
         </div>
 
-        <nav className="site-nav" aria-label={t('footer.nav')}>
+        <button
+          type="button"
+          className="nav-burger"
+          aria-expanded={menuOpen}
+          aria-controls="site-nav"
+          aria-label={t('nav.menu')}
+          onClick={() => setMenuOpen((o) => !o)}
+        >
+          <span />
+          <span />
+          <span />
+        </button>
+
+        <nav id="site-nav" className={`site-nav${menuOpen ? ' is-open' : ''}`} aria-label={t('footer.nav')}>
           {NAV.map((item) => (
             <NavLink
               key={item.to}
@@ -123,6 +140,7 @@ export default function SiteHeader() {
               className={({ isActive }) =>
                 `nav-link${isActive ? ' active' : ''}`
               }
+              onClick={() => setMenuOpen(false)}
             >
               {t(item.key)}
             </NavLink>

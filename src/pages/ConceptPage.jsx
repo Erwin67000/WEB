@@ -28,6 +28,18 @@ export default function ConceptPage() {
         <p className="hero-lead">{t('concept.lead')}</p>
       </section>
 
+      <div className="concept-visuals" aria-hidden>
+        <figure>
+          <img src="/accueil/hero-frame.jpg" alt="" style={{ objectPosition: '70% 40%' }} />
+        </figure>
+        <figure>
+          <img src="/accueil/hero-frame.jpg" alt="" style={{ objectPosition: '55% 70%' }} />
+        </figure>
+        <figure>
+          <img src="/accueil/hero-frame.jpg" alt="" style={{ objectPosition: '30% 50%' }} />
+        </figure>
+      </div>
+
       <section className="home-section">
         <div className="home-section-inner">
           <p className="section-kicker">{t('concept.pathsKicker')}</p>

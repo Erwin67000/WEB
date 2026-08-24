@@ -6,7 +6,6 @@ import {
 } from '../1_STRUCTURE/00_matrice/matrice_constante.js'
 import { loadCatalog } from '../data/catalog.js'
 import FurniturePreview3D from '../components/FurniturePreview3D.jsx'
-import { preloadCatalogGlbs } from '../components/CatalogGlbPreview.jsx'
 import { useI18n, useTId } from '@texte/I18nProvider.jsx'
 
 function tagKey(tag) {
@@ -38,7 +37,7 @@ export default function BoutiquePage() {
         if (!cancelled) {
           setRows(data)
           setError(null)
-          preloadCatalogGlbs(data.map((r) => r.id))
+          /* posters : snapshot au premier hover, pas 16 WebGL d’un coup */
         }
       })
       .catch((e) => {
@@ -135,6 +134,8 @@ export default function BoutiquePage() {
                   catalogRow={r}
                   height={220}
                   className="product-mini-3d"
+                  hint={false}
+                  interactive={false}
                 />
               </div>
               <div className="product-body">

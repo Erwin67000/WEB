@@ -190,11 +190,15 @@ export default function CatalogGlbPreview({
   dpr = [1, 1.25],
   /** true = page produit (orbit large) ; false = vignette grille */
   freeOrbit = false,
+  /** Monte le canvas seulement au hover / tap (grille boutique). */
+  interactive = true,
+  onCaptured,
 }) {
   const { t } = useI18n()
   const rootRef = useRef(null)
   const slotId = useRef(`glb-${productId}`)
   const [inView, setInView] = useState(eager)
+  const [hoverLive, setHoverLive] = useState(false)
   const [hasSlot, setHasSlot] = useState(false)
   const [failed, setFailed] = useState(false)
   const [snapshot, setSnapshot] = useState(
@@ -203,6 +207,7 @@ export default function CatalogGlbPreview({
   const releaseTimer = useRef(null)
 
   const url = catalogGlbUrl(productId)
+  const wantLive = interactive ? inView || hoverLive : eager || hoverLive
 
   useEffect(() => {
     setSnapshot(snapshotCache.get(productId) || null)
@@ -235,7 +240,7 @@ export default function CatalogGlbPreview({
       releaseTimer.current = null
     }
 
-    if (!inView || !url) {
+    if (!wantLive || !url) {
       // Délai avant libération → scroll rapide ne démonte pas tout de suite
       releaseTimer.current = setTimeout(() => {
         cancelWait(slotId.current)
@@ -258,7 +263,7 @@ export default function CatalogGlbPreview({
       // Ne pas release immédiatement au cleanup strict de React 18 double-mount
       // sauf si vraiment hors vue — géré par le timer quand inView false
     }
-  }, [inView, url, productId])
+  }, [wantLive, url, productId])
 
   // Cleanup final unmount
   useEffect(() => {
@@ -269,15 +274,24 @@ export default function CatalogGlbPreview({
     }
   }, [productId])
 
-  const showLive = inView && hasSlot && url && !failed
+  const showLive = wantLive && hasSlot && url && !failed
 
   return (
     <div
       ref={rootRef}
-      className={`mini-3d ${className}`}
+      className={`mini-3d ${className}${!snapshot && !showLive ? ' is-skeleton' : ''}`}
       style={{ height, background: '#f5f0e6', position: 'relative' }}
-      onClick={(e) => e.stopPropagation()}
+      onClick={(e) => {
+        e.stopPropagation()
+        if (!interactive && !eager) setHoverLive((v) => !v)
+      }}
       onPointerDown={(e) => e.stopPropagation()}
+      onPointerEnter={() => {
+        if (!eager && !interactive) setHoverLive(true)
+      }}
+      onPointerLeave={() => {
+        if (!eager && !interactive) setHoverLive(false)
+      }}
     >
       {/* Snapshot sous le canvas : visible si pas de live / pendant reload */}
       {snapshot && !showLive && (
@@ -322,16 +336,22 @@ export default function CatalogGlbPreview({
               url={url}
               productId={productId}
               freeOrbit={freeOrbit}
-              onShot={(data) => setSnapshot(data)}
+              onShot={(data) => {
+                setSnapshot(data)
+                snapshotCache.set(productId, data)
+                onCaptured?.(productId, data)
+              }}
             />
           </Suspense>
         </Canvas>
       )}
 
       {!showLive && !snapshot && (
-        <div className="mini-3d-placeholder" aria-hidden />
+        <div className="mini-3d-skeleton" aria-hidden>
+          <span />
+        </div>
       )}
-      {hint && (
+      {hint && eager && (
         <span className="mini-3d-hint">
           {freeOrbit ? t('config.dragZoom') : t('config.orbitZoom')}
         </span>

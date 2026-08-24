@@ -14,10 +14,7 @@ import {
   TVA,
   EPAISSEUR_PANNEAU,
 } from '../1_STRUCTURE/00_matrice/matrice_constante.js'
-import {
-  MODULE_KINDS,
-  ENVIRONMENTS,
-} from '../1_STRUCTURE/00_matrice/matrice_configuration.js'
+import { MODULE_KINDS } from '../1_STRUCTURE/00_matrice/matrice_configuration.js'
 import { getCatalogItem } from '../data/catalog.js'
 import FurniturePreview3D from '../components/FurniturePreview3D.jsx'
 import { createCheckoutSession } from '../lib/checkout.js'
@@ -96,7 +93,6 @@ function buildProductSpecs(row, t, tId) {
   const L = row.L_mm || row.dims?.L || 0
   const W = row.W_mm || row.dims?.W || 0
   const H = row.H_mm || row.dims?.H || 0
-  const volumeM3 = (L * W * H) / 1e9
 
   const finishId = resolveOssatureFinish(
     row.ossature_finish || row.texture || row.wood_finish,
@@ -112,27 +108,14 @@ function buildProductSpecs(row, t, tId) {
   ) || 0
   const pricing = pricingFromTtc(ttc)
 
-  const sceneId = row.scene && row.scene !== 'none' ? row.scene : null
-  const sceneLabel = sceneId
-    ? ENVIRONMENTS[sceneId]?.label || sceneId
-    : null
-
   /** Sections affichées (label + valeur) — seules les lignes non vides */
   const identity = [
-    { label: t('article.spec.reference'), value: row.sku || row.id, mono: true },
-    { label: t('article.spec.identity'), value: row.id, mono: true },
+    { label: t('article.spec.reference'), value: row.sku || null, mono: true },
     {
       label: t('article.spec.category'),
       value: row.category
         ? tId('catalog.category', row.category, row.category)
         : null,
-    },
-    {
-      label: t('article.spec.tags'),
-      value:
-        row.tags?.length > 0
-          ? row.tags.map((tg) => formatTagLabel(tId, tg)).join('  ')
-          : null,
     },
   ].filter((r) => r.value)
 
@@ -149,20 +132,6 @@ function buildProductSpecs(row, t, tId) {
       label: t('article.spec.height'),
       value: H > 0 ? formatMm(H) : null,
     },
-    {
-      label: t('article.spec.envelope'),
-      value:
-        L > 0 && W > 0 && H > 0
-          ? `${Math.round(L)} × ${Math.round(W)} × ${Math.round(H)} mm`
-          : null,
-    },
-    {
-      label: t('article.spec.volume'),
-      value:
-        volumeM3 > 0
-          ? `${volumeM3.toLocaleString('fr-FR', { maximumFractionDigits: 3 })} m³`
-          : null,
-    },
   ].filter((r) => r.value)
 
   const finition = [
@@ -175,11 +144,6 @@ function buildProductSpecs(row, t, tId) {
       label: t('article.spec.wood'),
       value: tId('wood', woodId, wood?.label || woodId || null),
       swatch: wood?.color || null,
-      hint: t('article.spec.woodHint'),
-    },
-    {
-      label: t('article.spec.texture'),
-      value: row.texture && row.texture !== finishId ? row.texture : null,
     },
   ].filter((r) => r.value)
 
@@ -201,31 +165,6 @@ function buildProductSpecs(row, t, tId) {
     {
       label: t('article.spec.modules'),
       value: summarizeModules(modules, t) || t('article.spec.none'),
-      list:
-        modules.length > 0
-          ? modules.map((m) => {
-              const lab = tId(
-                'module',
-                m.kind,
-                MODULE_KINDS[m.kind]?.label || m.kind,
-              )
-              const bay =
-                m.bayIndex != null ? ` · ${Number(m.bayIndex) + 1}` : ''
-              return `${lab}${bay}`
-            })
-          : null,
-    },
-    {
-      label: t('article.spec.modulesSpec'),
-      value: row.modules_spec || null,
-      mono: true,
-      secondary: true,
-    },
-    {
-      label: t('article.spec.panelsSpec'),
-      value: row.panneaux_spec || null,
-      mono: true,
-      secondary: true,
     },
   ].filter((r) => r.value)
 
@@ -243,46 +182,9 @@ function buildProductSpecs(row, t, tId) {
       label: t('article.spec.ofVat'),
       value: ttc > 0 ? formatEuro2(pricing.tva) : null,
     },
-    {
-      label: t('article.spec.model3d'),
-      value:
-        row.price_model3d_ht_eur > 0
-          ? formatEuro2(row.price_model3d_ht_eur)
-          : null,
-      secondary: true,
-    },
-    {
-      label: t('article.spec.exportJson'),
-      value:
-        row.price_json_ht_eur > 0
-          ? formatEuro2(row.price_json_ht_eur)
-          : null,
-      secondary: true,
-    },
   ].filter((r) => r.value)
 
-  const meta = [
-    {
-      label: t('article.spec.scene'),
-      value: sceneId ? tId('env', sceneId, sceneLabel) : null,
-    },
-    {
-      label: t('article.spec.featured'),
-      value: row.featured ? t('article.spec.yes') : null,
-    },
-    {
-      label: t('article.spec.docs'),
-      value: row.docs_ready ? t('article.spec.docsReady') : null,
-    },
-    {
-      label: t('article.spec.sortOrder'),
-      value:
-        row.sort_order != null && row.sort_order !== 0
-          ? String(row.sort_order)
-          : null,
-      secondary: true,
-    },
-  ].filter((r) => r.value)
+  const meta = []
 
   return {
     L,
@@ -448,19 +350,7 @@ export default function ArticlePage() {
   return (
     <div className="page page-article page-site page-full">
       <div className="article-layout">
-        <div className="article-preview">
-          <FurniturePreview3D
-            catalogRow={row}
-            height="100%"
-            className="article-mini"
-            hint
-            eager
-            freeOrbit
-            dpr={[1, 1.5]}
-          />
-        </div>
-
-        <div className="article-info page-pad-x">
+        <div className="article-info article-top page-pad-x">
           <button
             type="button"
             className="link-back"
@@ -526,25 +416,7 @@ export default function ArticlePage() {
             )}
           </div>
 
-          <p className="hint article-view-hint">{t('article.viewHint')}</p>
-
-          {/* Fiche technique complète auto */}
-          {specs.sections.map((section) =>
-            section.rows.length ? (
-              <section key={section.id} className="article-spec-section">
-                <h2 className="article-spec-title">{section.title}</h2>
-                <dl className="spec-list">
-                  {section.rows.map((r) => (
-                    <SpecRow key={`${section.id}-${r.label}`} row={r} />
-                  ))}
-                </dl>
-              </section>
-            ) : null,
-          )}
-
-          <p className="price-disclaimer">{t('article.priceDisclaimer')}</p>
-
-          <div className="article-actions hero-actions">
+          <div className="article-actions hero-actions article-actions-fold">
             <button
               type="button"
               className="btn btn-primary"
@@ -561,6 +433,36 @@ export default function ArticlePage() {
             </PayButton>
           </div>
           {buyMsg && <p className="hint article-order-hint">{buyMsg}</p>}
+        </div>
+
+        <div className="article-preview">
+          <FurniturePreview3D
+            catalogRow={row}
+            height="100%"
+            className="article-mini"
+            hint
+            eager
+            freeOrbit
+            dpr={[1, 1.5]}
+          />
+        </div>
+
+        <div className="article-info article-specs page-pad-x">
+          {/* Fiche technique complète auto */}
+          {specs.sections.map((section) =>
+            section.rows.length ? (
+              <section key={section.id} className="article-spec-section">
+                <h2 className="article-spec-title">{section.title}</h2>
+                <dl className="spec-list">
+                  {section.rows.map((r) => (
+                    <SpecRow key={`${section.id}-${r.label}`} row={r} />
+                  ))}
+                </dl>
+              </section>
+            ) : null,
+          )}
+
+          <p className="price-disclaimer">{t('article.priceDisclaimer')}</p>
           <p className="hint article-order-hint">{t('article.payHint')}</p>
         </div>
       </div>
