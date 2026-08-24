@@ -26,7 +26,7 @@ import { createConfigStore } from '../store/createConfigStore.js'
 import CatalogGlbPreview, {
   catalogGlbUrl,
 } from './CatalogGlbPreview.jsx'
-import { useI18n } from '../i18n/I18nProvider.jsx'
+import { useI18n } from '@texte/I18nProvider.jsx'
 
 const SCALE = 0.001
 

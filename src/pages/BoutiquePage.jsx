@@ -7,7 +7,7 @@ import {
 import { loadCatalog } from '../data/catalog.js'
 import FurniturePreview3D from '../components/FurniturePreview3D.jsx'
 import { preloadCatalogGlbs } from '../components/CatalogGlbPreview.jsx'
-import { useI18n, useTId } from '../i18n/I18nProvider.jsx'
+import { useI18n, useTId } from '@texte/I18nProvider.jsx'
 
 function tagKey(tag) {
   return String(tag || '')

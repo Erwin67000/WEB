@@ -1,4 +1,4 @@
-import { useI18n } from '../i18n/I18nProvider.jsx'
+import { useI18n } from '@texte/I18nProvider.jsx'
 
 const PILLARS = [
   { id: 'design', n: '01', titleKey: 'home.pillarDesign', textKey: 'home.pillarDesignText' },

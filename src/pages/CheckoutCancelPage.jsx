@@ -2,7 +2,7 @@
  * Page d’annulation / abandon Stripe Checkout.
  */
 import { Link, useSearchParams } from 'react-router-dom'
-import { useI18n } from '../i18n/I18nProvider.jsx'
+import { useI18n } from '@texte/I18nProvider.jsx'
 
 export default function CheckoutCancelPage() {
   const { t } = useI18n()

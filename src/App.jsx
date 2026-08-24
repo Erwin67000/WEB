@@ -21,7 +21,7 @@ import CheckoutSuccessPage from './pages/CheckoutSuccessPage.jsx'
 import CheckoutCancelPage from './pages/CheckoutCancelPage.jsx'
 import { ConfigStoreProvider } from './store/ConfigStoreContext.jsx'
 import { useConfigStore } from './store/useConfigStore.js'
-import { useI18n } from './i18n/I18nProvider.jsx'
+import { useI18n } from '@texte/I18nProvider.jsx'
 
 function Shell() {
   const location = useLocation()

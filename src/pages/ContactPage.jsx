@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useConfigStore } from '../store/useConfigStore.js'
 import { CLIENT_FIELDS } from '../3_INPUT/matrice_client.js'
-import { useI18n } from '../i18n/I18nProvider.jsx'
+import { useI18n } from '@texte/I18nProvider.jsx'
 
 export default function ContactPage() {
   const { t } = useI18n()

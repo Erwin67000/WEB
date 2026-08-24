@@ -21,7 +21,7 @@ import {
 import { DIM_LIMITS } from '../3_INPUT/matrice_input.js'
 import { CLIENT_FIELDS } from '../3_INPUT/matrice_client.js'
 import { FACE_PICK_DEFS } from '../1_STRUCTURE/02_agencement/FacePickPlanes.jsx'
-import { useI18n, useTId } from '../i18n/I18nProvider.jsx'
+import { useI18n, useTId } from '@texte/I18nProvider.jsx'
 
 /** Labels courts pour chips des panneaux actifs */
 const PANNEAU_CHIP_LABELS = Object.fromEntries(

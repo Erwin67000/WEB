@@ -2,7 +2,7 @@
  * Page Le concept — contenu inspiré de l’ancien accueil
  * (sans CTAs boutique / configurateur, sans prose Platon).
  */
-import { useI18n } from '../i18n/I18nProvider.jsx'
+import { useI18n } from '@texte/I18nProvider.jsx'
 
 const STRENGTH_KEYS = [
   { n: '01', title: 'concept.s1t', text: 'concept.s1' },

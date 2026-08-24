@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import ControlPanel from '../components/ControlPanel.jsx'
 import { useConfigStore } from '../store/useConfigStore.js'
 import { ENVIRONMENTS } from '../1_STRUCTURE/00_matrice/matrice_configuration.js'
-import { useI18n } from '../i18n/I18nProvider.jsx'
+import { useI18n } from '@texte/I18nProvider.jsx'
 
 // Scène 3D lourde (three + fiber + drei) : chargée à part → UI immédiate
 const Configurateur3D = lazy(() => import('../2_BUILD/3Dconfigurateur.jsx'))

@@ -5,7 +5,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { fetchOrderStatus } from '../lib/checkout.js'
-import { useI18n } from '../i18n/I18nProvider.jsx'
+import { useI18n } from '@texte/I18nProvider.jsx'
 
 function formatEurosFromCents(cents, currency = 'eur') {
   if (cents == null || Number.isNaN(Number(cents))) return '—'

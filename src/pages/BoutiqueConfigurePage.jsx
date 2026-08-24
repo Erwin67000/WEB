@@ -5,7 +5,7 @@ import { ConfigStoreProvider } from '../store/ConfigStoreContext.jsx'
 import { useBoutiqueSessionStore } from '../store/useBoutiqueSessionStore.js'
 import { useConfigStore } from '../store/useConfigStore.js'
 import { getCatalogItem } from '../data/catalog.js'
-import { useI18n, useTId } from '../i18n/I18nProvider.jsx'
+import { useI18n, useTId } from '@texte/I18nProvider.jsx'
 
 const Configurateur3D = lazy(() => import('../2_BUILD/3Dconfigurateur.jsx'))
 

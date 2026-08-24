@@ -21,7 +21,7 @@ import {
 import { getCatalogItem } from '../data/catalog.js'
 import FurniturePreview3D from '../components/FurniturePreview3D.jsx'
 import { createCheckoutSession } from '../lib/checkout.js'
-import { useI18n, useTId } from '../i18n/I18nProvider.jsx'
+import { useI18n, useTId } from '@texte/I18nProvider.jsx'
 
 /** Prix TTC catalogue → ventilation HT / TVA 20 %. */
 function pricingFromTtc(ttc) {

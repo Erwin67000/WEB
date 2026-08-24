@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react'
-import { useI18n } from '../i18n/I18nProvider.jsx'
+import { useI18n } from '@texte/I18nProvider.jsx'
 
 const Configurateur3D = lazy(() => import('../2_BUILD/3Dconfigurateur.jsx'))
 

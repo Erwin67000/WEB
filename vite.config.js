@@ -79,6 +79,7 @@ export default defineConfig({
         new URL('./src/1_STRUCTURE/03_bibliotheque', import.meta.url),
       ),
       '@build': fileURLToPath(new URL('./src/2_BUILD', import.meta.url)),
+      '@texte': fileURLToPath(new URL('./src/Texte ENG/FR', import.meta.url)),
       '@catalogue-csv': path.join(boutiqueDir, 'matrice_catalogue.csv'),
     },
     dedupe: ['three', 'react', 'react-dom'],
