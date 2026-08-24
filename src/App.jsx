@@ -21,9 +21,11 @@ import CheckoutSuccessPage from './pages/CheckoutSuccessPage.jsx'
 import CheckoutCancelPage from './pages/CheckoutCancelPage.jsx'
 import { ConfigStoreProvider } from './store/ConfigStoreContext.jsx'
 import { useConfigStore } from './store/useConfigStore.js'
+import { useI18n } from './i18n/I18nProvider.jsx'
 
 function Shell() {
   const location = useLocation()
+  const { t } = useI18n()
   const isMainConfig = location.pathname === '/configurateur'
   const isBoutiqueSession = /\/boutique\/[^/]+\/configurer$/.test(
     location.pathname,
@@ -41,12 +43,12 @@ function Shell() {
 
   useEffect(() => {
     document.title = isBoutiqueSession
-      ? 'Philae — Configurer (boutique)'
+      ? t('meta.titleBoutiqueConfig')
       : isMainConfig
-        ? 'Philae — Configurateur'
+        ? t('meta.titleConfig')
         : isHomeStory
-          ? 'Philae — Mobilier géométrique'
-          : 'Philae — Mobilier géométrique'
+          ? t('meta.titleHome')
+          : t('meta.titleDefault')
 
     const root = document.getElementById('root')
     if (isConfigMode) {
@@ -91,7 +93,7 @@ function Shell() {
       document.body.classList.remove('theme-ivory')
       root?.classList.remove('theme-ivory')
     }
-  }, [isConfigMode, isMainConfig, isBoutiqueSession, isHomeStory, isIvoryBg])
+  }, [isConfigMode, isMainConfig, isBoutiqueSession, isHomeStory, isIvoryBg, t])
 
   return (
     <ConfigStoreProvider store={useConfigStore}>

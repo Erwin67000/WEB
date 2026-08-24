@@ -8,6 +8,7 @@ import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas, useThree } from '@react-three/fiber'
 import { OrbitControls, useGLTF, Center, Bounds } from '@react-three/drei'
 import * as THREE from 'three'
+import { useI18n } from '../i18n/I18nProvider.jsx'
 
 const MAX_LIVE_CANVASES = 10
 const liveSlots = new Set()
@@ -190,6 +191,7 @@ export default function CatalogGlbPreview({
   /** true = page produit (orbit large) ; false = vignette grille */
   freeOrbit = false,
 }) {
+  const { t } = useI18n()
   const rootRef = useRef(null)
   const slotId = useRef(`glb-${productId}`)
   const [inView, setInView] = useState(eager)
@@ -331,7 +333,7 @@ export default function CatalogGlbPreview({
       )}
       {hint && (
         <span className="mini-3d-hint">
-          {freeOrbit ? 'Glisser pour tourner · molette zoom' : 'Orbit · zoom'}
+          {freeOrbit ? t('config.dragZoom') : t('config.orbitZoom')}
         </span>
       )}
     </div>

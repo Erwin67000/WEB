@@ -2,77 +2,46 @@
  * Page Le concept — contenu inspiré de l’ancien accueil
  * (sans CTAs boutique / configurateur, sans prose Platon).
  */
+import { useI18n } from '../i18n/I18nProvider.jsx'
 
-const STRENGTHS = [
-  {
-    n: '01',
-    title: 'Géométrie signature',
-    text: "Les trois arêtes se rejoignent à chaque sommet. L'angle porte la structure et l'identité Philae.",
-  },
-  {
-    n: '02',
-    title: 'Bois massif',
-    text: 'Le cadre est en bois massif. Robuste, durable, et précis.',
-  },
-  {
-    n: '03',
-    title: 'Léger & compact',
-    text: "En remplaçant le caisson mélaminé par une ossature d'arêtes, panneaux et poids sont réduits.",
-  },
-  {
-    n: '04',
-    title: 'Montable / démontable',
-    text: "Assemblage de l'ossature en quelques minutes, réversible.",
-  },
-  {
-    n: '05',
-    title: 'Aménagements libres',
-    text: "Tablettes, portes, tiroirs : vous composez l'intérieur.",
-  },
-  {
-    n: '06',
-    title: 'Sur mesure réel',
-    text: 'Dimensions libres dans le configurateur ; modèles boutique figés en L×P×H pour choisir vite.',
-  },
+const STRENGTH_KEYS = [
+  { n: '01', title: 'concept.s1t', text: 'concept.s1' },
+  { n: '02', title: 'concept.s2t', text: 'concept.s2' },
+  { n: '03', title: 'concept.s3t', text: 'concept.s3' },
+  { n: '04', title: 'concept.s4t', text: 'concept.s4' },
+  { n: '05', title: 'concept.s5t', text: 'concept.s5' },
+  { n: '06', title: 'concept.s6t', text: 'concept.s6' },
 ]
 
 export default function ConceptPage() {
+  const { t } = useI18n()
+
   return (
     <div className="page page-concept page-site">
       <section className="hero hero-home concept-hero">
-        <p className="section-kicker">Mobilier géométrique · Bois massif</p>
+        <p className="section-kicker">{t('concept.kicker')}</p>
         <h1 className="hero-title">
-          L&apos;ossature
+          {t('concept.title')}
           <br />
-          <span className="gold">comme signature</span>
+          <span className="gold">{t('concept.titleGold')}</span>
         </h1>
-        <p className="hero-lead">
-          Forme &amp; fonctions — une structure d&apos;abord, des usages
-          ensuite. Esthétique d&apos;arête, en bois massif.
-        </p>
+        <p className="hero-lead">{t('concept.lead')}</p>
       </section>
 
       <section className="home-section">
         <div className="home-section-inner">
-          <p className="section-kicker">Deux parcours</p>
+          <p className="section-kicker">{t('concept.pathsKicker')}</p>
           <h2 className="section-title-lg">
-            Choisir ou <span className="gold">créer</span>
+            {t('concept.pathsTitle')} <span className="gold">{t('concept.pathsGold')}</span>
           </h2>
           <div className="path-steps path-steps-2">
             <article className="path-step">
-              <h3>Boutique</h3>
-              <p>
-                Modèles prêts à personnaliser : finitions, panneaux, tablettes.
-                Les dimensions principales restent celles du modèle pour un
-                choix clair.
-              </p>
+              <h3>{t('concept.shopTitle')}</h3>
+              <p>{t('concept.shopText')}</p>
             </article>
             <article className="path-step">
-              <h3>Configurateur</h3>
-              <p>
-                Contrôle total : L, P, H, multi-meubles, scènes. Pour un projet
-                vraiment sur mesure.
-              </p>
+              <h3>{t('concept.configTitle')}</h3>
+              <p>{t('concept.configText')}</p>
             </article>
           </div>
         </div>
@@ -80,18 +49,19 @@ export default function ConceptPage() {
 
       <section className="home-strengths">
         <div className="home-section-inner">
-          <p className="section-kicker">Points forts</p>
+          <p className="section-kicker">{t('concept.strengthsKicker')}</p>
           <h2 className="section-title-lg">
-            Ce qui fait la <span className="gold">différence</span>
+            {t('concept.strengthsTitle')}{' '}
+            <span className="gold">{t('concept.strengthsGold')}</span>
           </h2>
         </div>
         <ol className="strength-list">
-          {STRENGTHS.map((item) => (
+          {STRENGTH_KEYS.map((item) => (
             <li key={item.n} className="strength-item">
               <span className="strength-n">{item.n}</span>
               <div>
-                <h3>{item.title}</h3>
-                <p>{item.text}</p>
+                <h3>{t(item.title)}</h3>
+                <p>{t(item.text)}</p>
               </div>
             </li>
           ))}
@@ -100,9 +70,8 @@ export default function ConceptPage() {
 
       <section className="home-quote">
         <blockquote>
-          « Crée ton propre meuble, et trouve l&apos;équilibre entre forme et
-          fonction. »
-          <cite>— Philae</cite>
+          {t('concept.quote')}
+          <cite>{t('concept.cite')}</cite>
         </blockquote>
       </section>
     </div>

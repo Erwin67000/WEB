@@ -5,10 +5,12 @@ import { ConfigStoreProvider } from '../store/ConfigStoreContext.jsx'
 import { useBoutiqueSessionStore } from '../store/useBoutiqueSessionStore.js'
 import { useConfigStore } from '../store/useConfigStore.js'
 import { getCatalogItem } from '../data/catalog.js'
+import { useI18n, useTId } from '../i18n/I18nProvider.jsx'
 
 const Configurateur3D = lazy(() => import('../2_BUILD/3Dconfigurateur.jsx'))
 
 function ViewportFallback() {
+  const { t } = useI18n()
   return (
     <div
       className="viewport-3d"
@@ -21,7 +23,7 @@ function ViewportFallback() {
         letterSpacing: '0.06em',
       }}
     >
-      Chargement de la scène 3D…
+      {t('config.loading3d')}
     </div>
   )
 }
@@ -34,6 +36,8 @@ function ViewportFallback() {
 export default function BoutiqueConfigurePage() {
   const { productId } = useParams()
   const navigate = useNavigate()
+  const { t } = useI18n()
+  const tId = useTId()
   const [row, setRow] = useState(null)
   const [error, setError] = useState(null)
   const [ready, setReady] = useState(false)
@@ -47,7 +51,7 @@ export default function BoutiqueConfigurePage() {
       .then((found) => {
         if (cancelled) return
         if (!found) {
-          setError('Configuration introuvable dans modele_boutique.')
+          setError('missing')
           return
         }
         setRow(found)
@@ -66,9 +70,11 @@ export default function BoutiqueConfigurePage() {
   if (error) {
     return (
       <div className="page page-site page-pad-x" style={{ padding: '2rem' }}>
-        <p className="action-msg">{error}</p>
+        <p className="action-msg">
+          {error === 'missing' ? t('boutiqueSession.missing') : error}
+        </p>
         <Link to="/boutique" className="btn btn-wood">
-          ← Boutique
+          {t('boutiqueSession.backShop')}
         </Link>
       </div>
     )
@@ -77,7 +83,7 @@ export default function BoutiqueConfigurePage() {
   if (!row) {
     return (
       <div className="page page-site page-pad-x" style={{ padding: '2rem' }}>
-        <p className="hint">Chargement du catalogue boutique…</p>
+        <p className="hint">{t('boutiqueSession.loading')}</p>
       </div>
     )
   }
@@ -86,7 +92,7 @@ export default function BoutiqueConfigurePage() {
     const snap = useBoutiqueSessionStore.getState().getSnapshot()
     useConfigStore.getState().hydrateFromSnapshot(snap, { keepContact: true })
     useBoutiqueSessionStore.setState({ dirty: false })
-    setSavedMsg('Configuration enregistrée dans le configurateur principal.')
+    setSavedMsg(t('boutiqueSession.saved'))
   }
 
   const saveAndOpenMain = () => {
@@ -108,15 +114,12 @@ export default function BoutiqueConfigurePage() {
               className="btn btn-ghost session-btn"
               onClick={discardAndBack}
             >
-              ← Retour
+              {t('boutiqueSession.back')}
             </button>
             <div className="session-title">
-              <span className="section-kicker">Session · modele_boutique</span>
-              <strong>{row.name}</strong>
-              <span className="hint">
-                Dimensions L×P×H figées · finitions &amp; aménagements libres ·
-                sauvegarde vers le main optionnelle
-              </span>
+              <span className="section-kicker">{t('boutiqueSession.kicker')}</span>
+              <strong>{tId('catalog.name', row.name, row.name)}</strong>
+              <span className="hint">{t('boutiqueSession.hint')}</span>
             </div>
           </div>
           <div className="boutique-session-bar-actions">
@@ -126,21 +129,21 @@ export default function BoutiqueConfigurePage() {
               className="btn btn-wood session-btn"
               onClick={discardAndBack}
             >
-              Annuler
+              {t('boutiqueSession.cancel')}
             </button>
             <button
               type="button"
               className="btn btn-primary session-btn"
               onClick={saveToMain}
             >
-              Sauvegarder vers le main
+              {t('boutiqueSession.saveMain')}
             </button>
             <button
               type="button"
               className="btn btn-primary session-btn"
               onClick={saveAndOpenMain}
             >
-              Sauvegarder &amp; ouvrir
+              {t('boutiqueSession.saveOpen')}
             </button>
           </div>
         </div>

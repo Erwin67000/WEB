@@ -4,22 +4,31 @@ import {
   FINITIONS_OSSATURE,
   resolveOssatureFinish,
 } from '../1_STRUCTURE/00_matrice/matrice_constante.js'
-import {
-  formatTag,
-  loadCatalog,
-} from '../data/catalog.js'
+import { loadCatalog } from '../data/catalog.js'
 import FurniturePreview3D from '../components/FurniturePreview3D.jsx'
 import { preloadCatalogGlbs } from '../components/CatalogGlbPreview.jsx'
+import { useI18n, useTId } from '../i18n/I18nProvider.jsx'
 
-const PRICE_DISCLAIMER =
-  'Prix indicatifs hors livraison.'
+function tagKey(tag) {
+  return String(tag || '')
+    .replace(/^#/, '')
+    .toLowerCase()
+}
 
 export default function BoutiquePage() {
   const navigate = useNavigate()
+  const { t } = useI18n()
+  const tId = useTId()
   const [rows, setRows] = useState([])
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(true)
   const [activeTags, setActiveTags] = useState([])
+
+  const formatTagLabel = (tag) => {
+    const raw = tagKey(tag)
+    const label = tId('catalog.tag', raw, raw)
+    return `#${label}`
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -29,7 +38,6 @@ export default function BoutiquePage() {
         if (!cancelled) {
           setRows(data)
           setError(null)
-          // Précharge tous les GLB catalogue (géométrie figée, pas de recalcul)
           preloadCatalogGlbs(data.map((r) => r.id))
         }
       })
@@ -47,43 +55,40 @@ export default function BoutiquePage() {
   const allTags = useMemo(() => {
     const s = new Set()
     for (const r of rows) {
-      for (const t of r.tags) s.add(t)
+      for (const tg of r.tags) s.add(tg)
     }
     return Array.from(s).sort((a, b) => a.localeCompare(b, 'fr'))
   }, [rows])
 
   const visible = useMemo(() => {
     if (activeTags.length === 0) return rows
-    return rows.filter((r) => activeTags.every((t) => r.tags.includes(t)))
+    return rows.filter((r) => activeTags.every((tg) => r.tags.includes(tg)))
   }, [rows, activeTags])
 
   const toggleTag = (tag) => {
     setActiveTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
+      prev.includes(tag) ? prev.filter((tg) => tg !== tag) : [...prev, tag],
     )
   }
 
   return (
     <div className="page page-boutique page-site page-full">
       <header className="page-head page-head-full">
-        <p className="section-kicker">Catalogue</p>
-        <h1 className="hero-title">Boutique</h1>
-        <p className="hero-lead">
-          La gamme de modèles préconfigurés.
-        </p>
-        <p className="price-disclaimer">{PRICE_DISCLAIMER}</p>
-        <p className="hint page-pad-x" style={{ paddingLeft: 0 }}>
-        </p>
+        <p className="section-kicker">{t('shop.kicker')}</p>
+        <h1 className="hero-title">{t('shop.title')}</h1>
+        <p className="hero-lead">{t('shop.lead')}</p>
+        <p className="price-disclaimer">{t('shop.priceDisclaimer')}</p>
+        <p className="hint page-pad-x" style={{ paddingLeft: 0 }} />
       </header>
 
       <div className="boutique-toolbar page-pad-x">
-        <div className="tag-filter" role="group" aria-label="Filtrer par tags">
+        <div className="tag-filter" role="group" aria-label={t('shop.filterAria')}>
           <button
             type="button"
             className={`tag-chip${activeTags.length === 0 ? ' active' : ''}`}
             onClick={() => setActiveTags([])}
           >
-            Tous
+            {t('shop.all')}
           </button>
           {allTags.map((tag) => (
             <button
@@ -92,26 +97,26 @@ export default function BoutiquePage() {
               className={`tag-chip${activeTags.includes(tag) ? ' active' : ''}`}
               onClick={() => toggleTag(tag)}
             >
-              {formatTag(tag)}
+              {formatTagLabel(tag)}
             </button>
           ))}
         </div>
         <span className="hint">
           {loading
-            ? 'Chargement…'
-            : `${visible.length} modèle${visible.length !== 1 ? 's' : ''}`}
+            ? t('shop.loading')
+            : visible.length === 1
+              ? t('shop.countOne')
+              : t('shop.countMany', { n: visible.length })}
           {activeTags.length > 0
-            ? ` · filtre ${activeTags.map(formatTag).join(' ')}`
+            ? t('shop.filterBy', {
+                filter: activeTags.map(formatTagLabel).join(' '),
+              })
             : ''}
         </span>
       </div>
 
-
       {!loading && !error && visible.length === 0 && (
-        <p className="hint page-pad-x">
-          Aucune ligne active dans la matrice. Ajoutez des modèles avec{' '}
-          <code>active=true</code>.
-        </p>
+        <p className="hint page-pad-x">{t('shop.empty')}</p>
       )}
 
       <div className="product-grid page-pad-x">
@@ -134,57 +139,64 @@ export default function BoutiquePage() {
               </div>
               <div className="product-body">
                 <div className="product-meta">
-                  <span className="product-cat">{r.category}</span>
-                  {r.featured && <span className="badge-gold">Vedette</span>}
+                  <span className="product-cat">
+                    {tId('catalog.category', r.category, r.category)}
+                  </span>
+                  {r.featured && (
+                    <span className="badge-gold">{t('shop.featured')}</span>
+                  )}
                 </div>
                 <h2 className="product-name">
                   <Link
                     to={`/boutique/${r.id}`}
                     className="product-name-link"
                   >
-                    {r.name}
+                    {tId('catalog.name', r.name, r.name)}
                   </Link>
                 </h2>
-                <p className="product-desc">{r.short_description}</p>
+                <p className="product-desc">
+                  {tId('catalog.desc', r.short_description, r.short_description)}
+                </p>
                 <p className="product-dims">
-                  {fin?.label || r.wood_finish} · {r.L_mm}×{r.W_mm}×{r.H_mm} mm
+                  {tId('finish', finishId, fin?.label || r.wood_finish)} · {r.L_mm}
+                  ×{r.W_mm}×{r.H_mm} mm
                   {r.sku ? ` · ${r.sku}` : ''}
                 </p>
                 <div className="product-tags">
-                  {r.tags.map((t) => (
+                  {r.tags.map((tg) => (
                     <button
-                      key={t}
+                      key={tg}
                       type="button"
                       className="product-tag"
                       onClick={() =>
                         setActiveTags((prev) =>
-                          prev.includes(t) ? prev : [...prev, t],
+                          prev.includes(tg) ? prev : [...prev, tg],
                         )
                       }
                     >
-                      {formatTag(t)}
+                      {formatTagLabel(tg)}
                     </button>
                   ))}
                 </div>
                 <div className="product-footer">
                   <span className="product-price">
                     {r.price_from
-                      ? `à partir de ${r.price_from} € TTC`
-                      : 'Prix sur devis'}
+                      ? t('shop.fromPrice', { price: r.price_from })
+                      : t('shop.onQuote')}
                   </span>
                   <div className="product-actions">
                     <Link
                       to={`/boutique/${r.id}`}
                       className="btn btn-wood btn-sm-site"
                     >
-                      Détail
+                      {t('shop.detail')}
                     </Link>
                     <button
                       type="button"
                       className="btn btn-primary btn-sm-site"
                       onClick={() => navigate(`/boutique/${r.id}/configurer`)}
                     >
-                      Configurer
+                      {t('shop.configure')}
                     </button>
                   </div>
                 </div>

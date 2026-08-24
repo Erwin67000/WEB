@@ -13,6 +13,7 @@
  */
 import { Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useI18n } from '../i18n/I18nProvider.jsx'
 import { Canvas, useFrame, useThree, extend } from '@react-three/fiber'
 import * as THREE from 'three'
 import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js'
@@ -69,42 +70,12 @@ const REST_EDGE_IDS = [
 ]
 
 const STORY = [
-  {
-    id: 'one',
-    kicker: 'LVL 01 · Origine',
-    title: 'L’intention',
-    text: 'Deux points. Une dimension. Le jeu commence ici.',
-  },
-  {
-    id: 'assemble',
-    kicker: 'LVL 02 · Sommet',
-    title: 'Triple rencontre',
-    text: 'Trois arêtes se percutent — le premier sommet naît.',
-  },
-  {
-    id: 'stretch',
-    kicker: 'LVL 03 · Volume',
-    title: 'Étire le monde',
-    text: 'L, P, H : trois axes, une seule signature géométrique.',
-  },
-  {
-    id: 'frame',
-    kicker: 'LVL 04 · Ossature',
-    title: 'Boss fight · 12 arêtes',
-    text: 'Le squelette complet. La structure avant la peau.',
-  },
-  {
-    id: 'shelves',
-    kicker: 'LVL 05 · Pouvoirs',
-    title: 'Fonctions débloquées',
-    text: 'Tablettes, usages, modules — tu équipe ton meuble.',
-  },
-  {
-    id: 'panels',
-    kicker: 'LVL 06 · Habillage',
-    title: 'Caractère',
-    text: 'Les panneaux donnent le visage. Olive, terracotta, ton terrain.',
-  },
+  { id: 'one' },
+  { id: 'assemble' },
+  { id: 'stretch' },
+  { id: 'frame' },
+  { id: 'shelves' },
+  { id: 'panels' },
 ]
 
 /** Couleur croquis (foncé sur fond ivoire) */
@@ -996,6 +967,7 @@ export default function HomeScrollStory({
   showExit = false,
   onProgress,
 }) {
+  const { t } = useI18n()
   const trackRef = useRef(null)
   const stageRef = useRef(null)
   const progressRef = useRef(0)
@@ -1020,12 +992,24 @@ export default function HomeScrollStory({
       const p = getTrackProgress(el)
       progressRef.current = p
 
-      // Libérer l’écran une fois le track passé → footer / playground visibles
+      // Visible seulement pendant le track :
+      //  — masqué tant que le manifeste (au-dessus) occupe l’écran
+      //  — masqué une fois le track passé → visualiseur / footer
       const stage = stageRef.current
       if (stage) {
         const rect = el.getBoundingClientRect()
         const vh = window.innerHeight || 1
-        if (rect.bottom <= 0) {
+        const headerH = parseFloat(
+          getComputedStyle(document.documentElement).getPropertyValue(
+            '--header-current-h',
+          ),
+        ) || 72
+        if (rect.bottom <= 0 || rect.top >= vh) {
+          stage.style.opacity = '0'
+          stage.style.visibility = 'hidden'
+          stage.style.pointerEvents = 'none'
+        } else if (rect.top > headerH + 8) {
+          // Track pas encore entré — manifeste encore à l’écran
           stage.style.opacity = '0'
           stage.style.visibility = 'hidden'
           stage.style.pointerEvents = 'none'
@@ -1088,6 +1072,9 @@ export default function HomeScrollStory({
   }, [])
 
   const ch = STORY[chapter]
+  const chKicker = t(`story.${ch.id}.kicker`)
+  const chTitle = t(`story.${ch.id}.title`)
+  const chText = t(`story.${ch.id}.text`)
   const trackVh = SCROLL_PAGES * 100
 
   /** Scroll au début de l’étape i (progression = i / N) */
@@ -1137,7 +1124,7 @@ export default function HomeScrollStory({
         {/* HUD gamifié — coin haut droit */}
         <div className="home-story-hud" aria-hidden>
           <div className="home-story-hud-row">
-            <span className="home-story-hud-label">Assemblage</span>
+            <span className="home-story-hud-label">{t('story.hudLabel')}</span>
             <span className="home-story-hud-pct">
               {Math.round(hudP * 100)}%
             </span>
@@ -1158,25 +1145,28 @@ export default function HomeScrollStory({
         </div>
 
         {/* Timeline gauche, milieu vertical */}
-        <ol className="home-story-chapters" aria-label="Étapes du récit">
-          {STORY.map((s, i) => (
-            <li
-              key={s.id}
-              className={
-                i === chapter ? 'active' : i < chapter ? 'done' : ''
-              }
-            >
-              <button
-                type="button"
-                className="home-story-chapter-btn"
-                onClick={() => goToChapter(i)}
-                aria-current={i === chapter ? 'step' : undefined}
-                title={`Aller à : ${s.kicker}`}
+        <ol className="home-story-chapters" aria-label={t('story.chaptersAria')}>
+          {STORY.map((s, i) => {
+            const kicker = t(`story.${s.id}.kicker`)
+            return (
+              <li
+                key={s.id}
+                className={
+                  i === chapter ? 'active' : i < chapter ? 'done' : ''
+                }
               >
-                {s.kicker}
-              </button>
-            </li>
-          ))}
+                <button
+                  type="button"
+                  className="home-story-chapter-btn"
+                  onClick={() => goToChapter(i)}
+                  aria-current={i === chapter ? 'step' : undefined}
+                  title={t('story.goTo', { kicker })}
+                >
+                  {kicker}
+                </button>
+              </li>
+            )
+          })}
         </ol>
 
         {/* Texte bas centre : fondu simple */}
@@ -1185,13 +1175,11 @@ export default function HomeScrollStory({
           ref={copyRef}
           className="home-story-copy"
         >
-          <p className="section-kicker home-story-kicker">{ch.kicker}</p>
-          <h2 className="home-story-title">{ch.title}</h2>
-          <p className="home-story-text">{ch.text}</p>
+          <p className="section-kicker home-story-kicker">{chKicker}</p>
+          <h2 className="home-story-title">{chTitle}</h2>
+          <p className="home-story-text">{chText}</p>
           {chapter === STORY.length - 1 && (
-            <p className="home-story-next-hint">
-              Continue de scroller · le terrain de jeu t’attend ↓
-            </p>
+            <p className="home-story-next-hint">{t('home.storyNext')}</p>
           )}
         </div>
       </div>
@@ -1208,7 +1196,7 @@ export default function HomeScrollStory({
     return (
       <div
         className="home-story home-story--fixed home-story--with-header"
-        aria-label="Assemblage du meuble Philae"
+        aria-label={t('story.aria')}
       >
         <div ref={stageRef} className="home-story-stage">
           {stage}
@@ -1227,7 +1215,7 @@ export default function HomeScrollStory({
     <section
       ref={trackRef}
       className="home-story home-story--sticky"
-      aria-label="Assemblage du meuble Philae"
+      aria-label={t('story.aria')}
       style={{ height: `${trackVh}vh` }}
     >
       <div className="home-story-sticky">{stage}</div>

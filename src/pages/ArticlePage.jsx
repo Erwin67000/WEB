@@ -18,12 +18,10 @@ import {
   MODULE_KINDS,
   ENVIRONMENTS,
 } from '../1_STRUCTURE/00_matrice/matrice_configuration.js'
-import { formatTag, getCatalogItem } from '../data/catalog.js'
+import { getCatalogItem } from '../data/catalog.js'
 import FurniturePreview3D from '../components/FurniturePreview3D.jsx'
 import { createCheckoutSession } from '../lib/checkout.js'
-
-const PRICE_DISCLAIMER =
-  'Prix TTC indicatif catalogue. Personnalisation via Configurer (session isolée). Fabrication sur commande.'
+import { useI18n, useTId } from '../i18n/I18nProvider.jsx'
 
 /** Prix TTC catalogue → ventilation HT / TVA 20 %. */
 function pricingFromTtc(ttc) {
@@ -56,16 +54,21 @@ function formatEuro2(n) {
   }).format(n)
 }
 
-const MODULE_LABELS = {
-  shelf: MODULE_KINDS.shelf?.label || 'Tablette',
-  drawer: MODULE_KINDS.drawer?.label || 'Tiroir',
-  door: 'Porte (module)',
+function tagKey(tag) {
+  return String(tag || '')
+    .replace(/^#/, '')
+    .toLowerCase()
+}
+
+function formatTagLabel(tId, tag) {
+  const raw = tagKey(tag)
+  return `#${tId('catalog.tag', raw, raw)}`
 }
 
 /**
- * Agrège les modules par kind → « 2 tablettes, 1 tiroir ».
+ * Agrège les modules par kind → « 2 shelves, 1 drawer ».
  */
-function summarizeModules(modules = []) {
+function summarizeModules(modules = [], t) {
   if (!modules.length) return null
   const counts = new Map()
   for (const m of modules) {
@@ -74,8 +77,12 @@ function summarizeModules(modules = []) {
   }
   return [...counts.entries()]
     .map(([kind, n]) => {
-      const label = MODULE_LABELS[kind] || kind
-      return n > 1 ? `${n} ${label.toLowerCase()}s` : `1 ${label.toLowerCase()}`
+      if (kind === 'shelf' || kind === 'drawer' || kind === 'door') {
+        return n > 1
+          ? t(`moduleCount.${kind}`, { n })
+          : t(`moduleCount.${kind}One`)
+      }
+      return n > 1 ? `${n} ${kind}` : `1 ${kind}`
     })
     .join(', ')
 }
@@ -84,7 +91,7 @@ function summarizeModules(modules = []) {
  * Construit la fiche technique complète depuis une ligne catalogue.
  * Chaque champ présent dans la matrice apparaît automatiquement.
  */
-function buildProductSpecs(row) {
+function buildProductSpecs(row, t, tId) {
   const L = row.L_mm || row.dims?.L || 0
   const W = row.W_mm || row.dims?.W || 0
   const H = row.H_mm || row.dims?.H || 0
@@ -111,40 +118,45 @@ function buildProductSpecs(row) {
 
   /** Sections affichées (label + valeur) — seules les lignes non vides */
   const identity = [
-    { label: 'Référence', value: row.sku || row.id, mono: true },
-    { label: 'Identifiant', value: row.id, mono: true },
-    { label: 'Catégorie', value: row.category || null },
+    { label: t('article.spec.reference'), value: row.sku || row.id, mono: true },
+    { label: t('article.spec.identity'), value: row.id, mono: true },
     {
-      label: 'Tags',
+      label: t('article.spec.category'),
+      value: row.category
+        ? tId('catalog.category', row.category, row.category)
+        : null,
+    },
+    {
+      label: t('article.spec.tags'),
       value:
         row.tags?.length > 0
-          ? row.tags.map(formatTag).join('  ')
+          ? row.tags.map((tg) => formatTagLabel(tId, tg)).join('  ')
           : null,
     },
   ].filter((r) => r.value)
 
   const dimensions = [
     {
-      label: 'Longueur (L)',
+      label: t('article.spec.length'),
       value: L > 0 ? formatMm(L) : null,
     },
     {
-      label: 'Profondeur (W)',
+      label: t('article.spec.depth'),
       value: W > 0 ? formatMm(W) : null,
     },
     {
-      label: 'Hauteur (H)',
+      label: t('article.spec.height'),
       value: H > 0 ? formatMm(H) : null,
     },
     {
-      label: 'Encombrement',
+      label: t('article.spec.envelope'),
       value:
         L > 0 && W > 0 && H > 0
           ? `${Math.round(L)} × ${Math.round(W)} × ${Math.round(H)} mm`
           : null,
     },
     {
-      label: 'Volume enveloppe',
+      label: t('article.spec.volume'),
       value:
         volumeM3 > 0
           ? `${volumeM3.toLocaleString('fr-FR', { maximumFractionDigits: 3 })} m³`
@@ -154,58 +166,62 @@ function buildProductSpecs(row) {
 
   const finition = [
     {
-      label: 'Finition ossature',
-      value: fin?.label || finishId || null,
+      label: t('article.spec.frameFinish'),
+      value: tId('finish', finishId, fin?.label || finishId || null),
       swatch: fin?.previewColor || null,
     },
     {
-      label: 'Essence (atelier)',
-      value: wood?.label || woodId || null,
+      label: t('article.spec.wood'),
+      value: tId('wood', woodId, wood?.label || woodId || null),
       swatch: wood?.color || null,
-      hint: 'Bois local atelier — non choisi par le client',
+      hint: t('article.spec.woodHint'),
     },
     {
-      label: 'Texture matrice',
+      label: t('article.spec.texture'),
       value: row.texture && row.texture !== finishId ? row.texture : null,
     },
   ].filter((r) => r.value)
 
   const composition = [
     {
-      label: 'Panneaux',
+      label: t('article.spec.panels'),
       value:
         panneaux.length > 0
-          ? panneaux.map(panneauLabel).join(' · ')
-          : 'Aucun (ossature seule)',
+          ? panneaux.map((p) => tId('panel', p, panneauLabel(p))).join(' · ')
+          : t('article.spec.noPanels'),
       list: panneaux.length
-        ? panneaux.map((p) => panneauLabel(p))
+        ? panneaux.map((p) => tId('panel', p, panneauLabel(p)))
         : null,
     },
     {
-      label: 'Épaisseur panneau',
+      label: t('article.spec.panelThickness'),
       value: panneaux.length ? `${EPAISSEUR_PANNEAU} mm` : null,
     },
     {
-      label: 'Modules',
-      value: summarizeModules(modules) || 'Aucun',
+      label: t('article.spec.modules'),
+      value: summarizeModules(modules, t) || t('article.spec.none'),
       list:
         modules.length > 0
           ? modules.map((m) => {
-              const lab = MODULE_LABELS[m.kind] || m.kind
+              const lab = tId(
+                'module',
+                m.kind,
+                MODULE_KINDS[m.kind]?.label || m.kind,
+              )
               const bay =
-                m.bayIndex != null ? ` · baie ${Number(m.bayIndex) + 1}` : ''
+                m.bayIndex != null ? ` · ${Number(m.bayIndex) + 1}` : ''
               return `${lab}${bay}`
             })
           : null,
     },
     {
-      label: 'Spec modules (CSV)',
+      label: t('article.spec.modulesSpec'),
       value: row.modules_spec || null,
       mono: true,
       secondary: true,
     },
     {
-      label: 'Spec panneaux (CSV)',
+      label: t('article.spec.panelsSpec'),
       value: row.panneaux_spec || null,
       mono: true,
       secondary: true,
@@ -214,20 +230,20 @@ function buildProductSpecs(row) {
 
   const pricingRows = [
     {
-      label: 'Prix TTC',
-      value: ttc > 0 ? formatEuro(ttc) : 'Sur devis',
+      label: t('article.spec.priceTtc'),
+      value: ttc > 0 ? formatEuro(ttc) : t('article.spec.onQuote'),
       emphasize: true,
     },
     {
-      label: 'dont HT',
+      label: t('article.spec.ofHt'),
       value: ttc > 0 ? formatEuro2(pricing.ht) : null,
     },
     {
-      label: 'dont TVA 20 %',
+      label: t('article.spec.ofVat'),
       value: ttc > 0 ? formatEuro2(pricing.tva) : null,
     },
     {
-      label: 'Modèle 3D (HT)',
+      label: t('article.spec.model3d'),
       value:
         row.price_model3d_ht_eur > 0
           ? formatEuro2(row.price_model3d_ht_eur)
@@ -235,7 +251,7 @@ function buildProductSpecs(row) {
       secondary: true,
     },
     {
-      label: 'Export JSON (HT)',
+      label: t('article.spec.exportJson'),
       value:
         row.price_json_ht_eur > 0
           ? formatEuro2(row.price_json_ht_eur)
@@ -246,19 +262,19 @@ function buildProductSpecs(row) {
 
   const meta = [
     {
-      label: 'Scène 3D',
-      value: sceneLabel,
+      label: t('article.spec.scene'),
+      value: sceneId ? tId('env', sceneId, sceneLabel) : null,
     },
     {
-      label: 'Mise en avant',
-      value: row.featured ? 'Oui' : null,
+      label: t('article.spec.featured'),
+      value: row.featured ? t('article.spec.yes') : null,
     },
     {
-      label: 'Docs atelier',
-      value: row.docs_ready ? 'Prêtes' : null,
+      label: t('article.spec.docs'),
+      value: row.docs_ready ? t('article.spec.docsReady') : null,
     },
     {
-      label: 'Ordre catalogue',
+      label: t('article.spec.sortOrder'),
       value:
         row.sort_order != null && row.sort_order !== 0
           ? String(row.sort_order)
@@ -279,13 +295,13 @@ function buildProductSpecs(row) {
     ttc,
     pricing,
     sections: [
-      { id: 'identity', title: 'Référence', rows: identity },
-      { id: 'dimensions', title: 'Dimensions', rows: dimensions },
-      { id: 'finition', title: 'Finition', rows: finition },
-      { id: 'composition', title: 'Composition', rows: composition },
-      { id: 'pricing', title: 'Tarif', rows: pricingRows },
+      { id: 'identity', title: t('article.section.identity'), rows: identity },
+      { id: 'dimensions', title: t('article.section.dimensions'), rows: dimensions },
+      { id: 'finition', title: t('article.section.finish'), rows: finition },
+      { id: 'composition', title: t('article.section.composition'), rows: composition },
+      { id: 'pricing', title: t('article.section.pricing'), rows: pricingRows },
       ...(meta.length
-        ? [{ id: 'meta', title: 'Informations', rows: meta }]
+        ? [{ id: 'meta', title: t('article.section.meta'), rows: meta }]
         : []),
     ],
   }
@@ -327,6 +343,8 @@ function SpecRow({ row }) {
 export default function ArticlePage() {
   const { productId } = useParams()
   const navigate = useNavigate()
+  const { t } = useI18n()
+  const tId = useTId()
   const [row, setRow] = useState(null)
   const [error, setError] = useState(null)
   const [buyBusy, setBuyBusy] = useState(false)
@@ -337,7 +355,7 @@ export default function ArticlePage() {
     getCatalogItem(productId)
       .then((found) => {
         if (cancelled) return
-        if (!found) setError('Configuration introuvable dans modele_boutique.')
+        if (!found) setError('missing')
         else {
           setRow(found)
           setError(null)
@@ -351,14 +369,19 @@ export default function ArticlePage() {
     }
   }, [productId])
 
-  const specs = useMemo(() => (row ? buildProductSpecs(row) : null), [row])
+  const specs = useMemo(
+    () => (row ? buildProductSpecs(row, t, tId) : null),
+    [row, t, tId],
+  )
 
   if (error) {
     return (
       <div className="page page-site page-full page-pad-x">
-        <p className="action-msg">{error}</p>
+        <p className="action-msg">
+          {error === 'missing' ? t('article.missing') : error}
+        </p>
         <Link to="/boutique" className="btn btn-wood">
-          ← Boutique
+          {t('article.back')}
         </Link>
       </div>
     )
@@ -367,7 +390,7 @@ export default function ArticlePage() {
   if (!row || !specs) {
     return (
       <div className="page page-site page-full page-pad-x">
-        <p className="hint">Chargement de la matrice…</p>
+        <p className="hint">{t('article.loading')}</p>
       </div>
     )
   }
@@ -380,7 +403,7 @@ export default function ArticlePage() {
       return
     }
     setBuyBusy(true)
-    setBuyMsg('Préparation du paiement sécurisé…')
+    setBuyMsg(t('article.preparingPay'))
     try {
       const dims = row.dims || { L: row.L_mm, W: row.W_mm, H: row.H_mm }
       const dimLabel =
@@ -413,7 +436,7 @@ export default function ArticlePage() {
         window.location.assign(result.url)
         return
       }
-      setBuyMsg('Paiement indisponible — contact@philae.design')
+      setBuyMsg(t('article.payUnavailable'))
     } catch (e) {
       setBuyMsg(e.message || 'Erreur paiement')
     } finally {
@@ -442,22 +465,30 @@ export default function ArticlePage() {
             className="link-back"
             onClick={() => navigate('/boutique')}
           >
-            ← Boutique
+            {t('article.back')}
           </button>
 
           {row.category && (
-            <p className="section-kicker">{row.category}</p>
+            <p className="section-kicker">
+              {tId('catalog.category', row.category, row.category)}
+            </p>
           )}
-          <h1 className="hero-title">{row.name}</h1>
+          <h1 className="hero-title">
+            {tId('catalog.name', row.name, row.name)}
+          </h1>
           {row.short_description && (
-            <p className="hero-lead">{row.short_description}</p>
+            <p className="hero-lead">
+              {tId('catalog.desc', row.short_description, row.short_description)}
+            </p>
           )}
 
           {/* Encart dimensions + finition (toujours visible en tête) */}
           <div className="article-highlights">
             {specs.L > 0 && (
               <div className="article-highlight">
-                <span className="article-highlight-k">Dimensions</span>
+                <span className="article-highlight-k">
+                  {t('article.highlights.dims')}
+                </span>
                 <strong>
                   {Math.round(specs.L)}×{Math.round(specs.W)}×
                   {Math.round(specs.H)}
@@ -467,7 +498,9 @@ export default function ArticlePage() {
             )}
             {specs.fin && (
               <div className="article-highlight">
-                <span className="article-highlight-k">Finition</span>
+                <span className="article-highlight-k">
+                  {t('article.highlights.finish')}
+                </span>
                 <strong className="article-highlight-finish">
                   {specs.fin.previewColor && (
                     <span
@@ -476,22 +509,23 @@ export default function ArticlePage() {
                       aria-hidden
                     />
                   )}
-                  {specs.fin.label}
+                  {tId('finish', specs.finishId, specs.fin.label)}
                 </strong>
               </div>
             )}
             {ttc > 0 && (
               <div className="article-highlight">
-                <span className="article-highlight-k">Prix</span>
-                <strong className="product-price">{formatEuro(ttc)} TTC</strong>
+                <span className="article-highlight-k">
+                  {t('article.highlights.price')}
+                </span>
+                <strong className="product-price">
+                  {t('article.highlights.ttc', { price: formatEuro(ttc) })}
+                </strong>
               </div>
             )}
           </div>
 
-          <p className="hint article-view-hint">
-            Visualisation figée (ligne matrice) — orbit et zoom uniquement.
-            Contours panneaux plus fins que les arêtes ossature.
-          </p>
+          <p className="hint article-view-hint">{t('article.viewHint')}</p>
 
           {/* Fiche technique complète auto */}
           {specs.sections.map((section) =>
@@ -507,7 +541,7 @@ export default function ArticlePage() {
             ) : null,
           )}
 
-          <p className="price-disclaimer">{PRICE_DISCLAIMER}</p>
+          <p className="price-disclaimer">{t('article.priceDisclaimer')}</p>
 
           <div className="article-actions hero-actions">
             <button
@@ -515,7 +549,7 @@ export default function ArticlePage() {
               className="btn btn-primary"
               onClick={() => navigate(`/boutique/${row.id}/configurer`)}
             >
-              Configurer cette base
+              {t('article.configureBase')}
             </button>
             <button
               type="button"
@@ -524,16 +558,14 @@ export default function ArticlePage() {
               onClick={handleBuyNow}
             >
               {buyBusy
-                ? 'Redirection…'
+                ? t('article.redirecting')
                 : ttc >= 0.5
-                  ? `Acheter · ${Math.round(ttc)} € TTC`
-                  : 'Demander un devis'}
+                  ? t('article.buy', { price: Math.round(ttc) })
+                  : t('article.requestQuote')}
             </button>
           </div>
           {buyMsg && <p className="hint article-order-hint">{buyMsg}</p>}
-          <p className="hint article-order-hint">
-            Paiement sécurisé Stripe · Fabrication sur commande
-          </p>
+          <p className="hint article-order-hint">{t('article.payHint')}</p>
         </div>
       </div>
     </div>

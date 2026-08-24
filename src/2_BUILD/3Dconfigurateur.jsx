@@ -12,6 +12,7 @@ import AgencementView from '../1_STRUCTURE/02_agencement/ModuleMesh.jsx'
 import FacePickPlanes from '../1_STRUCTURE/02_agencement/FacePickPlanes.jsx'
 import { ENVIRONMENTS } from '../1_STRUCTURE/00_matrice/matrice_configuration.js'
 import { useActiveConfigStore } from '../store/ConfigStoreContext.jsx'
+import { useI18n } from '../i18n/I18nProvider.jsx'
 
 const SCALE = 0.001
 
@@ -183,17 +184,23 @@ function SunLight({ enabled, intensity }) {
   )
 }
 
-function SceneContent() {
+function SceneContent({ orbitOnly = false, ivory = false }) {
   const units = useActiveConfigStore((s) => s.units)
   const activeUnitId = useActiveConfigStore((s) => s.activeUnitId)
   const environmentId = useActiveConfigStore((s) => s.environmentId)
   const sunEnabled = useActiveConfigStore((s) => s.sunEnabled)
   const sunIntensity = useActiveConfigStore((s) => s.sunIntensity)
-  const showGrid = useActiveConfigStore((s) => s.showGrid)
+  const showGridStore = useActiveConfigStore((s) => s.showGrid)
   const wireframe = useActiveConfigStore((s) => s.wireframe)
-  const panneauPickMode = useActiveConfigStore((s) => s.panneauPickMode)
+  const panneauPickModeStore = useActiveConfigStore((s) => s.panneauPickMode)
   const togglePanneau = useActiveConfigStore((s) => s.togglePanneau)
-  const env = ENVIRONMENTS[environmentId] || ENVIRONMENTS.none
+  const panneauPickMode = orbitOnly ? false : panneauPickModeStore
+  const envBase = ENVIRONMENTS[environmentId] || ENVIRONMENTS.none
+  const ivoryLook = ivory && envBase.id === 'none'
+  const env = ivoryLook
+    ? { ...envBase, bg: '#f5f0e6', grid: false }
+    : envBase
+  const showGrid = orbitOnly ? false : showGridStore
 
   const active = units.find((u) => u.id === activeUnitId) || units[0]
   // Cible orbit = centre du volume (origine meuble fixée au coin 0,0,0)
@@ -214,11 +221,21 @@ function SceneContent() {
   return (
     <>
       <color attach="background" args={[env.bg || '#0a0a0a']} />
-      <ambientLight intensity={sunEnabled ? 0.28 : 0.55} />
-      <hemisphereLight args={['#e8f0ff', '#3a3020', sunEnabled ? 0.35 : 0.45]} />
-      <SunLight enabled={sunEnabled} intensity={sunIntensity} />
-      {!sunEnabled && (
-        <directionalLight position={[-3, 5, -2]} intensity={0.45} color="#fff8ee" />
+      <ambientLight intensity={ivoryLook ? 0.62 : sunEnabled ? 0.28 : 0.55} />
+      <hemisphereLight
+        args={[
+          '#e8f0ff',
+          '#3a3020',
+          ivoryLook ? 0.5 : sunEnabled ? 0.35 : 0.45,
+        ]}
+      />
+      <SunLight enabled={!ivoryLook && sunEnabled} intensity={sunIntensity} />
+      {(ivoryLook || !sunEnabled) && (
+        <directionalLight
+          position={ivoryLook ? [3.5, 6, 2.5] : [-3, 5, -2]}
+          intensity={ivoryLook ? 1.35 : 0.45}
+          color="#fff5e6"
+        />
       )}
 
       {showGrid && !env.room && (
@@ -238,7 +255,7 @@ function SceneContent() {
       )}
 
       <EnvironmentScene env={env} />
-      {sunEnabled && <ShadowFloor />}
+      {sunEnabled && !ivoryLook && <ShadowFloor />}
 
       {units.map((u) => (
         <UnitGroup
@@ -263,6 +280,9 @@ function SceneContent() {
         makeDefault
         enableDamping
         dampingFactor={0.08}
+        enablePan={!orbitOnly}
+        enableRotate
+        enableZoom
         minDistance={0.5}
         maxDistance={20}
         /* Mode ajout panneau : on peut passer sous z=0 pour cliquer le socle.
@@ -308,11 +328,25 @@ function CameraFloorClamp({ pickMode }) {
   return null
 }
 
-export default function Configurateur3D() {
-  const panneauPickMode = useActiveConfigStore((s) => s.panneauPickMode)
+function ViewportHint({ pickMode }) {
+  const { t } = useI18n()
+  return (
+    <div className="viewport-hint">
+      {pickMode ? t('config.hintPick') : t('config.hintOrbit')}
+    </div>
+  )
+}
+
+export default function Configurateur3D({ orbitOnly = false, ivory = false }) {
+  const panneauPickModeStore = useActiveConfigStore((s) => s.panneauPickMode)
+  const panneauPickMode = orbitOnly ? false : panneauPickModeStore
 
   return (
-    <div className={`viewport-3d${panneauPickMode ? ' pick-mode' : ''}`}>
+    <div
+      className={`viewport-3d${panneauPickMode ? ' pick-mode' : ''}${
+        ivory ? ' is-ivory' : ''
+      }${orbitOnly ? ' is-orbit-only' : ''}`}
+    >
       <Canvas
         shadows
         dpr={[1, 1.5]}
@@ -334,14 +368,12 @@ export default function Configurateur3D() {
         }}
       >
         <Suspense fallback={null}>
-          <SceneContent />
+          <SceneContent orbitOnly={orbitOnly} ivory={ivory} />
         </Suspense>
       </Canvas>
-      <div className="viewport-hint">
-        {panneauPickMode
-          ? 'Cliquez une face du meuble pour ajouter / retirer un panneau'
-          : 'Orbit · molette zoom · clic droit pan · ombres soleil'}
-      </div>
+      {!orbitOnly && (
+        <ViewportHint pickMode={panneauPickMode} />
+      )}
     </div>
   )
 }

@@ -26,6 +26,7 @@ import { createConfigStore } from '../store/createConfigStore.js'
 import CatalogGlbPreview, {
   catalogGlbUrl,
 } from './CatalogGlbPreview.jsx'
+import { useI18n } from '../i18n/I18nProvider.jsx'
 
 const SCALE = 0.001
 
@@ -240,6 +241,7 @@ function LiveGeometryPreview({
   dpr,
   eager,
 }) {
+  const { t } = useI18n()
   const rootRef = useRef(null)
   const [visible, setVisible] = useState(eager)
 
@@ -319,7 +321,7 @@ function LiveGeometryPreview({
       ) : (
         <div className="mini-3d-placeholder" aria-hidden />
       )}
-      {hint && <span className="mini-3d-hint">Orbit · zoom</span>}
+      {hint && <span className="mini-3d-hint">{t('config.orbitZoom')}</span>}
     </div>
   )
 }

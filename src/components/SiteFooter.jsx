@@ -1,8 +1,11 @@
 import { Link } from 'react-router-dom'
+import { useI18n } from '../i18n/I18nProvider.jsx'
 
 const year = new Date().getFullYear()
 
 export default function SiteFooter() {
+  const { t } = useI18n()
+
   return (
     <footer className="site-footer">
       <div className="site-footer-inner">
@@ -10,24 +13,24 @@ export default function SiteFooter() {
           <img src="/logo-philae.jpg" alt="" className="footer-logo" />
           <div>
             <p className="footer-name">Philae</p>
-            <p className="footer-tag">Mobilier géométrique · Bois massif</p>
+            <p className="footer-tag">{t('footer.tag')}</p>
           </div>
         </div>
 
         <div className="footer-cols">
           <div className="footer-col">
-            <h4>Navigation</h4>
-            <Link to="/">Accueil</Link>
-            <Link to="/boutique">Boutique</Link>
-            <Link to="/configurateur">Configurateur</Link>
-            <Link to="/concept">Le concept</Link>
-            <Link to="/contact">Contact</Link>
+            <h4>{t('footer.nav')}</h4>
+            <Link to="/">{t('nav.home')}</Link>
+            <Link to="/boutique">{t('nav.shop')}</Link>
+            <Link to="/configurateur">{t('nav.configurator')}</Link>
+            <Link to="/concept">{t('nav.concept')}</Link>
+            <Link to="/contact">{t('nav.contact')}</Link>
           </div>
 
           <div className="footer-col">
-            <h4>Atelier</h4>
+            <h4>{t('footer.workshop')}</h4>
             <a href="mailto:contact@philae.design">contact@philae.design</a>
-            <p>France · Fabrication sur mesure</p>
+            <p>{t('footer.madeIn')}</p>
             <a
               href="https://www.philae.design/"
               target="_blank"
@@ -38,20 +41,18 @@ export default function SiteFooter() {
           </div>
 
           <div className="footer-col">
-            <h4>Informations</h4>
-            <Link to="/contact">Mentions légales</Link>
-            <Link to="/contact">CGV</Link>
-            <Link to="/contact">Confidentialité</Link>
-            <Link to="/contact">Livraison & montage</Link>
+            <h4>{t('footer.info')}</h4>
+            <Link to="/contact">{t('footer.legal')}</Link>
+            <Link to="/contact">{t('footer.terms')}</Link>
+            <Link to="/contact">{t('footer.privacy')}</Link>
+            <Link to="/contact">{t('footer.shipping')}</Link>
           </div>
         </div>
       </div>
 
       <div className="site-footer-bottom">
-        <p>© {year} Philae. Tous droits réservés.</p>
-        <p className="footer-credit">
-          Conception & fabrication — atelier Philae
-        </p>
+        <p>{t('footer.rights', { year })}</p>
+        <p className="footer-credit">{t('footer.credit')}</p>
       </div>
     </footer>
   )

@@ -16,12 +16,12 @@ import {
   shelfZMm,
   moduleLayout,
   WURTH_HAUTEURS_MM,
-  DRAWER_DEPTH_TOO_SMALL_MSG,
   WURTH_PROFONDEUR_MIN_MM,
 } from '../1_STRUCTURE/02_agencement/agencement.js'
 import { DIM_LIMITS } from '../3_INPUT/matrice_input.js'
 import { CLIENT_FIELDS } from '../3_INPUT/matrice_client.js'
 import { FACE_PICK_DEFS } from '../1_STRUCTURE/02_agencement/FacePickPlanes.jsx'
+import { useI18n, useTId } from '../i18n/I18nProvider.jsx'
 
 /** Labels courts pour chips des panneaux actifs */
 const PANNEAU_CHIP_LABELS = Object.fromEntries(
@@ -138,6 +138,8 @@ export default function ControlPanel() {
     [unit, storeApi],
   )
 
+  const { t } = useI18n()
+  const tId = useTId()
   const [flash, setFlash] = useState('')
   const [checkoutBusy, setCheckoutBusy] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -203,7 +205,7 @@ export default function ControlPanel() {
       >
         <span className="panel-mobile-handle" />
         <span>
-          {mobileOpen ? 'Masquer les options' : 'Options & devis'}
+          {mobileOpen ? t('config.hideOptions') : t('config.options')}
         </span>
         <span className="chev">{mobileOpen ? '▾' : '▴'}</span>
       </button>
@@ -216,7 +218,7 @@ export default function ControlPanel() {
               className="section-head"
               onClick={() => toggle('meuble')}
             >
-              <span>Meubles</span>
+              <span>{t('config.furniture')}</span>
               <span className="chev">{openSections.meuble ? '▾' : '▸'}</span>
             </button>
             {openSections.meuble && (
@@ -248,8 +250,8 @@ export default function ControlPanel() {
                         className={`unit-chip ${u.id === activeUnitId ? 'active' : ''}`}
                         title={
                           u.id === activeUnitId
-                            ? 'Cliquer pour renommer'
-                            : 'Sélectionner'
+                            ? t('config.renameHint')
+                            : t('config.selectHint')
                         }
                         onClick={() => {
                           if (u.id === activeUnitId) {
@@ -260,7 +262,9 @@ export default function ControlPanel() {
                           }
                         }}
                       >
-                        {u.label || `Meuble ${idx + 1}`}
+                        {/^Meuble\s+\d+$/i.test(u.label || '')
+                          ? t('config.unitN', { n: idx + 1 })
+                          : u.label || t('config.unitN', { n: idx + 1 })}
                       </button>
                     ),
                   )}
@@ -273,13 +277,17 @@ export default function ControlPanel() {
                       const result = addUnit()
                       if (result && result.ok === false) {
                         notify(
-                          result.reason ||
-                            'Veuillez nous contacter via notre formulaire pour tout projet d’envergure',
+                          result.reason === 'max-units' ||
+                            /envergure|larger-scale/i.test(result.reason || '')
+                            ? t('config.reasonLarge')
+                            : result.reason
+                              ? t('config.reasonBoutique')
+                              : t('config.reasonLarge'),
                         )
                       }
                     }}
                   >
-                    + Meuble
+                    {t('config.addPiece')}
                   </button>
                   <button
                     type="button"
@@ -287,7 +295,7 @@ export default function ControlPanel() {
                     onClick={() => removeUnit(activeUnitId)}
                     disabled={units.length <= 1}
                   >
-                    Supprimer
+                    {t('config.remove')}
                   </button>
                 </div>
               </div>
@@ -299,7 +307,7 @@ export default function ControlPanel() {
         <section className="panel-section">
           <button type="button" className="section-head" onClick={() => toggle('dims')}>
             <span>
-              {dimsLocked ? 'Dimensions du modèle' : 'Dimensions'}
+              {dimsLocked ? t('config.dimsModel') : t('config.dims')}
             </span>
             <span className="chev">{openSections.dims ? '▾' : '▸'}</span>
           </button>
@@ -308,24 +316,23 @@ export default function ControlPanel() {
               {dimsLocked ? (
                 <div className="dims-locked-block">
                   <p className="muted" style={{ margin: 0 }}>
-                    Dimensions du modèle boutique (figées)
+                    {t('config.dimsLocked')}
                   </p>
                   <p className="dims-locked-values">
                     <strong>
                       {unit.dims.L} × {unit.dims.W} × {unit.dims.H}
                     </strong>{' '}
                     mm
-                    <span className="muted"> (L × P × H)</span>
+                    <span className="muted"> {t('config.lwh')}</span>
                   </p>
                   <p className="muted" style={{ fontSize: '0.68rem', margin: 0 }}>
-                    Pour modifier L, P, H : utilisez le{' '}
-                    <strong>configurateur libre</strong>.
+                    {t('config.dimsLockedHint')}
                   </p>
                 </div>
               ) : (
                 <>
                   <SliderDim
-                    label="Longueur (L)"
+                    label={t('config.length')}
                     value={unit.dims.L}
                     min={DIM_LIMITS.L.min}
                     max={DIM_LIMITS.L.max}
@@ -333,7 +340,7 @@ export default function ControlPanel() {
                     onChange={(L) => updateDims(unit.id, { L })}
                   />
                   <SliderDim
-                    label="Profondeur (W)"
+                    label={t('config.depth')}
                     value={unit.dims.W}
                     min={DIM_LIMITS.W.min}
                     max={DIM_LIMITS.W.max}
@@ -341,7 +348,7 @@ export default function ControlPanel() {
                     onChange={(W) => updateDims(unit.id, { W })}
                   />
                   <SliderDim
-                    label="Hauteur (H)"
+                    label={t('config.height')}
                     value={unit.dims.H}
                     min={DIM_LIMITS.H.min}
                     max={DIM_LIMITS.H.max}
@@ -353,7 +360,7 @@ export default function ControlPanel() {
               {canShowPosition && !dimsLocked && (
                 <>
                   <SliderDim
-                    label="Pos. X"
+                    label={t('config.posX')}
                     value={unit.positionMm.x}
                     min={-5000}
                     max={5000}
@@ -361,7 +368,7 @@ export default function ControlPanel() {
                     onChange={(x) => updatePosition(unit.id, { x })}
                   />
                   <SliderDim
-                    label="Pos. Y"
+                    label={t('config.posY')}
                     value={unit.positionMm.y}
                     min={-5000}
                     max={5000}
@@ -372,7 +379,7 @@ export default function ControlPanel() {
               )}
               {!dimsLocked && (
                 <NumFieldInline
-                  label="Rot. Z"
+                  label={t('config.rotZ')}
                   value={unit.rotationZ}
                   min={-180}
                   max={180}
@@ -385,7 +392,7 @@ export default function ControlPanel() {
               )}
 
               <p className="field-label" style={{ marginTop: '0.35rem' }}>
-                Finition ossature
+                {t('config.frameFinish')}
               </p>
               <div className="finish-choice-list">
                 {FINITIONS_OSSATURE_CLIENT.map((id) => {
@@ -401,11 +408,13 @@ export default function ControlPanel() {
                         updateUnit(unit.id, { ossatureFinish: id })
                       }
                     >
-                      <span className="finish-choice-label">{f.label}</span>
+                      <span className="finish-choice-label">
+                        {tId('finish', id, f.label)}
+                      </span>
                       <span
                         className="finish-choice-swatch"
                         style={{ background: f.previewColor }}
-                        title={f.label}
+                        title={tId('finish', id, f.label)}
                       />
                     </button>
                   )
@@ -418,7 +427,7 @@ export default function ControlPanel() {
         {/* Modules */}
         <section className="panel-section">
           <button type="button" className="section-head" onClick={() => toggle('modules')}>
-            <span>Agencement</span>
+            <span>{t('config.layout')}</span>
             <span className="chev">{openSections.modules ? '▾' : '▸'}</span>
           </button>
           {openSections.modules && (
@@ -431,13 +440,13 @@ export default function ControlPanel() {
                     className="btn-sm"
                     onClick={() => addModule(k.id)}
                   >
-                    + {k.label}
+                    + {tId('module', k.id, k.label)}
                   </button>
                 ))}
               </div>
               {unit.modules.length === 0 && (
                 <p className="muted">
-                  Aucun module.
+                  {t('config.noModules')}
                 </p>
               )}
               <ul className="mod-list">
@@ -466,21 +475,25 @@ export default function ControlPanel() {
                     <li key={m.id} className="mod-item">
                       <div className="mod-head">
                         <span>
-                          {MODULE_KINDS[m.kind]?.label || m.kind}
+                          {tId(
+                            'module',
+                            m.kind,
+                            MODULE_KINDS[m.kind]?.label || m.kind,
+                          )}
                           {m.kind === 'drawer' ? ' · Würth B' : ''}
                         </span>
                         <button
                           type="button"
                           className="btn-icon"
                           onClick={() => removeModule(m.id)}
-                          aria-label="Retirer"
+                          aria-label={t('config.removeAria')}
                         >
                           ×
                         </button>
                       </div>
                       {m.kind === 'shelf' && (
                         <SliderDim
-                          label="Position Z"
+                          label={t('config.posZ')}
                           value={Math.round(shelfZ)}
                           min={Math.round(shelfZMin)}
                           max={Math.round(shelfZMax)}
@@ -492,13 +505,13 @@ export default function ControlPanel() {
                         <>
                           {depthTooSmall ? (
                             <p className="drawer-warn" role="alert">
-                              {wurth?.depthWarn ||
-                                DRAWER_DEPTH_TOO_SMALL_MSG ||
-                                `Profondeur inférieure à la limite pour ajout de tiroir : ${WURTH_PROFONDEUR_MIN_MM} mm`}
+                              {t('config.drawerTooShallow', {
+                                min: WURTH_PROFONDEUR_MIN_MM,
+                              })}
                             </p>
                           ) : null}
                           <SliderDim
-                            label="Position Z"
+                            label={t('config.posZ')}
                             value={Math.round(
                               m.zMm != null ? m.zMm : drawerZ ?? drawerZMin,
                             )}
@@ -508,7 +521,7 @@ export default function ControlPanel() {
                             onChange={(z) => setModuleZ(m.id, z)}
                           />
                           <label className="field compact">
-                            <span className="field-label">Hauteur</span>
+                            <span className="field-label">{t('config.height')}</span>
                             <select
                               className="field-input"
                               value={m.hMm ?? wurth?.hMm ?? 110}
@@ -524,7 +537,7 @@ export default function ControlPanel() {
                             </select>
                           </label>
                           <p className="muted drawer-dims-hint">
-                            Profondeur auto{' '}
+                            {t('config.depthAuto')}{' '}
                             <strong>
                               {depthTooSmall
                                 ? `${wurth?.depthAvailableMm ?? 0} mm`
@@ -543,7 +556,7 @@ export default function ControlPanel() {
                             )}
                           </p>
                           <label className="field compact">
-                            <span className="field-label">Ouverture</span>
+                            <span className="field-label">{t('config.opening')}</span>
                             <input
                               type="range"
                               min={0}
@@ -559,7 +572,7 @@ export default function ControlPanel() {
                       )}
                       {m.kind === 'door' && (
                         <label className="field compact">
-                          <span className="field-label">Ouverture</span>
+                          <span className="field-label">{t('config.opening')}</span>
                           <input
                             type="range"
                             min={0}
@@ -583,7 +596,7 @@ export default function ControlPanel() {
         {/* Panneaux */}
         <section className="panel-section">
           <button type="button" className="section-head" onClick={() => toggle('panneaux')}>
-            <span>Panneaux</span>
+            <span>{t('config.panels')}</span>
             <span className="chev">{openSections.panneaux ? '▾' : '▸'}</span>
           </button>
           {openSections.panneaux && (
@@ -594,13 +607,12 @@ export default function ControlPanel() {
                 onClick={() => setPanneauPickMode(!panneauPickMode)}
               >
                 {panneauPickMode
-                  ? '✓ Terminer (faces)'
-                  : '+ Ajouter un panneau'}
+                  ? t('config.doneFaces')
+                  : t('config.addPanel')}
               </button>
               {panneauPickMode && (
                 <p className="pick-hint">
-                  Cliquez une <strong>face du meuble</strong> dans la vue 3D.
-                  Recliquez pour retirer.
+                  {t('config.pickHint')}
                 </p>
               )}
 
@@ -611,20 +623,20 @@ export default function ControlPanel() {
                       key={id}
                       type="button"
                       className="panneau-chip"
-                      title="Retirer"
+                      title={t('config.removePanel')}
                       onClick={() => togglePanneau(id)}
                     >
-                      {PANNEAU_CHIP_LABELS[id] || id}
+                      {tId('panel', id, PANNEAU_CHIP_LABELS[id] || id)}
                       <span aria-hidden>×</span>
                     </button>
                   ))}
                 </div>
               ) : (
-                <p className="muted">Aucun panneau</p>
+                <p className="muted">{t('config.noPanels')}</p>
               )}
 
               <p className="field-label" style={{ marginTop: '0.35rem' }}>
-                Couleur des panneaux
+                {t('config.panelColor')}
               </p>
               <div className="color-swatch-grid">
                 {Object.values(PANNEAU_COULEURS)
@@ -637,7 +649,7 @@ export default function ControlPanel() {
                         key={c.id}
                         type="button"
                         className={`color-swatch-btn${active ? ' active' : ''}`}
-                        title={c.label}
+                        title={tId('panelColor', c.id, c.label)}
                         onClick={() =>
                           updateUnit(unit.id, { panneauCouleur: c.id })
                         }
@@ -646,7 +658,9 @@ export default function ControlPanel() {
                           className="color-swatch"
                           style={{ background: c.color }}
                         />
-                        <span className="color-swatch-label">{c.label}</span>
+                        <span className="color-swatch-label">
+                          {tId('panelColor', c.id, c.label)}
+                        </span>
                       </button>
                     )
                   })}
@@ -654,7 +668,7 @@ export default function ControlPanel() {
                   className={`color-swatch-btn surmesure-btn${
                     unit.panneauCouleur === 'surmesure' ? ' active' : ''
                   }`}
-                  title="Sur mesure — spectre RVB"
+                  title={t('config.customColor')}
                 >
                   <span
                     className="color-swatch"
@@ -667,7 +681,7 @@ export default function ControlPanel() {
                           : 'conic-gradient(red, yellow, lime, aqua, blue, magenta, red)',
                     }}
                   />
-                  <span className="color-swatch-label">Sur mesure</span>
+                  <span className="color-swatch-label">{t('config.custom')}</span>
                   <input
                     type="color"
                     className="color-input-hidden"
@@ -695,20 +709,20 @@ export default function ControlPanel() {
         {/* Scène */}
         <section className="panel-section">
           <button type="button" className="section-head" onClick={() => toggle('scene')}>
-            <span>Scène 3D</span>
+            <span>{t('config.scene')}</span>
             <span className="chev">{openSections.scene ? '▾' : '▸'}</span>
           </button>
           {openSections.scene && (
             <div className="section-body">
               <label className="field">
-                <span className="field-label">Environnement</span>
+                <span className="field-label">{t('config.environment')}</span>
                 <select
                   value={environmentId}
                   onChange={(e) => setEnvironment(e.target.value)}
                 >
                   {Object.values(ENVIRONMENTS).map((e) => (
                     <option key={e.id} value={e.id}>
-                      {e.label}
+                      {tId('env', e.id, e.label)}
                     </option>
                   ))}
                 </select>
@@ -719,11 +733,13 @@ export default function ControlPanel() {
                   checked={sunEnabled}
                   onChange={(e) => setSun(e.target.checked)}
                 />
-                Soleil
+                {t('config.sun')}
               </label>
               {sunEnabled && (
                 <label className="field compact">
-                  <span className="field-label">Intensité {sunIntensity.toFixed(1)}</span>
+                  <span className="field-label">
+                    {t('config.intensity', { n: sunIntensity.toFixed(1) })}
+                  </span>
                   <input
                     type="range"
                     min={0.2}
@@ -741,14 +757,14 @@ export default function ControlPanel() {
         {/* Contact */}
         <section className="panel-section">
           <button type="button" className="section-head" onClick={() => toggle('contact')}>
-            <span>Client</span>
+            <span>{t('config.client')}</span>
             <span className="chev">{openSections.contact ? '▾' : '▸'}</span>
           </button>
           {openSections.contact && (
             <div className="section-body">
               {CLIENT_FIELDS.map((f) => (
                 <label key={f.key} className="field">
-                  <span className="field-label">{f.label}</span>
+                  <span className="field-label">{t(`client.${f.key}`)}</span>
                   <input
                     type={f.type}
                     value={contact[f.key] || ''}
@@ -757,12 +773,12 @@ export default function ControlPanel() {
                 </label>
               ))}
               <label className="field">
-                <span className="field-label">Notes</span>
+                <span className="field-label">{t('config.notes')}</span>
                 <textarea
                   rows={3}
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Ex. Buffet bas 2 tiroirs signature Philae"
+                  placeholder={t('config.notesPlaceholder')}
                 />
               </label>
             </div>
@@ -772,40 +788,46 @@ export default function ControlPanel() {
         {/* Achat / export */}
         <section className="panel-section">
           <button type="button" className="section-head" onClick={() => toggle('devis')}>
-            <span>Acheter</span>
+            <span>{t('config.buy')}</span>
             <span className="chev">{openSections.devis ? '▾' : '▸'}</span>
           </button>
           {openSections.devis && (
             <div className="section-body">
               <div className="quote-ref">
-                <span>Réf.</span>
+                <span>{t('config.ref')}</span>
                 <strong>{quoteRef}</strong>
-                <button type="button" className="btn-icon" onClick={refreshQuoteRef} title="Nouvelle réf.">
+                <button type="button" className="btn-icon" onClick={refreshQuoteRef} title={t('config.newRef')}>
                   ↻
                 </button>
               </div>
               <div className="price-block">
                 <div>
-                  <span>Total HT</span>
+                  <span>{t('config.totalHt')}</span>
                   <strong>{pricing.ht.toFixed(2)} €</strong>
                 </div>
                 <div>
-                  <span>TVA 20 %</span>
+                  <span>{t('config.vat')}</span>
                   <strong>{pricing.tva.toFixed(2)} €</strong>
                 </div>
                 <div className="ttc">
-                  <span>TTC</span>
+                  <span>{t('config.ttc')}</span>
                   <strong>{pricing.ttc.toFixed(2)} €</strong>
                 </div>
               </div>
               {impact && (
                 <div className="impact-block">
-                  <p className="impact-title">Impact (indicatif)</p>
+                  <p className="impact-title">{t('config.impact')}</p>
                   <p>
-                    Ossature ~{impact.woodKg.toFixed(1)} kg · Caisson ~{impact.caissonKg.toFixed(1)} kg
+                    {t('config.impactLine1', {
+                      wood: impact.woodKg.toFixed(1),
+                      caisson: impact.caissonKg.toFixed(1),
+                    })}
                   </p>
                   <p>
-                    Gain matière ~{impact.gainKg.toFixed(1)} kg · CO₂e ~{impact.gainCO2.toFixed(1)} kg
+                    {t('config.impactLine2', {
+                      gain: impact.gainKg.toFixed(1),
+                      co2: impact.gainCO2.toFixed(1),
+                    })}
                   </p>
                 </div>
               )}
@@ -816,7 +838,7 @@ export default function ControlPanel() {
                   disabled={checkoutBusy || pricing.ttc < 0.5}
                   onClick={async () => {
                     setCheckoutBusy(true)
-                    notify('Préparation du paiement sécurisé…')
+                    notify(t('config.preparingPay'))
                     try {
                       const result = await requestAcheter()
                       if (result?.error) {
@@ -824,35 +846,32 @@ export default function ControlPanel() {
                         return
                       }
                       if (result?.url) {
-                        notify('Redirection vers Stripe…')
+                        notify(t('config.redirectStripe'))
                         return
                       }
-                      notify(
-                        'Paiement indisponible — contact@philae.design',
-                      )
+                      notify(t('config.payUnavailable'))
                     } finally {
                       setCheckoutBusy(false)
                     }
                   }}
                 >
                   {checkoutBusy
-                    ? 'Redirection…'
-                    : `Acheter · ${pricing.ttc.toFixed(0)} € TTC`}
+                    ? t('config.redirecting')
+                    : t('config.buyPrice', { price: pricing.ttc.toFixed(0) })}
                 </button>
                 <button
                   type="button"
                   className="btn"
                   onClick={async () => {
                     await requestModele3D()
-                    notify('Demande modèle 3D (45 €) préparée')
+                    notify(t('config.model3dDone'))
                   }}
                 >
-                  Modèle 3D (45 €)
+                  {t('config.model3d')}
                 </button>
               </div>
               <p className="legal-hint">
-                Paiement sécurisé Stripe · TVA 20 % incluse dans le TTC ·
-                Fabrication sur commande · contact@philae.design
+                {t('config.legal')}
               </p>
             </div>
           )}

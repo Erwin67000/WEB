@@ -5,6 +5,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { fetchOrderStatus } from '../lib/checkout.js'
+import { useI18n } from '../i18n/I18nProvider.jsx'
 
 function formatEurosFromCents(cents, currency = 'eur') {
   if (cents == null || Number.isNaN(Number(cents))) return '—'
@@ -15,6 +16,7 @@ function formatEurosFromCents(cents, currency = 'eur') {
 }
 
 export default function CheckoutSuccessPage() {
+  const { t } = useI18n()
   const [params] = useSearchParams()
   const sessionId = params.get('session_id') || ''
   const orderId = params.get('order_id') || ''
@@ -33,7 +35,7 @@ export default function CheckoutSuccessPage() {
           setState({
             loading: false,
             order: null,
-            error: e.message || 'Impossible de confirmer le paiement',
+            error: e.message || 'confirm',
           })
         }
       }
@@ -46,31 +48,25 @@ export default function CheckoutSuccessPage() {
   const order = state.order
   const paid =
     order?.status === 'paid' ||
-    order?.status === 'complete' ||
-    // Stripe source fallback
     order?.status === 'complete'
 
   return (
     <div className="page page-site page-full page-checkout page-checkout-success">
       <div className="checkout-card">
-        <p className="section-kicker">Paiement</p>
-        <h1 className="hero-title checkout-title">Merci</h1>
+        <p className="section-kicker">{t('checkout.kicker')}</p>
+        <h1 className="hero-title checkout-title">{t('checkout.thanks')}</h1>
 
         {state.loading && (
-          <p className="lead">Confirmation de votre paiement…</p>
+          <p className="lead">{t('checkout.confirming')}</p>
         )}
 
         {!state.loading && state.error && (
           <>
-            <p className="lead">
-              Votre paiement a peut‑être abouti, mais la confirmation
-              automatique n’est pas encore disponible.
-            </p>
-            <p className="hint">{state.error}</p>
+            <p className="lead">{t('checkout.maybePaid')}</p>
+            <p className="hint">{state.error === 'confirm' ? '' : state.error}</p>
             {(orderId || sessionId) && (
               <p className="hint">
-                Référence à communiquer :{' '}
-                <strong>{orderId || sessionId}</strong>
+                {t('checkout.refToShare', { ref: orderId || sessionId })}
               </p>
             )}
           </>
@@ -79,51 +75,50 @@ export default function CheckoutSuccessPage() {
         {!state.loading && !state.error && order && (
           <>
             <p className="lead">
-              {paid
-                ? 'Votre commande est confirmée. L’atelier Philae prépare la fabrication.'
-                : 'Paiement enregistré — validation en cours.'}
+              {paid ? t('checkout.confirmed') : t('checkout.pending')}
             </p>
 
             <dl className="checkout-summary">
               <div>
-                <dt>Commande</dt>
+                <dt>{t('checkout.order')}</dt>
                 <dd>{order.id || orderId || '—'}</dd>
               </div>
               <div>
-                <dt>Réf. devis</dt>
+                <dt>{t('checkout.quoteRef')}</dt>
                 <dd>{order.quote_ref || '—'}</dd>
               </div>
               {order.product_label && (
                 <div>
-                  <dt>Meuble</dt>
+                  <dt>{t('checkout.piece')}</dt>
                   <dd>{order.product_label}</dd>
                 </div>
               )}
               <div>
-                <dt>Montant réglé</dt>
+                <dt>{t('checkout.amount')}</dt>
                 <dd className="product-price">
                   {formatEurosFromCents(
                     order.amount_charged_cents,
                     order.currency,
                   )}
-                  {order.payment_mode === 'deposit' ? ' (acompte)' : ' TTC'}
+                  {order.payment_mode === 'deposit'
+                    ? t('checkout.deposit')
+                    : t('checkout.ttc')}
                 </dd>
               </div>
               {order.customer_email && (
                 <div>
-                  <dt>E‑mail</dt>
+                  <dt>{t('checkout.email')}</dt>
                   <dd>{order.customer_email}</dd>
                 </div>
               )}
               <div>
-                <dt>Statut</dt>
-                <dd>{paid ? 'Payé' : order.status || '—'}</dd>
+                <dt>{t('checkout.status')}</dt>
+                <dd>{paid ? t('checkout.paid') : order.status || '—'}</dd>
               </div>
             </dl>
 
             <p className="hint checkout-next">
-              Un e‑mail de confirmation Stripe vous est adressé. Pour le suivi
-              fabrication :{' '}
+              {t('checkout.nextLead')}{' '}
               <a href="mailto:contact@philae.design">contact@philae.design</a>
             </p>
           </>
@@ -131,10 +126,10 @@ export default function CheckoutSuccessPage() {
 
         <div className="checkout-actions">
           <Link to="/boutique" className="btn btn-primary">
-            Retour boutique
+            {t('checkout.backShop')}
           </Link>
           <Link to="/" className="btn btn-wood">
-            Accueil
+            {t('checkout.home')}
           </Link>
         </div>
       </div>

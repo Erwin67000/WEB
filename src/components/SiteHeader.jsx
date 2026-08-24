@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { useConfigStore } from '../store/useConfigStore.js'
+import { useI18n } from '../i18n/I18nProvider.jsx'
 
 const NAV = [
-  { to: '/', label: 'Accueil', end: true },
-  { to: '/boutique', label: 'Boutique' },
-  { to: '/configurateur', label: 'Configurateur' },
-  { to: '/concept', label: 'Le concept' },
-  { to: '/contact', label: 'Contact' },
+  { to: '/', key: 'nav.home', end: true },
+  { to: '/boutique', key: 'nav.shop' },
+  { to: '/configurateur', key: 'nav.configurator' },
+  { to: '/concept', key: 'nav.concept' },
+  { to: '/contact', key: 'nav.contact' },
 ]
 
 /** Dès le premier pixel de scroll → version compacte */
@@ -23,19 +24,46 @@ function getScrollY() {
   )
 }
 
+function LangSwitch() {
+  const { lang, setLang, t } = useI18n()
+
+  return (
+    <div className="lang-switch" role="group" aria-label={t('lang.aria')}>
+      <button
+        type="button"
+        className={`lang-btn${lang === 'en' ? ' is-active' : ''}`}
+        onClick={() => setLang('en')}
+        aria-pressed={lang === 'en'}
+      >
+        {t('lang.en')}
+      </button>
+      <span className="lang-sep" aria-hidden>
+        /
+      </span>
+      <button
+        type="button"
+        className={`lang-btn${lang === 'fr' ? ' is-active' : ''}`}
+        onClick={() => setLang('fr')}
+        aria-pressed={lang === 'fr'}
+      >
+        {t('lang.fr')}
+      </button>
+    </div>
+  )
+}
+
 export default function SiteHeader() {
   const cartCount = useConfigStore((s) => s.cartCount)
   const location = useLocation()
+  const { t } = useI18n()
   const isConfig =
     location.pathname.startsWith('/configurateur') ||
     /\/boutique\/[^/]+\/configurer$/.test(location.pathname)
   const isHome = location.pathname === '/'
 
-  // Compact au scroll sur toutes les pages sauf configurateur (plein écran)
   const [compact, setCompact] = useState(false)
 
   useEffect(() => {
-    // Configurateur : toujours le grand bandeau
     if (isConfig) {
       setCompact(false)
       document.documentElement.style.setProperty('--header-current-h', '72px')
@@ -55,19 +83,17 @@ export default function SiteHeader() {
       raf = requestAnimationFrame(update)
     }
 
-    // Après ScrollToTop (reset asynchrone)
-    const t = window.setTimeout(update, 60)
+    const timer = window.setTimeout(update, 60)
     window.addEventListener('scroll', onScroll, { passive: true, capture: true })
     document.addEventListener('scroll', onScroll, { passive: true, capture: true })
     return () => {
-      clearTimeout(t)
+      clearTimeout(timer)
       cancelAnimationFrame(raf)
       window.removeEventListener('scroll', onScroll, { capture: true })
       document.removeEventListener('scroll', onScroll, { capture: true })
     }
   }, [isConfig, location.pathname])
 
-  // Hauteur CSS pour le stage scrollytelling (accueil)
   useEffect(() => {
     const h = !isConfig && compact ? '52px' : '72px'
     document.documentElement.style.setProperty('--header-current-h', h)
@@ -80,12 +106,15 @@ export default function SiteHeader() {
       }${isHome ? ' is-home' : ''}`}
     >
       <div className="site-header-inner">
-        <NavLink to="/" className="site-brand" end>
-          <img src="/logo-philae.jpg" alt="" className="site-logo-img" />
-          <span className="site-logo-word">PHILAE</span>
-        </NavLink>
+        <div className="site-header-left">
+          <LangSwitch />
+          <NavLink to="/" className="site-brand" end>
+            <img src="/logo-philae.jpg" alt="" className="site-logo-img" />
+            <span className="site-logo-word">PHILAE</span>
+          </NavLink>
+        </div>
 
-        <nav className="site-nav" aria-label="Navigation principale">
+        <nav className="site-nav" aria-label={t('footer.nav')}>
           {NAV.map((item) => (
             <NavLink
               key={item.to}
@@ -95,16 +124,14 @@ export default function SiteHeader() {
                 `nav-link${isActive ? ' active' : ''}`
               }
             >
-              {item.label}
+              {t(item.key)}
             </NavLink>
           ))}
         </nav>
 
         <div className="site-header-meta">
-          <span className="gold-dot" aria-hidden />
-          <span className="meta-text">Atelier</span>
           {cartCount > 0 && (
-            <span className="cart-pill" title="Articles au panier">
+            <span className="cart-pill" title={t('nav.shop')}>
               {cartCount}
             </span>
           )}
