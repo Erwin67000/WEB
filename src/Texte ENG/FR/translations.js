@@ -13,7 +13,7 @@ export const translations = {
       home: 'Home',
       shop: 'Shop',
       configurator: 'Configurator',
-      concept: 'The concept',
+      concept: 'Concept',
       contact: 'Contact',
     },
     lang: {
@@ -22,7 +22,7 @@ export const translations = {
       en: 'EN',
     },
     footer: {
-      tag: 'Geometric furniture · Solid wood',
+      tag: 'Framed Fourniture',
       nav: 'Navigation',
       workshop: 'Workshop',
       madeIn: 'France · Made to order',
@@ -32,14 +32,14 @@ export const translations = {
       privacy: 'Privacy',
       shipping: 'Shipping & assembly',
       rights: '© {year} Philae. All rights reserved.',
-      credit: 'Design & making — Philae workshop',
+      credit: 'Design & making — Atelier Philae',
     },
     home: {
-      manifestoAria: 'Form and function',
-      kicker: 'Solid wood · Signature frame',
+      manifestoAria: 'Form and Function',
+      kicker: 'Framed Fourniture · Signature frame',
       titleLead: 'Form',
-      titleAnd: 'and',
-      titleTail: 'function',
+      titleAnd: '&',
+      titleTail: 'Function',
       scroll: 'Scroll to assemble',
       pillarDesign: 'Design',
       pillarDesignText:

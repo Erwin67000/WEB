@@ -22,6 +22,7 @@ import { DIM_LIMITS } from '../3_INPUT/matrice_input.js'
 import { CLIENT_FIELDS } from '../3_INPUT/matrice_client.js'
 import { FACE_PICK_DEFS } from '../1_STRUCTURE/02_agencement/FacePickPlanes.jsx'
 import { useI18n, useTId } from '@texte/I18nProvider.jsx'
+import PayButton from './PayButton.jsx'
 
 /** Labels courts pour chips des panneaux actifs */
 const PANNEAU_CHIP_LABELS = Object.fromEntries(
@@ -832,9 +833,7 @@ export default function ControlPanel() {
                 </div>
               )}
               <div className="row-actions col client-actions">
-                <button
-                  type="button"
-                  className="btn primary"
+                <PayButton
                   disabled={checkoutBusy || pricing.ttc < 0.5}
                   onClick={async () => {
                     setCheckoutBusy(true)
@@ -858,7 +857,7 @@ export default function ControlPanel() {
                   {checkoutBusy
                     ? t('config.redirecting')
                     : t('config.buyPrice', { price: pricing.ttc.toFixed(0) })}
-                </button>
+                </PayButton>
                 <button
                   type="button"
                   className="btn"

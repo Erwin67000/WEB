@@ -1122,7 +1122,7 @@ export default function HomeScrollStory({
 
       <div className="home-story-overlay">
         {/* HUD gamifié — coin haut droit */}
-        <div className="home-story-hud" aria-hidden>
+        <div className="home-story-hud">
           <div className="home-story-hud-row">
             <span className="home-story-hud-label">{t('story.hudLabel')}</span>
             <span className="home-story-hud-pct">
@@ -1132,15 +1132,27 @@ export default function HomeScrollStory({
           <div className="home-story-hud-bar">
             <i style={{ width: `${Math.round(hudP * 100)}%` }} />
           </div>
-          <div className="home-story-hud-pips">
-            {STORY.map((s, i) => (
-              <span
-                key={s.id}
-                className={
-                  i < chapter ? 'done' : i === chapter ? 'active' : ''
-                }
-              />
-            ))}
+          <div
+            className="home-story-hud-pips"
+            role="group"
+            aria-label={t('story.chaptersAria')}
+          >
+            {STORY.map((s, i) => {
+              const kicker = t(`story.${s.id}.kicker`)
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  className={`home-story-hud-pip${
+                    i < chapter ? ' done' : i === chapter ? ' active' : ''
+                  }`}
+                  onClick={() => goToChapter(i)}
+                  aria-current={i === chapter ? 'step' : undefined}
+                  title={t('story.goTo', { kicker })}
+                  aria-label={t('story.goTo', { kicker })}
+                />
+              )
+            })}
           </div>
         </div>
 

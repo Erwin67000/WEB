@@ -11,6 +11,9 @@ export default function HomeManifesto() {
 
   return (
     <section className="home-manifesto" aria-label={t('home.manifestoAria')}>
+      <div className="home-manifesto-bg" aria-hidden>
+        <img src="/accueil/hero-frame.jpg" alt="" />
+      </div>
       <div className="home-manifesto-inner">
         <p className="section-kicker home-manifesto-kicker">{t('home.kicker')}</p>
         <h1 className="home-manifesto-title">
@@ -21,12 +24,14 @@ export default function HomeManifesto() {
 
         <ul className="home-pillars">
           {PILLARS.map((p) => (
-            <li key={p.id} className="home-pillar">
-              <span className="home-pillar-n" aria-hidden>
-                {p.n}
-              </span>
-              <h2 className="home-pillar-title">{t(p.titleKey)}</h2>
-              <p className="home-pillar-text">{t(p.textKey)}</p>
+            <li key={p.id}>
+              <article className="home-pillar pillar-hover">
+                <span className="home-pillar-n" aria-hidden>
+                  {p.n}
+                </span>
+                <h2 className="home-pillar-title">{t(p.titleKey)}</h2>
+                <p className="home-pillar-text">{t(p.textKey)}</p>
+              </article>
             </li>
           ))}
         </ul>

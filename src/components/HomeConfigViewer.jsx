@@ -17,7 +17,6 @@ export default function HomeConfigViewer() {
           <Configurateur3D orbitOnly ivory />
         </Suspense>
       </div>
-      <p className="home-viewer-hint">{t('home.viewerHint')}</p>
     </section>
   )
 }

@@ -22,6 +22,7 @@ import { getCatalogItem } from '../data/catalog.js'
 import FurniturePreview3D from '../components/FurniturePreview3D.jsx'
 import { createCheckoutSession } from '../lib/checkout.js'
 import { useI18n, useTId } from '@texte/I18nProvider.jsx'
+import PayButton from '../components/PayButton.jsx'
 
 /** Prix TTC catalogue → ventilation HT / TVA 20 %. */
 function pricingFromTtc(ttc) {
@@ -551,18 +552,13 @@ export default function ArticlePage() {
             >
               {t('article.configureBase')}
             </button>
-            <button
-              type="button"
-              className="btn btn-wood"
-              disabled={buyBusy}
-              onClick={handleBuyNow}
-            >
+            <PayButton disabled={buyBusy} onClick={handleBuyNow}>
               {buyBusy
                 ? t('article.redirecting')
                 : ttc >= 0.5
                   ? t('article.buy', { price: Math.round(ttc) })
                   : t('article.requestQuote')}
-            </button>
+            </PayButton>
           </div>
           {buyMsg && <p className="hint article-order-hint">{buyMsg}</p>}
           <p className="hint article-order-hint">{t('article.payHint')}</p>
