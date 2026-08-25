@@ -805,17 +805,17 @@ function StoryWorld({ progressRef }) {
       pStretch,
     )
 
-    // À partir du LEVEL 03 : descendre le meuble dans le cadre
-    // pour ne plus chevaucher le titre en haut.
+    // À partir du LEVEL 03 : le meuble descend dans le cadre
+    // (sens inverse : caméra plus basse, regard un peu plus haut).
     const frameDown = lerp(0, 0.38, pStretch)
-    look.y -= frameDown * 0.22
+    look.y += frameDown * 0.22
 
     // Angle caméra de base (la rotation modèle gère 90° / +45°)
     const ang = -0.85 + pJoin * 0.2 + pStretch * 0.35
 
     const camGoal = new THREE.Vector3(
       look.x + Math.cos(ang) * dist,
-      look.y + dist * (0.32 + pStretch * 0.1) + frameDown,
+      look.y + dist * (0.32 + pStretch * 0.1) - frameDown,
       look.z + Math.sin(ang) * dist,
     )
     camera.position.lerp(camGoal, 0.1)
