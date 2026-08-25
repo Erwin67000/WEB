@@ -441,7 +441,7 @@ export const translations = {
     },
     finish: {
       brut: 'Raw',
-      vernis_clair: 'Clear varnish',
+      vernis_clair: 'Varnished',
       vernis_fonce: 'Dark varnish',
       huile: 'Natural oil',
       grave: 'Engraved',
@@ -1021,7 +1021,7 @@ export const translations = {
     },
     finish: {
       brut: 'Brut',
-      vernis_clair: 'Vernis clair',
+      vernis_clair: 'Vernis',
       vernis_fonce: 'Vernis foncé',
       huile: 'Huile naturelle',
       grave: 'Gravé',

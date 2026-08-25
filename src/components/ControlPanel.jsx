@@ -20,7 +20,7 @@ import {
   WURTH_PROFONDEUR_MIN_MM,
 } from '../1_STRUCTURE/02_agencement/agencement.js'
 import { DIM_LIMITS } from '../3_INPUT/matrice_input.js'
-import { CLIENT_FIELDS } from '../3_INPUT/matrice_client.js'
+
 import { FACE_PICK_DEFS } from '../1_STRUCTURE/02_agencement/FacePickPlanes.jsx'
 import { useNavigate } from 'react-router-dom'
 import { useI18n, useTId } from '@texte/I18nProvider.jsx'
@@ -96,8 +96,7 @@ export default function ControlPanel() {
   const sunEnabled = useActiveConfigStore((s) => s.sunEnabled)
   const sunIntensity = useActiveConfigStore((s) => s.sunIntensity)
   const wireframe = useActiveConfigStore((s) => s.wireframe)
-  const notes = useActiveConfigStore((s) => s.notes)
-  const contact = useActiveConfigStore((s) => s.contact)
+
   const panneauPickMode = useActiveConfigStore((s) => s.panneauPickMode)
   const dimsLocked = useActiveConfigStore((s) => s.dimsLocked)
 
@@ -118,8 +117,6 @@ export default function ControlPanel() {
   const setSunIntensity = useActiveConfigStore((s) => s.setSunIntensity)
   const setWireframe = useActiveConfigStore((s) => s.setWireframe)
   const setPanneauPickMode = useActiveConfigStore((s) => s.setPanneauPickMode)
-  const setNotes = useActiveConfigStore((s) => s.setNotes)
-  const setContact = useActiveConfigStore((s) => s.setContact)
   const requestModele3D = useActiveConfigStore((s) => s.requestModele3D)
   const navigate = useNavigate()
 
@@ -154,7 +151,6 @@ export default function ControlPanel() {
     modules: !!dimsLocked,
     panneaux: !!dimsLocked,
     scene: false,
-    contact: false,
     devis: false,
   }))
 
@@ -753,37 +749,6 @@ export default function ControlPanel() {
                   />
                 </label>
               )}
-            </div>
-          )}
-        </section>
-
-        {/* Contact */}
-        <section className="panel-section">
-          <button type="button" className="section-head" onClick={() => toggle('contact')}>
-            <span>{t('config.client')}</span>
-            <span className="chev">{openSections.contact ? '▾' : '▸'}</span>
-          </button>
-          {openSections.contact && (
-            <div className="section-body">
-              {CLIENT_FIELDS.map((f) => (
-                <label key={f.key} className="field">
-                  <span className="field-label">{t(`client.${f.key}`)}</span>
-                  <input
-                    type={f.type}
-                    value={contact[f.key] || ''}
-                    onChange={(e) => setContact({ [f.key]: e.target.value })}
-                  />
-                </label>
-              ))}
-              <label className="field">
-                <span className="field-label">{t('config.notes')}</span>
-                <textarea
-                  rows={3}
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder={t('config.notesPlaceholder')}
-                />
-              </label>
             </div>
           )}
         </section>

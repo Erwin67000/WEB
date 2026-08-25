@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-25T16:11:32.849Z",
+  "generatedAt": "2026-08-25T16:25:16.907Z",
   "items": [
     {
       "id": "001-table-chevet",
@@ -38,36 +38,40 @@
       "glb": "/catalogue/glb/010-coffre.glb"
     },
     {
-      "id": "013-bibliotheque",
-      "glb": "/catalogue/glb/013-bibliotheque.glb"
+      "id": "012-servante",
+      "glb": "/catalogue/glb/012-servante.glb"
     },
     {
-      "id": "014-bibliotheque",
-      "glb": "/catalogue/glb/014-bibliotheque.glb"
+      "id": "013-servante",
+      "glb": "/catalogue/glb/013-servante.glb"
+    },
+    {
+      "id": "014-servante",
+      "glb": "/catalogue/glb/014-servante.glb"
     },
     {
       "id": "015-bibliotheque",
       "glb": "/catalogue/glb/015-bibliotheque.glb"
     },
     {
-      "id": "016-banc",
-      "glb": "/catalogue/glb/016-banc.glb"
+      "id": "016-bibliotheque",
+      "glb": "/catalogue/glb/016-bibliotheque.glb"
     },
     {
-      "id": "017-banc",
-      "glb": "/catalogue/glb/017-banc.glb"
+      "id": "017-bibliotheque",
+      "glb": "/catalogue/glb/017-bibliotheque.glb"
     },
     {
-      "id": "029-meuble-bas",
-      "glb": "/catalogue/glb/029-meuble-bas.glb"
+      "id": "018-banc",
+      "glb": "/catalogue/glb/018-banc.glb"
     },
     {
-      "id": "051-cube",
-      "glb": "/catalogue/glb/051-cube.glb"
+      "id": "019-banc",
+      "glb": "/catalogue/glb/019-banc.glb"
     },
     {
-      "id": "052-cube",
-      "glb": "/catalogue/glb/052-cube.glb"
+      "id": "031-meuble-bas",
+      "glb": "/catalogue/glb/031-meuble-bas.glb"
     },
     {
       "id": "053-cube",
@@ -76,6 +80,14 @@
     {
       "id": "054-cube",
       "glb": "/catalogue/glb/054-cube.glb"
+    },
+    {
+      "id": "055-cube",
+      "glb": "/catalogue/glb/055-cube.glb"
+    },
+    {
+      "id": "056-cube",
+      "glb": "/catalogue/glb/056-cube.glb"
     }
   ]
 }

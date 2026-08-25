@@ -396,9 +396,10 @@ export function shelfZMm(mod, dims, moduleList = []) {
   const sameKind = moduleList.filter((m) => m.kind === 'shelf')
   const count = Math.max(sameKind.length, 1)
   const index = sameKind.findIndex((m) => m.id === mod.id)
-  const i = index >= 0 ? index : mod.bayIndex ?? 0
-  const step = (zMax - zMin) / (count + 1)
-  return zMin + step * (i + 1)
+  const i = Math.max(0, index >= 0 ? index : mod.bayIndex ?? 0)
+  if (count === 1) return (zMin + zMax) / 2
+  const span = zMax - zMin
+  return zMin + (span * i) / (count - 1)
 }
 
 export function moduleLayout(mod, { L, W, H }, moduleList = []) {

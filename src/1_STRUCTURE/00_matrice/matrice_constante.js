@@ -200,7 +200,7 @@ export const FINITIONS_OSSATURE = {
   },
   vernis_clair: {
     id: 'vernis_clair',
-    label: 'Vernis clair',
+    label: 'Vernis',
     roughness: 0.32,
     metalness: 0.08,
     shade: 1.06,
@@ -242,12 +242,7 @@ export const FINITIONS_OSSATURE = {
 }
 
 /** Finitions proposées au client dans le control panel. */
-export const FINITIONS_OSSATURE_CLIENT = [
-  'brut',
-  'vernis_clair',
-  'vernis_fonce',
-  'huile',
-]
+export const FINITIONS_OSSATURE_CLIENT = ['brut', 'vernis_clair']
 
 /**
  * 5 couleurs panneau — tons site (or / ivoire / bois), contrastent légèrement.
@@ -339,7 +334,7 @@ export const DEFAULT_FINITION_OSSATURE = 'brut'
 /**
  * Résout une finition ossature client depuis une valeur catalogue
  * (texture, wood_finish, ossature_finish, alias libres).
- * Valeurs valides client : brut | vernis_clair | vernis_fonce | huile
+ * Valeurs proposées client : brut | vernis_clair (vernis)
  */
 export function resolveOssatureFinish(raw) {
   const s = String(raw || '')
