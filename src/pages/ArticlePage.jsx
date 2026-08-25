@@ -362,6 +362,18 @@ export default function ArticlePage() {
   return (
     <div className="page page-article page-site page-full">
       <div className="article-layout">
+        <div className="article-preview">
+          <FurniturePreview3D
+            catalogRow={row}
+            height="100%"
+            className="article-mini"
+            hint
+            eager
+            freeOrbit
+            dpr={[1, 1.5]}
+          />
+        </div>
+
         <div className="article-info page-pad-x">
           <button
             type="button"
@@ -456,18 +468,6 @@ export default function ArticlePage() {
 
           <p className="price-disclaimer">{t('article.priceDisclaimer')}</p>
           <p className="hint article-order-hint">{t('article.payHint')}</p>
-        </div>
-
-        <div className="article-preview">
-          <FurniturePreview3D
-            catalogRow={row}
-            height="100%"
-            className="article-mini"
-            hint
-            eager
-            freeOrbit
-            dpr={[1, 1.5]}
-          />
         </div>
       </div>
     </div>

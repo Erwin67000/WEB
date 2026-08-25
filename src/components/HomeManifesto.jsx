@@ -1,5 +1,5 @@
-import { Link } from 'react-router-dom'
 import { useI18n } from '@texte/I18nProvider.jsx'
+import ShopHoverButton from './ShopHoverButton.jsx'
 
 const PILLARS = [
   { id: 'design', n: '01', titleKey: 'home.pillarDesign', textKey: 'home.pillarDesignText' },
@@ -39,12 +39,12 @@ export default function HomeManifesto() {
         </ul>
 
         <div className="home-manifesto-ctas">
-          <Link to="/boutique" className="btn btn-primary">
+          <ShopHoverButton variant="primary" size="lg" to="/boutique">
             {t('home.ctaShop')}
-          </Link>
-          <Link to="/configurateur" className="btn btn-wood">
+          </ShopHoverButton>
+          <ShopHoverButton variant="wood" size="lg" to="/configurateur">
             {t('home.ctaConfig')}
-          </Link>
+          </ShopHoverButton>
         </div>
         <p className="home-manifesto-scroll" aria-hidden>
           {t('home.scroll')}

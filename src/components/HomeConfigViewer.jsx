@@ -1,6 +1,6 @@
 import { lazy, Suspense } from 'react'
-import { Link } from 'react-router-dom'
 import { useI18n } from '@texte/I18nProvider.jsx'
+import ShopHoverButton from './ShopHoverButton.jsx'
 
 const Configurateur3D = lazy(() => import('../2_BUILD/3Dconfigurateur.jsx'))
 
@@ -13,12 +13,12 @@ export default function HomeConfigViewer() {
         <h2 className="home-close-title">{t('home.closeTitle')}</h2>
         <p className="home-close-lead">{t('home.closeLead')}</p>
         <div className="home-manifesto-ctas">
-          <Link to="/boutique" className="btn btn-primary">
+          <ShopHoverButton variant="primary" size="lg" to="/boutique">
             {t('home.ctaShop')}
-          </Link>
-          <Link to="/configurateur" className="btn btn-wood">
+          </ShopHoverButton>
+          <ShopHoverButton variant="wood" size="lg" to="/configurateur">
             {t('home.ctaConfig')}
-          </Link>
+          </ShopHoverButton>
         </div>
       </div>
       <div className="home-viewer-stage">

@@ -2612,7 +2612,7 @@ body.config-lock {
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  flex: 1;
+  flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -2628,6 +2628,17 @@ body.config-lock {
   cursor: pointer;
   color: #f5f0e6;
   background: #3d2e22;
+}
+
+.product-actions .shop-hover-btn {
+  flex: 1;
+}
+
+.shop-hover-btn-lg {
+  min-width: 12.5rem;
+  min-height: 2.85rem;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.72rem;
 }
 
 .shop-hover-btn-primary {
@@ -2701,43 +2712,39 @@ body.config-lock {
   outline-offset: 2px;
 }
 
-.site-main:has(.page-article) {
-  overflow: hidden;
-  height: calc(100dvh - var(--header-h, 64px));
-}
-
-/* ——— Page article : 3D collé à droite, infos qui scrollent ——— */
+/* ——— Page article : 3D à gauche, texte à droite, scroll page + footer ——— */
 .page-article.page-full {
-  height: calc(100dvh - var(--header-h, 64px));
-  max-height: calc(100dvh - var(--header-h, 64px));
-  min-height: 0;
+  height: auto;
+  min-height: calc(100dvh - var(--header-h, 64px));
+  overflow: visible;
   padding-bottom: 0;
-  overflow: hidden;
 }
 
 .article-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
-  grid-template-areas: 'info preview';
-  height: 100%;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  grid-template-areas: 'preview info';
+  min-height: calc(100dvh - var(--header-h, 64px));
   width: 100%;
 }
 
 .article-info {
   grid-area: info;
-  height: 100%;
-  overflow-y: auto;
-  overscroll-behavior: contain;
+  height: auto;
+  overflow: visible;
   padding-top: 1.5rem;
   padding-bottom: 2.5rem;
 }
 
 .article-preview {
   grid-area: preview;
-  height: 100%;
+  position: sticky;
+  top: var(--header-h, 64px);
+  height: calc(100dvh - var(--header-h, 64px));
+  align-self: start;
   min-height: 0;
   background: var(--ivory, #f5f0e6);
-  border-left: 1px solid #ddd5c4;
+  border-right: 1px solid #ddd5c4;
 }
 
 .article-mini {
@@ -3067,6 +3074,7 @@ body.config-lock {
     grid-template-areas:
       'preview'
       'info';
+    min-height: 0;
     height: auto;
   }
   .article-info {
@@ -3074,10 +3082,12 @@ body.config-lock {
     overflow: visible;
   }
   .article-preview {
+    position: relative;
+    top: auto;
     min-height: 280px;
     height: 50vw;
     max-height: 420px;
-    border-left: none;
+    border-right: none;
     border-bottom: 1px solid var(--border);
   }
   .article-mini {

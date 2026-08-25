@@ -25,13 +25,21 @@ function ArrowIcon() {
 export default function ShopHoverButton({
   children,
   variant = 'wood',
+  size = 'md',
   to,
   type = 'button',
   onClick,
   className = '',
   disabled = false,
 }) {
-  const cls = `shop-hover-btn shop-hover-btn-${variant}${className ? ` ${className}` : ''}`
+  const cls = [
+    'shop-hover-btn',
+    `shop-hover-btn-${variant}`,
+    size === 'lg' ? 'shop-hover-btn-lg' : '',
+    className,
+  ]
+    .filter(Boolean)
+    .join(' ')
   const inner = (
     <>
       <span className="shop-hover-btn-dot" aria-hidden />
