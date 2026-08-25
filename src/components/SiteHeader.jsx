@@ -111,9 +111,8 @@ export default function SiteHeader() {
     >
       <div className="site-header-inner">
         <div className="site-header-left">
-          <LangSwitch />
           <NavLink to="/" className="site-brand" end>
-            <img src="/logo-philae.svg" alt="" className="site-logo-img" />
+            <img src="/logo-philae.jpg" alt="" className="site-logo-img" />
             <span className="site-logo-word">PHILAE</span>
           </NavLink>
         </div>
@@ -148,6 +147,7 @@ export default function SiteHeader() {
         </nav>
 
         <div className="site-header-meta">
+          <LangSwitch />
           {cartCount > 0 && (
             <span className="cart-pill" title={t('nav.shop')}>
               {cartCount}

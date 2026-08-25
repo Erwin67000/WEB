@@ -1161,12 +1161,14 @@ export default function HomeScrollStory({
           ref={copyRef}
           className="home-story-copy home-story-copy-stack"
         >
-          <p className="section-kicker home-story-kicker">{chKicker}</p>
-          <h2 className="home-story-title">{chTitle}</h2>
+          <div className="home-story-head">
+            <p className="section-kicker home-story-kicker">{chKicker}</p>
+            <h2 className="home-story-title">{chTitle}</h2>
+          </div>
+          <p className="home-story-ghost" aria-hidden>
+            {chTitle}
+          </p>
           <p className="home-story-text">{chText}</p>
-          {chapter === STORY.length - 1 && (
-            <p className="home-story-next-hint">{t('home.storyNext')}</p>
-          )}
         </div>
       </div>
 

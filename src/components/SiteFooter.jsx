@@ -10,9 +10,9 @@ export default function SiteFooter() {
     <footer className="site-footer">
       <div className="site-footer-inner">
         <div className="footer-brand">
-          <img src="/logo-philae.svg" alt="" className="footer-logo" />
+          <img src="/logo-philae.jpg" alt="" className="footer-logo" />
           <div>
-            <p className="footer-name">Philae</p>
+            <p className="footer-name">PHILAE</p>
             <p className="footer-tag">{t('footer.tag')}</p>
           </div>
         </div>
