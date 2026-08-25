@@ -3,6 +3,7 @@
  * Source : public/catalogue/modele_boutique.csv (après sync)
  *          ou src/1_STRUCTURE/03_bibliotheque/modele_boutique.csv
  * Tablettes = octogone + 2 traverses (buildTablette).
+ * Tiroirs = Würth type B : caisson, traverses, rails Dynamoov (buildTiroir).
  * Sortie : public/catalogue/glb/<id>.glb
  *
  * Usage : npm run build:catalogue-glbs
@@ -13,6 +14,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 import { Blob as NodeBlob } from 'node:buffer'
 import * as THREE from 'three'
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js'
+import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js'
 
 // Polyfills navigateur pour GLTFExporter sous Node
 if (typeof globalThis.Blob === 'undefined') globalThis.Blob = NodeBlob
@@ -58,7 +60,13 @@ const outDir = path.join(root, 'public/catalogue/glb')
 const { buildOssature } = await import(
   pathToFileURL(path.join(root, 'src/1_STRUCTURE/01_meuble3D/ossature.js')).href
 )
-const { buildPanneauComplet, moduleLayout } = await import(
+const {
+  buildPanneauComplet,
+  moduleLayout,
+  buildTiroir,
+  normalizeRailGeometry,
+  railGeometryToThree,
+} = await import(
   pathToFileURL(path.join(root, 'src/1_STRUCTURE/02_agencement/agencement.js')).href
 )
 const {
@@ -120,6 +128,22 @@ function loadCatalogueRows() {
 }
 
 const SCALE = 0.001
+const RAIL_METAL_COLOR = '#b4b8bc'
+const RAIL_STL_PATH = path.join(root, 'public/structure/agencement/rail-gauche.stl')
+
+function loadRailGeometryMm() {
+  if (!fs.existsSync(RAIL_STL_PATH)) {
+    console.warn('[generate-glbs] rail STL introuvable', RAIL_STL_PATH)
+    return null
+  }
+  const buf = fs.readFileSync(RAIL_STL_PATH)
+  const ab = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength)
+  const geo = new STLLoader().parse(ab)
+  return normalizeRailGeometry(geo)
+}
+
+const railGeoMm = loadRailGeometryMm()
+if (railGeoMm) console.log('[generate-glbs] rails Dynamoov STL chargés')
 
 function shadeHex(hex, factor) {
   const c = new THREE.Color(hex)
@@ -331,7 +355,75 @@ function buildRowGroup(row) {
       continue
     }
 
-    // Tiroirs / portes : boîte + filaire (legacy)
+    if (mod.kind === 'drawer') {
+      try {
+        const layout = moduleLayout(mod, dims, modules)
+        const data = buildTiroir(dims, layout, mod)
+        if (data.depthTooSmall) {
+          console.warn(`  [skip tiroir ${row.id}/${mod.id}] profondeur < 250 mm`)
+          continue
+        }
+        for (const tr of data.traverses || []) {
+          root.add(
+            meshFromBuffers(
+              tr.positions,
+              tr.indices,
+              woodColor,
+              `drawer-tr-${tr.id}-${mod.id || mod.bayIndex}`,
+            ),
+          )
+          const tw = tubesFromWire(
+            tr.wire,
+            edgeColor,
+            `drawer-tr-wire-${tr.id}-${mod.id || mod.bayIndex}`,
+            1.3,
+          )
+          if (tw) root.add(tw)
+        }
+        for (const p of data.box?.panels || []) {
+          root.add(
+            meshFromBuffers(
+              p.positions,
+              p.indices,
+              new THREE.Color(panneauColor),
+              `drawer-box-${p.id}-${mod.id || mod.bayIndex}`,
+            ),
+          )
+          const pl = tubesFromWire(
+            p.wire,
+            edgeColor,
+            `drawer-box-wire-${p.id}-${mod.id || mod.bayIndex}`,
+            0.85,
+          )
+          if (pl) root.add(pl)
+        }
+        if (railGeoMm) {
+          const railMat = new THREE.MeshStandardMaterial({
+            color: RAIL_METAL_COLOR,
+            metalness: 0.92,
+            roughness: 0.28,
+          })
+          for (const r of data.rails || []) {
+            const geo = railGeometryToThree(railGeoMm, {
+              scaleX: r.scale?.x ?? 1,
+              scaleY: r.scale?.y ?? 1,
+              scaleZ: r.scale?.z ?? 1,
+              mirrorX: Boolean(r.mirrorX),
+            })
+            const mesh = new THREE.Mesh(geo, railMat)
+            const [x, y, z] = r.position
+            mesh.position.copy(meubleToThree(x, y, z))
+            mesh.name = `drawer-${r.id}-${mod.id || mod.bayIndex}`
+            root.add(mesh)
+          }
+        }
+      } catch (e) {
+        console.warn(`  [skip tiroir ${row.id}/${mod.id}]`, e.message)
+      }
+      continue
+    }
+
+    // Portes : boîte + filaire
     const layout = moduleLayout(mod, dims, modules)
     const [cx, cy, cz] = layout.center
     const [sx, sy, sz] = layout.size
