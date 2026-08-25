@@ -14,6 +14,7 @@ import {
 } from '../1_STRUCTURE/00_matrice/matrice_configuration.js'
 import {
   shelfZMm,
+  shelfZBounds,
   moduleLayout,
   WURTH_HAUTEURS_MM,
   WURTH_PROFONDEUR_MIN_MM,
@@ -454,10 +455,13 @@ export default function ControlPanel() {
                     m.kind === 'shelf'
                       ? shelfZMm(m, unit.dims, unit.modules)
                       : null
+                  const shelfBounds =
+                    m.kind === 'shelf'
+                      ? shelfZBounds(unit.dims, unit.modules)
+                      : null
                   const shelfExtrusion = areteExtrusionMm(unit.dims)
-                  const shelfZMin = 22 + Number(EPAISSEUR_PANNEAU)
-                  const shelfZMax =
-                    unit.dims.H - 22 - shelfExtrusion
+                  const shelfZMin = shelfBounds?.zMin ?? 22 + Number(EPAISSEUR_PANNEAU)
+                  const shelfZMax = shelfBounds?.zMax ?? unit.dims.H - 22 - shelfExtrusion
                   const drawerLayout =
                     m.kind === 'drawer'
                       ? moduleLayout(m, unit.dims, unit.modules)

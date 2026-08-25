@@ -9,6 +9,7 @@ import {
 import {
   createModule,
   modulePriceBreakdown,
+  liftShelvesAboveDrawers,
 } from '../1_STRUCTURE/02_agencement/agencement.js'
 import { Meuble } from '../1_STRUCTURE/01_meuble3D/ossature.js'
 import {
@@ -331,9 +332,13 @@ export function createConfigStore(opts = {}) {
         units: s.units.map((u) => {
           if (u.id !== id) return u
           const bayIndex = u.modules.filter((m) => m.kind === kind).length
+          const modules = [...u.modules, createModule(kind, bayIndex)]
           return {
             ...u,
-            modules: [...u.modules, createModule(kind, bayIndex)],
+            modules:
+              kind === 'drawer'
+                ? liftShelvesAboveDrawers(modules, u.dims)
+                : modules,
           }
         }),
         dirty: true,
@@ -373,18 +378,22 @@ export function createConfigStore(opts = {}) {
     setModuleZ: (modId, zMm) => {
       const id = get().activeUnitId
       set((s) => ({
-        units: s.units.map((u) =>
-          u.id !== id
-            ? u
-            : {
-                ...u,
-                modules: u.modules.map((m) =>
-                  m.id === modId
-                    ? { ...m, zMm: Number.isFinite(zMm) ? zMm : null }
-                    : m,
-                ),
-              },
-        ),
+        units: s.units.map((u) => {
+          if (u.id !== id) return u
+          const modules = u.modules.map((m) =>
+            m.id === modId
+              ? { ...m, zMm: Number.isFinite(zMm) ? zMm : null }
+              : m,
+          )
+          const changed = u.modules.find((m) => m.id === modId)
+          return {
+            ...u,
+            modules:
+              changed?.kind === 'drawer'
+                ? liftShelvesAboveDrawers(modules, u.dims)
+                : modules,
+          }
+        }),
         dirty: true,
       }))
     },
@@ -394,18 +403,18 @@ export function createConfigStore(opts = {}) {
       const id = get().activeUnitId
       const n = Number(hMm)
       set((s) => ({
-        units: s.units.map((u) =>
-          u.id !== id
-            ? u
-            : {
-                ...u,
-                modules: u.modules.map((m) =>
-                  m.id === modId && m.kind === 'drawer'
-                    ? { ...m, hMm: Number.isFinite(n) ? n : m.hMm }
-                    : m,
-                ),
-              },
-        ),
+        units: s.units.map((u) => {
+          if (u.id !== id) return u
+          const modules = u.modules.map((m) =>
+            m.id === modId && m.kind === 'drawer'
+              ? { ...m, hMm: Number.isFinite(n) ? n : m.hMm }
+              : m,
+          )
+          return {
+            ...u,
+            modules: liftShelvesAboveDrawers(modules, u.dims),
+          }
+        }),
         dirty: true,
       }))
     },

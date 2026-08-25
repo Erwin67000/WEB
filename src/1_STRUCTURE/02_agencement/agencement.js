@@ -328,16 +328,68 @@ export function createModule(kind, bayIndex = 0, extras = {}) {
 }
 
 /**
- * Z tablette (mm) = **haut** de l’octogone (face supérieure).
- * Clamp pour laisser la place à l’épaisseur (vers le bas) + traverses (vers le haut).
+ * Z haut des tiroirs (mm) : sommet du caisson le plus haut.
+ * 0 s’il n’y a pas de tiroir.
  */
-export function shelfZMm(mod, dims, moduleList = []) {
+export function drawersTopZMm(dims = {}, moduleList = []) {
+  const drawers = moduleList.filter((m) => m.kind === 'drawer')
+  if (!drawers.length) return 0
+  const inset = 22
+  const extrusion = areteExtrusionMm(dims)
+  const zMin = inset + extrusion
+  const gap = Number(DRAWER_STACK_GAP_MM) || 40
+  let top = 0
+  drawers.forEach((d, i) => {
+    const h = drawerHeightMm(d)
+    let zBottom
+    if (d.zMm != null && Number.isFinite(Number(d.zMm))) {
+      zBottom = Number(d.zMm)
+    } else {
+      zBottom = zMin
+      for (let k = 0; k < i; k++) {
+        zBottom += drawerHeightMm(drawers[k]) + gap
+      }
+    }
+    top = Math.max(top, zBottom + h)
+  })
+  return top
+}
+
+/**
+ * Bornes Z tablette (haut de l’octogone).
+ * S’il y a des tiroirs, le bas du plateau ≥ sommet des tiroirs.
+ */
+export function shelfZBounds(dims = {}, moduleList = []) {
   const { H } = dims
   const inset = 22
   const extrusion = areteExtrusionMm(dims)
-  // Bas du plateau ≥ inset ; haut + extrusion traverses (section arête) ≤ H − inset
-  const zMin = inset + EPAISSEUR_PANNEAU
-  const zMax = Math.max(zMin, H - inset - extrusion)
+  const zMinFloor = inset + EPAISSEUR_PANNEAU
+  const drawerTop = drawersTopZMm(dims, moduleList)
+  const zMin =
+    drawerTop > 0
+      ? Math.max(zMinFloor, drawerTop + EPAISSEUR_PANNEAU)
+      : zMinFloor
+  const zMax = Math.max(zMin, (Number(H) || 0) - inset - extrusion)
+  return { zMin, zMax, drawerTop }
+}
+
+export function liftShelvesAboveDrawers(modules = [], dims = {}) {
+  const { zMin } = shelfZBounds(dims, modules)
+  return modules.map((m) => {
+    if (m.kind !== 'shelf') return m
+    if (m.zMm == null || !Number.isFinite(Number(m.zMm))) return m
+    if (Number(m.zMm) < zMin) return { ...m, zMm: zMin }
+    return m
+  })
+}
+
+/**
+ * Z tablette (mm) = **haut** de l’octogone (face supérieure).
+ * Clamp pour laisser la place à l’épaisseur (vers le bas) + traverses (vers le haut).
+ * Avec tiroirs : bas du plateau ≥ Z haut des tiroirs.
+ */
+export function shelfZMm(mod, dims, moduleList = []) {
+  const { zMin, zMax } = shelfZBounds(dims, moduleList)
   if (mod.zMm != null && Number.isFinite(Number(mod.zMm))) {
     return Math.min(zMax, Math.max(zMin, Number(mod.zMm)))
   }
@@ -369,6 +421,7 @@ export function moduleLayout(mod, { L, W, H }, moduleList = []) {
   if (mod.kind === 'shelf') {
     /** zMm = haut de tablette (octogone) */
     const zTop = shelfZMm(mod, dims, moduleList)
+    const bounds = shelfZBounds(dims, moduleList)
     const zCenter = zTop - EPAISSEUR_PANNEAU / 2
     return {
       center: [L / 2, W / 2, zCenter],
@@ -376,8 +429,9 @@ export function moduleLayout(mod, { L, W, H }, moduleList = []) {
       openOffset: [0, 0, 0],
       zMm: zTop,
       zTopMm: zTop,
-      zMin: inset + EPAISSEUR_PANNEAU,
-      zMax: Math.max(inset + EPAISSEUR_PANNEAU, H - inset - extrusion),
+      zMin: bounds.zMin,
+      zMax: bounds.zMax,
+      drawerTopMm: bounds.drawerTop,
       areteExtrusionMm: extrusion,
     }
   }
