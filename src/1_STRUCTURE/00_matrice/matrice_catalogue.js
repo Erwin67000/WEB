@@ -40,10 +40,11 @@ export const CATALOGUE_COLUMNS = [
 ]
 
 /** URL principale — Excel atelier (colonne Boutique). */
-export const MATRICE_CATALOGUE_URL = '/catalogue/modele_boutique.xls'
+export const MATRICE_CATALOGUE_URL = '/catalogue/modele_boutique.xlsx'
 
 /** Fallbacks (CSV généré + ancien pipeline). */
 export const MATRICE_CATALOGUE_FALLBACKS = [
+  '/catalogue/modele_boutique.xls',
   '/catalogue/modele_boutique.csv',
   '/catalogue/matrice_catalogue.csv',
   '/catalogue/matrice_catalogue.xlsx',

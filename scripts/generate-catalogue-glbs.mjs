@@ -35,6 +35,11 @@ if (typeof globalThis.FileReader === 'undefined') {
 }
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
+const modeleXlsxSrc = path.join(
+  root,
+  'src/1_STRUCTURE/03_bibliotheque/modele_boutique.xlsx',
+)
+const modeleXlsxPublic = path.join(root, 'public/catalogue/modele_boutique.xlsx')
 const modeleXlsSrc = path.join(
   root,
   'src/1_STRUCTURE/03_bibliotheque/modele_boutique.xls',
@@ -90,7 +95,7 @@ function readCsvText(p) {
 }
 
 function loadCatalogueRows() {
-  for (const p of [modeleXlsSrc, modeleXlsPublic]) {
+  for (const p of [modeleXlsxSrc, modeleXlsxPublic, modeleXlsSrc, modeleXlsPublic]) {
     if (fs.existsSync(p)) {
       const rows = parseMatriceCatalogueWorkbook(fs.readFileSync(p))
       if (rows?.length) {

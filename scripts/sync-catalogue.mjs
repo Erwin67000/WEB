@@ -1,9 +1,11 @@
 /**
  * Source unique des modèles préconfigurés :
- *   src/1_STRUCTURE/03_bibliotheque/modele_boutique.xls  (prioritaire)
+ *   src/1_STRUCTURE/03_bibliotheque/modele_boutique.xlsx  (prioritaire)
+ *   src/1_STRUCTURE/03_bibliotheque/modele_boutique.xls
  *   src/1_STRUCTURE/03_bibliotheque/modele_boutique.csv
  *
  * Copie vers public pour le navigateur + scripts GLB :
+ *   public/catalogue/modele_boutique.xlsx
  *   public/catalogue/modele_boutique.xls
  *   public/catalogue/modele_boutique.csv
  */
@@ -13,6 +15,10 @@ import { fileURLToPath } from 'node:url'
 import * as XLSX from 'xlsx'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
+const xlsxSource = path.join(
+  root,
+  'src/1_STRUCTURE/03_bibliotheque/modele_boutique.xlsx',
+)
 const xlsSource = path.join(
   root,
   'src/1_STRUCTURE/03_bibliotheque/modele_boutique.xls',
@@ -24,22 +30,26 @@ const csvSource = path.join(
 const targetDir = path.join(root, 'public/catalogue')
 const targetCsv = path.join(targetDir, 'modele_boutique.csv')
 const targetXls = path.join(targetDir, 'modele_boutique.xls')
+const targetXlsx = path.join(targetDir, 'modele_boutique.xlsx')
 
 fs.mkdirSync(targetDir, { recursive: true })
 
-if (fs.existsSync(xlsSource)) {
-  const wb = XLSX.read(fs.readFileSync(xlsSource), { type: 'buffer' })
+const excelSource = fs.existsSync(xlsxSource) ? xlsxSource : fs.existsSync(xlsSource) ? xlsSource : null
+
+if (excelSource) {
+  const wb = XLSX.read(fs.readFileSync(excelSource), { type: 'buffer' })
   const sheetName =
     wb.SheetNames.find((n) => /catalogue|boutique|modele/i.test(n)) ||
     wb.SheetNames[0]
   const csv = XLSX.utils.sheet_to_csv(wb.Sheets[sheetName] || {})
   fs.writeFileSync(targetCsv, '\uFEFF' + csv.replace(/^\uFEFF/, ''), 'utf8')
-  fs.copyFileSync(xlsSource, targetXls)
+  if (excelSource.endsWith('.xlsx')) fs.copyFileSync(excelSource, targetXlsx)
+  else fs.copyFileSync(excelSource, targetXls)
   console.log(
     '[sync:catalogue]',
-    path.relative(root, xlsSource),
+    path.relative(root, excelSource),
     '→',
-    path.relative(root, targetXls),
+    path.relative(root, excelSource.endsWith('.xlsx') ? targetXlsx : targetXls),
     '+',
     path.relative(root, targetCsv),
   )
