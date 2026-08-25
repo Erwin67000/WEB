@@ -22,6 +22,7 @@ function ViewportFallback() {
 export default function ConfigurateurPage() {
   const [params] = useSearchParams()
   const setEnvironment = useConfigStore((s) => s.setEnvironment)
+  const hydrateFromSnapshot = useConfigStore((s) => s.hydrateFromSnapshot)
 
   useEffect(() => {
     const env = params.get('env')
@@ -29,6 +30,28 @@ export default function ConfigurateurPage() {
       setEnvironment(env)
     }
   }, [params, setEnvironment])
+
+  useEffect(() => {
+    if (params.get('resume') !== '1') return
+    let cancelled = false
+    import('../lib/checkoutDraft.js').then(({ fetchDraft }) =>
+      fetchDraft().then((draft) => {
+        if (cancelled || !draft?.config?.units?.length) return
+        hydrateFromSnapshot(
+          {
+            units: draft.config.units,
+            notes: draft.config.notes,
+            quoteRef: draft.quoteRef,
+            contact: draft.config.contact,
+          },
+          { keepContact: false },
+        )
+      }),
+    )
+    return () => {
+      cancelled = true
+    }
+  }, [params, hydrateFromSnapshot])
 
   return (
     <div className="config-layout configurator-app">

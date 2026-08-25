@@ -342,6 +342,10 @@ export const translations = {
       oauthError: 'Sign-in was interrupted. Try again.',
       linkExpired: 'This link has expired. Request a new one.',
       linkBad: 'This link is not valid.',
+      resumeConfig: 'Resume this piece',
+      savedPiece: 'Piece in progress',
+      googleHint:
+        'Google sign-in needs GOOGLE_CLIENT_ID / SECRET in .dev.vars (see docs/TEST-PREMIER-CLIENT.md).',
     },
     boutiqueSession: {
       missing: 'This model could not be found.',
@@ -952,6 +956,10 @@ export const translations = {
       oauthError: 'Connexion interrompue. Réessayez.',
       linkExpired: 'Ce lien a expiré. Demandez-en un nouveau.',
       linkBad: 'Ce lien n’est pas valable.',
+      resumeConfig: 'Reprendre ce meuble',
+      savedPiece: 'Meuble en cours',
+      googleHint:
+        'Google n’est pas encore branché : ajoute GOOGLE_CLIENT_ID et GOOGLE_CLIENT_SECRET dans .dev.vars (voir docs/TEST-PREMIER-CLIENT.md).',
     },
     boutiqueSession: {
       missing: 'Ce modèle est introuvable.',

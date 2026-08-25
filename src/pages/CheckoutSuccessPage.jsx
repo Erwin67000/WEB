@@ -30,6 +30,14 @@ export default function CheckoutSuccessPage() {
         if (!cancelled) {
           setState({ loading: false, order: data.order, error: null })
         }
+        const paidNow =
+          data.order?.status === 'paid' || data.order?.status === 'complete'
+        if (paidNow && (orderId || data.order?.id)) {
+          fetch(
+            `/api/orders/${encodeURIComponent(orderId || data.order.id)}/notify`,
+            { method: 'POST', credentials: 'include' },
+          ).catch(() => {})
+        }
       } catch (e) {
         if (!cancelled) {
           setState({

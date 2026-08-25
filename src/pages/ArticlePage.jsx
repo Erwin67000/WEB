@@ -19,7 +19,7 @@ import { getCatalogItem } from '../data/catalog.js'
 import FurniturePreview3D from '../components/FurniturePreview3D.jsx'
 import { useI18n, useTId, useCatalogText } from '@texte/I18nProvider.jsx'
 import PayButton from '../components/PayButton.jsx'
-import { writeCheckoutDraft } from '../lib/checkoutDraft.js'
+import { persistDraft } from '../lib/checkoutDraft.js'
 import { STRIPE_ENABLED, isFranceCountry } from '../lib/payments.js'
 import { trackEvent } from '../lib/plausible.js'
 
@@ -319,7 +319,7 @@ export default function ArticlePage() {
   const { ttc, pricing } = specs
   const france = isFranceCountry(contact.country)
 
-  function handlePay() {
+  async function handlePay() {
     trackEvent('Checkout intent', { product: row.id })
     if (ttc < 0.5) {
       navigate('/contact')
@@ -330,7 +330,7 @@ export default function ArticlePage() {
       dims.L && dims.W && dims.H
         ? ` (${Math.round(dims.L)}×${Math.round(dims.W)}×${Math.round(dims.H)} mm)`
         : ''
-    writeCheckoutDraft({
+    await persistDraft({
       source: 'boutique',
       quoteRef: `CAT-${row.id}`,
       productLabel: `${row.name || row.id}${dimLabel}`,

@@ -25,7 +25,7 @@ import { FACE_PICK_DEFS } from '../1_STRUCTURE/02_agencement/FacePickPlanes.jsx'
 import { useNavigate } from 'react-router-dom'
 import { useI18n, useTId } from '@texte/I18nProvider.jsx'
 import PayButton from './PayButton.jsx'
-import { writeCheckoutDraft } from '../lib/checkoutDraft.js'
+import { persistDraft } from '../lib/checkoutDraft.js'
 import { STRIPE_ENABLED, isFranceCountry } from '../lib/payments.js'
 import { labelFromUnits } from '../lib/checkout.js'
 
@@ -818,7 +818,7 @@ export default function ControlPanel() {
             const { trackEvent } = await import('../lib/plausible.js')
             const { getExtrasConsent } = await import('../lib/plausible.js')
             trackEvent('Checkout intent', { source: 'configurator' })
-            writeCheckoutDraft({
+            await persistDraft({
               source: dimsLocked ? 'boutique' : 'configurator',
               quoteRef: storeApi.getState().quoteRef,
               productLabel: labelFromUnits(units),

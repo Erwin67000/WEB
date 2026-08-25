@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useI18n } from '@texte/I18nProvider.jsx'
 import { fetchSession, logout, postAuth } from '../lib/authClient.js'
+import { fetchDraft, writeCheckoutDraft } from '../lib/checkoutDraft.js'
 
 function formatEuro(cents, currency = 'eur') {
   return new Intl.NumberFormat('fr-FR', {
@@ -17,6 +18,7 @@ export default function ComptePage() {
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [newsletter, setNewsletter] = useState(false)
+  const [draft, setDraft] = useState(null)
 
   useEffect(() => {
     let cancelled = false
@@ -32,6 +34,8 @@ export default function ComptePage() {
       const res = await fetch('/api/account/orders', { credentials: 'include' })
       const data = await res.json().catch(() => ({}))
       if (!cancelled) setOrders(data.orders || [])
+      const d = await fetchDraft()
+      if (!cancelled) setDraft(d)
       setLoading(false)
     })()
     return () => {
@@ -53,6 +57,27 @@ export default function ComptePage() {
       <h1 className="hero-title">{user.name || user.email}</h1>
       <p className="hint">{user.email}</p>
       {user.isGuest && <p className="hint">{t('account.guestHint')}</p>}
+
+      {draft?.productLabel && (
+        <p className="hint">
+          {t('account.savedPiece')}: <strong>{draft.productLabel}</strong>
+          {' — '}
+          <Link
+            to={
+              draft.config?.units?.length
+                ? '/configurateur?resume=1'
+                : draft.productId
+                  ? `/boutique/${draft.productId}`
+                  : '/commande'
+            }
+            onClick={() => writeCheckoutDraft(draft)}
+          >
+            {t('account.resumeConfig')}
+          </Link>
+          {' · '}
+          <Link to="/commande">{t('account.continuePay')}</Link>
+        </p>
+      )}
 
       <label className="cgv-accept">
         <input

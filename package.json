@@ -21,6 +21,7 @@
     "db:init:remote": "wrangler d1 execute philae-orders --remote --file=worker/schema.sql",
     "db:auth:local": "wrangler d1 execute philae-orders --local --file=worker/schema-auth.sql",
     "db:auth:remote": "wrangler d1 execute philae-orders --remote --file=worker/schema-auth.sql",
+    "db:drafts:local": "wrangler d1 execute philae-orders --local --file=worker/schema-drafts.sql",
     "deploy": "npm run build && wrangler deploy"
   },
   "dependencies": {

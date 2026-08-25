@@ -20,6 +20,7 @@ import { stripeRequest } from './stripe.js'
  * @param {string} [opts.paymentDescription]
  * @param {string} [opts.customerId]
  * @param {{ submit?: string, shipping?: string }} [opts.customText]
+ * @param {string} [opts.receiptEmail]
  * @returns {Promise<object>} session Stripe (contient url, id, …)
  */
 export async function createCheckoutSession(secretKey, opts) {
@@ -35,6 +36,7 @@ export async function createCheckoutSession(secretKey, opts) {
     locale = 'fr',
     paymentDescription,
     customText = {},
+    receiptEmail,
   } = opts
 
   if (!priceId) throw new Error('priceId requis pour la Checkout Session')
@@ -90,13 +92,16 @@ export async function createCheckoutSession(secretKey, opts) {
   } else if (customerEmail) {
     body.customer_email = String(customerEmail).slice(0, 256)
   }
-  if (paymentDescription || metadata.order_id) {
+  if (paymentDescription || metadata.order_id || receiptEmail) {
     body.payment_intent_data = {
       description: paymentDescription || `Commande ${metadata.order_id || ''}`,
       metadata: {
         order_id: metadata.order_id || '',
         quote_ref: metadata.quote_ref || '',
       },
+      ...(receiptEmail
+        ? { receipt_email: String(receiptEmail).slice(0, 256) }
+        : {}),
     }
   }
 

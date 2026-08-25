@@ -26,6 +26,8 @@ import {
 } from './orders.js'
 import { presentOrder, isoCountry } from './orderPresentation.js'
 import { handleAuth, getSessionUser } from './auth.js'
+import { handleDrafts } from './drafts.js'
+import { sendMail, orderConfirmationCopy } from './mail.js'
 
 /** Acompte futur : 100 = paiement total. Override via env.DEPOSIT_PERCENT */
 const DEFAULT_DEPOSIT_PERCENT = 100
@@ -279,6 +281,7 @@ async function handleCreateCheckout(request, env) {
       customerEmail: customerId ? undefined : contact.email || undefined,
       locale: presentation.lang,
       paymentDescription: `${productLabel} — ${quoteRef}`,
+      receiptEmail: contact.email || sessionUser.email,
       customText: {
         submit: presentation.submitMessage,
         shipping: presentation.shippingMessage,
@@ -354,9 +357,32 @@ async function handleStripeWebhook(request, env) {
     const session = event.data?.object || {}
     const result = await handleCheckoutSessionCompleted(env.DB, session)
     console.log('[webhook] checkout.session.completed', result)
+    if (result?.handled && result.orderId) {
+      await sendOrderConfirmation(env, result.orderId)
+    }
   }
 
   return json({ received: true })
+}
+
+async function sendOrderConfirmation(env, orderId) {
+  if (!env.DB || !orderId) return { sent: false }
+  const order = await env.DB.prepare(`SELECT * FROM orders WHERE id = ?`)
+    .bind(orderId)
+    .first()
+  if (!order || order.status !== 'paid') return { sent: false }
+  if (order.confirmation_sent_at) return { sent: true, already: true }
+  const to = order.customer_email
+  const copy = orderConfirmationCopy(order, 'fr')
+  const result = await sendMail(env, { to, ...copy })
+  if (result.sent || result.preview) {
+    await env.DB.prepare(
+      `UPDATE orders SET confirmation_sent_at = ? WHERE id = ?`,
+    )
+      .bind(new Date().toISOString(), orderId)
+      .run()
+  }
+  return result
 }
 
 async function handleGetOrder(request, env, orderId) {
@@ -428,6 +454,11 @@ async function handleApi(request, env, _ctx) {
       if (authRes) return authRes
     }
 
+    if (path.startsWith('/api/checkout/draft')) {
+      const draftRes = await handleDrafts(request, env, cors)
+      if (draftRes) return draftRes
+    }
+
     if (path === '/api/health' && request.method === 'GET') {
       return json(
         {
@@ -455,6 +486,15 @@ async function handleApi(request, env, _ctx) {
 
     if (path === '/api/webhooks/stripe' && request.method === 'POST') {
       return handleStripeWebhook(request, env)
+    }
+
+    const notifyMatch = path.match(/^\/api\/orders\/([^/]+)\/notify$/)
+    if (notifyMatch && request.method === 'POST') {
+      const result = await sendOrderConfirmation(
+        env,
+        decodeURIComponent(notifyMatch[1]),
+      )
+      return json({ ok: true, ...result }, 200, cors)
     }
 
     const orderMatch = path.match(/^\/api\/orders\/([^/]+)$/)

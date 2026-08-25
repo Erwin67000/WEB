@@ -2,6 +2,7 @@
  * Auth Philae — session D1, lien magique, Google, Apple, invité.
  * Pas de mot de passe.
  */
+import { sendMail, accountCopy } from './mail.js'
 
 export const CGV_VERSION = '2026-08-25'
 const COOKIE = 'philae_sid'
@@ -76,6 +77,12 @@ async function sha256hex(s) {
 
 function publicUser(row) {
   if (!row) return null
+  let address = null
+  try {
+    address = row.address_json ? JSON.parse(row.address_json) : null
+  } catch {
+    address = null
+  }
   return {
     id: row.id,
     email: row.email,
@@ -86,6 +93,7 @@ function publicUser(row) {
     cgvAcceptedAt: row.cgv_accepted_at || null,
     newsletter: Boolean(row.newsletter_opt_in),
     stripeCustomerId: row.stripe_customer_id || null,
+    address,
   }
 }
 
@@ -328,6 +336,10 @@ export async function handleAuth(request, env, cors) {
       newsletter: Boolean(row.newsletter),
     })
     const sid = await createSession(env, user.id)
+    if (Date.now() - new Date(user.created_at).getTime() < 15_000) {
+      const copy = accountCopy(publicUser(user), body.lang)
+      sendMail(env, { to: user.email, ...copy }).catch(() => {})
+    }
     return withCors(
       json(
         { ok: true, user: publicUser(user) },
@@ -407,13 +419,51 @@ export async function handleAuth(request, env, cors) {
     return withCors(json({ ok: true, newsletter: Boolean(body.newsletter) }))
   }
 
-  if (path === '/api/auth/google' && request.method === 'GET') {
-    if (!providers(env).google) return withCors(json({ error: 'GOOGLE_OFF' }, 503))
-    const state = newId('st')
+  if (path === '/api/account/address' && request.method === 'POST') {
+    const sessionUser = await getSessionUser(request, env)
+    if (!sessionUser) return withCors(json({ error: 'NON_AUTH' }, 401))
+    let body = {}
+    try {
+      body = await request.json()
+    } catch {
+      body = {}
+    }
+    const address = {
+      firstName: String(body.firstName || '').slice(0, 80),
+      lastName: String(body.lastName || '').slice(0, 80),
+      phone: String(body.phone || '').slice(0, 40),
+      addressLine1: String(body.addressLine1 || '').slice(0, 200),
+      addressLine2: String(body.addressLine2 || '').slice(0, 200),
+      postalCode: String(body.postalCode || '').slice(0, 20),
+      city: String(body.city || '').slice(0, 100),
+      country: String(body.country || 'FR').slice(0, 8),
+    }
+    const name = `${address.firstName} ${address.lastName}`.trim()
     await env.DB.prepare(
-      `INSERT INTO oauth_states (state, provider, expires_at) VALUES (?, 'google', ?)`,
+      `UPDATE users SET address_json = ?, name = COALESCE(NULLIF(?, ''), name), updated_at = ? WHERE id = ?`,
     )
-      .bind(state, plusMinutes(15))
+      .bind(JSON.stringify(address), name, nowIso(), sessionUser.id)
+      .run()
+    const user = await env.DB.prepare(`SELECT * FROM users WHERE id = ?`)
+      .bind(sessionUser.id)
+      .first()
+    return withCors(json({ ok: true, user: publicUser(user) }))
+  }
+
+  if (path === '/api/auth/google' && request.method === 'GET') {
+    if (!providers(env).google) {
+      const origin = siteOrigin(request, env)
+      return new Response(
+        `<!doctype html><meta charset="utf-8"><title>Google</title><body style="font-family:sans-serif;padding:2rem;max-width:36rem"><p>Google n’est pas encore configuré.</p><p>Dans le Cloud Console : type <strong>Web</strong>, origine <code>${origin}</code>, URI de redirection <code>${origin}/api/auth/callback/google</code>.</p><p>Puis coller <code>GOOGLE_CLIENT_ID</code> et <code>GOOGLE_CLIENT_SECRET</code> dans <code>.dev.vars</code> et relancer <code>npm run dev:api</code>.</p><p><a href="/commande">Retour à la commande</a></p></body>`,
+        { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8' } },
+      )
+    }
+    const state = newId('st')
+    const draftId = url.searchParams.get('draft') || null
+    await env.DB.prepare(
+      `INSERT INTO oauth_states (state, provider, draft_id, expires_at) VALUES (?, 'google', ?, ?)`,
+    )
+      .bind(state, draftId, plusMinutes(15))
       .run()
     const origin = siteOrigin(request, env)
     const redirectUri = `${origin}/api/auth/callback/google`
@@ -475,9 +525,20 @@ export async function handleAuth(request, env, cors) {
         .bind(String(info.sub), user.id, nowIso())
         .run()
       const sid = await createSession(env, user.id)
-      const next = user.cgv_accepted_at
-        ? `${origin}/commande?auth=ok`
-        : `${origin}/commande?auth=cgv`
+      if (st.draft_id) {
+        await env.DB.prepare(
+          `UPDATE checkout_drafts SET user_id = ?, updated_at = ? WHERE id = ?`,
+        )
+          .bind(user.id, nowIso(), st.draft_id)
+          .run()
+      }
+      if (Date.now() - new Date(user.created_at).getTime() < 15_000) {
+        const copy = accountCopy(publicUser(user))
+        sendMail(env, { to: user.email, ...copy }).catch(() => {})
+      }
+      const flag = user.cgv_accepted_at ? 'ok' : 'cgv'
+      const draftQ = st.draft_id ? `&draft=${encodeURIComponent(st.draft_id)}` : ''
+      const next = `${origin}/commande?auth=${flag}${draftQ}`
       const res = new Response(null, {
         status: 302,
         headers: {
