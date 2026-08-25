@@ -80,7 +80,7 @@ export const TVA = 0.2
  */
 export const PRIX = {
   /** Ossature bois (section 30×30 ou 40×40 selon max dim) */
-  ossatureForfait: 900,
+  ossatureForfait: 500,
   /** € HT / m de longueur cumulée 4×(L+W+H) */
   ossatureParMetre: 50,
 
