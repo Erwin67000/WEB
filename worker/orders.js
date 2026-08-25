@@ -25,14 +25,16 @@ export async function insertOrder(db, order) {
         currency, customer_email, customer_name, stripe_customer_id,
         product_label, config_json, source, catalog_product_id,
         stripe_product_id, stripe_price_id, stripe_session_id,
-        created_at, updated_at
+        created_at, updated_at,
+        user_id, guest_email, cgv_accepted_at
       ) VALUES (
         ?, ?, ?, ?, ?,
         ?, ?, ?, ?,
         ?, ?, ?, ?,
         ?, ?, ?, ?,
         ?, ?, ?,
-        ?, ?
+        ?, ?,
+        ?, ?, ?
       )`,
     )
     .bind(
@@ -58,6 +60,9 @@ export async function insertOrder(db, order) {
       order.stripe_session_id || null,
       order.created_at || nowIso(),
       order.updated_at || nowIso(),
+      order.user_id || null,
+      order.guest_email || null,
+      order.cgv_accepted_at || null,
     )
     .run()
 

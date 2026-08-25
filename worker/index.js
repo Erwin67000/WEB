@@ -24,6 +24,8 @@ import {
   getOrderById,
   getOrderBySession,
 } from './orders.js'
+import { presentOrder, isoCountry } from './orderPresentation.js'
+import { handleAuth, getSessionUser } from './auth.js'
 
 /** Acompte futur : 100 = paiement total. Override via env.DEPOSIT_PERCENT */
 const DEFAULT_DEPOSIT_PERCENT = 100
@@ -52,6 +54,7 @@ function corsHeaders(origin, env) {
     'Access-Control-Allow-Origin': ok ? origin || '*' : allowed[0] || '*',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Stripe-Signature',
+    'Access-Control-Allow-Credentials': 'true',
   }
 }
 
@@ -125,23 +128,35 @@ async function handleCreateCheckout(request, env) {
       ? Math.max(50, Math.round((amountTtcCents * depositPercent) / 100))
       : amountTtcCents
 
+  const sessionUser = await getSessionUser(request, env)
+  if (!sessionUser) {
+    return json({ error: 'AUTH_REQUIRED' }, 401)
+  }
+  if (!sessionUser.cgvAcceptedAt) {
+    return json({ error: 'CGV_REQUIRED' }, 400)
+  }
+
   const orderId = makeOrderId()
   const quoteRef = String(body.quoteRef || orderId).slice(0, 64)
-  const productLabel = String(
-    body.productLabel || 'Mobilier Philae sur mesure',
-  ).slice(0, 120)
   const origin = siteOrigin(request, env)
-  const contact = body.contact || {}
-  const catalogProductId = body.productId ? String(body.productId) : null
-
-  const descriptionParts = [
-    `Réf. ${quoteRef}`,
-    `HT ${ht.toFixed(2)} € · TVA 20 % ${tva.toFixed(2)} € · TTC ${ttc.toFixed(2)} €`,
-  ]
-  if (paymentMode === 'deposit') {
-    descriptionParts.push(`Acompte ${depositPercent} % — solde atelier ultérieur`)
+  const contact = {
+    ...(body.config?.contact || {}),
+    ...(body.contact || {}),
+    email: body.contact?.email || body.config?.contact?.email || sessionUser.email,
+    name:
+      body.contact?.name ||
+      sessionUser.name ||
+      `${body.config?.contact?.firstName || ''} ${body.config?.contact?.lastName || ''}`.trim(),
   }
-  const description = descriptionParts.join(' · ').slice(0, 500)
+  const catalogProductId = body.productId ? String(body.productId) : null
+  const presentation = presentOrder(body, quoteRef, origin)
+  const productLabel = String(
+    presentation.name || body.productLabel || 'Meuble PHILAE',
+  ).slice(0, 120)
+  const description = presentation.description
+  const customerName =
+    contact.name ||
+    `${contact.firstName || ''} ${contact.lastName || ''}`.trim()
 
   let configJson = null
   try {
@@ -166,12 +181,16 @@ async function handleCreateCheckout(request, env) {
     amount_ttc_cents: amountTtcCents,
     amount_charged_cents: amountChargedCents,
     currency: 'eur',
-    customer_email: contact.email || null,
-    customer_name: contact.name || null,
+    customer_email: contact.email || sessionUser?.email || null,
+    customer_name: customerName || sessionUser?.name || null,
     product_label: productLabel,
     config_json: configJson,
     source: body.source || 'configurator',
     catalog_product_id: catalogProductId,
+    user_id: sessionUser.id,
+    guest_email: sessionUser.isGuest ? sessionUser.email : null,
+    cgv_accepted_at: sessionUser.cgvAcceptedAt,
+    stripe_customer_id: sessionUser.stripeCustomerId || null,
     created_at: createdAt,
     updated_at: createdAt,
   })
@@ -185,6 +204,7 @@ async function handleCreateCheckout(request, env) {
       description,
       unitAmountCents: amountChargedCents,
       currency: 'eur',
+      images: presentation.imageUrl ? [presentation.imageUrl] : [],
       metadata: {
         order_id: orderId,
         quote_ref: quoteRef,
@@ -209,6 +229,44 @@ async function handleCreateCheckout(request, env) {
   const successUrl = `${origin}/commande/succes?session_id={CHECKOUT_SESSION_ID}&order_id=${encodeURIComponent(orderId)}`
   const cancelUrl = `${origin}/commande/annule?order_id=${encodeURIComponent(orderId)}`
 
+  const country = isoCountry(contact.country || body.config?.deliveryCountry)
+  let customerId
+  if (sessionUser.stripeCustomerId) {
+    customerId = sessionUser.stripeCustomerId
+  } else if (contact.email) {
+    try {
+      const customer = await stripeRequest(env.STRIPE_SECRET_KEY, '/v1/customers', {
+        email: String(contact.email).slice(0, 256),
+        ...(customerName ? { name: customerName.slice(0, 256) } : {}),
+        ...(contact.phone ? { phone: String(contact.phone).slice(0, 40) } : {}),
+        metadata: { order_id: orderId, quote_ref: quoteRef },
+        ...(contact.addressLine1 && contact.city
+          ? {
+              address: {
+                line1: String(contact.addressLine1).slice(0, 200),
+                ...(contact.addressLine2
+                  ? { line2: String(contact.addressLine2).slice(0, 200) }
+                  : {}),
+                city: String(contact.city).slice(0, 100),
+                postal_code: String(contact.postalCode || '').slice(0, 20),
+                ...(country ? { country } : {}),
+              },
+            }
+          : {}),
+      })
+      customerId = customer.id
+      if (customerId && env.DB) {
+        await env.DB.prepare(
+          `UPDATE users SET stripe_customer_id = ?, updated_at = ? WHERE id = ?`,
+        )
+          .bind(customerId, new Date().toISOString(), sessionUser.id)
+          .run()
+      }
+    } catch (e) {
+      console.warn('[customer]', e.message)
+    }
+  }
+
   let session
   try {
     session = await createCheckoutSession(env.STRIPE_SECRET_KEY, {
@@ -217,9 +275,14 @@ async function handleCreateCheckout(request, env) {
       successUrl,
       cancelUrl,
       clientReferenceId: orderId,
-      customerEmail: contact.email || undefined,
-      locale: 'fr',
+      customerId,
+      customerEmail: customerId ? undefined : contact.email || undefined,
+      locale: presentation.lang,
       paymentDescription: `${productLabel} — ${quoteRef}`,
+      customText: {
+        submit: presentation.submitMessage,
+        shipping: presentation.shippingMessage,
+      },
       metadata: {
         order_id: orderId,
         quote_ref: quoteRef,
@@ -231,6 +294,7 @@ async function handleCreateCheckout(request, env) {
         catalog_product_id: catalogProductId || '',
         stripe_product_id: stripeProductId,
         stripe_price_id: stripePriceId,
+        product_label: productLabel.slice(0, 400),
       },
     })
   } catch (e) {
@@ -359,6 +423,11 @@ async function handleApi(request, env, _ctx) {
   }
 
   try {
+    if (path.startsWith('/api/auth') || path.startsWith('/api/account')) {
+      const authRes = await handleAuth(request, env, cors)
+      if (authRes) return authRes
+    }
+
     if (path === '/api/health' && request.method === 'GET') {
       return json(
         {

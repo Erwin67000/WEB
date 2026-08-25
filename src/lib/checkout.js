@@ -33,6 +33,7 @@ export async function createCheckoutSession(payload) {
   }
   const res = await fetch('/api/checkout', {
     method: 'POST',
+    credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       paymentMode: 'full',

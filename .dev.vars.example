@@ -22,3 +22,14 @@ SITE_URL=http://localhost:3102
 # Optionnel
 # CORS_ORIGINS=https://philae.design,https://www.philae.design
 # DEPOSIT_PERCENT=30
+
+# Auth (lien magique / Google / Apple) — ne jamais committer les secrets
+# AUTH_SECRET=changer-moi
+# RESEND_API_KEY=re_xxxxxxxx
+# MAIL_FROM=PHILAE <noreply@philae.design>
+# GOOGLE_CLIENT_ID=
+# GOOGLE_CLIENT_SECRET=
+# APPLE_CLIENT_ID=
+# APPLE_TEAM_ID=
+# APPLE_KEY_ID=
+# APPLE_PRIVATE_KEY=

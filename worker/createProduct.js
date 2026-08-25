@@ -17,6 +17,7 @@ import { stripeRequest } from './stripe.js'
  * @param {number} opts.unitAmountCents  montant en centimes
  * @param {string} [opts.currency='eur']
  * @param {Record<string, string>} [opts.metadata]
+ * @param {string[]} [opts.images] URLs HTTPS publiques
  * @returns {Promise<{ productId: string, priceId: string, product: object }>}
  */
 export async function createProductWithDefaultPrice(secretKey, opts) {
@@ -26,6 +27,7 @@ export async function createProductWithDefaultPrice(secretKey, opts) {
     unitAmountCents,
     currency = 'eur',
     metadata = {},
+    images = [],
   } = opts
 
   if (!name) throw new Error('Nom produit requis')
@@ -38,6 +40,9 @@ export async function createProductWithDefaultPrice(secretKey, opts) {
     name: String(name).slice(0, 250),
     ...(description
       ? { description: String(description).slice(0, 500) }
+      : {}),
+    ...(Array.isArray(images) && images.length
+      ? { images: images.slice(0, 8) }
       : {}),
     default_price_data: {
       currency: String(currency).toLowerCase(),

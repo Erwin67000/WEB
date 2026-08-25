@@ -20,6 +20,8 @@ import ConceptPage from './pages/ConceptPage.jsx'
 import ContactPage from './pages/ContactPage.jsx'
 import CheckoutSuccessPage from './pages/CheckoutSuccessPage.jsx'
 import CheckoutCancelPage from './pages/CheckoutCancelPage.jsx'
+import CommandePage from './pages/CommandePage.jsx'
+import ComptePage from './pages/ComptePage.jsx'
 import LegalPage from './pages/LegalPage.jsx'
 import NotFoundPage from './pages/NotFoundPage.jsx'
 import { ConfigStoreProvider } from './store/ConfigStoreContext.jsx'
@@ -48,7 +50,8 @@ function pageTitle(pathname, t) {
     return t('meta.titlePrivacy')
   if (pathname === '/politique-cookies') return t('meta.titleCookies')
   if (pathname === '/livraison') return t('meta.titleShipping')
-  if (pathname.startsWith('/commande/') || pathname.includes('/acheter'))
+  if (pathname === '/compte') return t('meta.titleAccount')
+  if (pathname.startsWith('/commande') || pathname.includes('/acheter'))
     return t('meta.titleCheckout')
   return t('meta.title404')
 }
@@ -67,7 +70,8 @@ function Shell() {
     location.pathname === '/contact' ||
     location.pathname === '/boutique' ||
     /^\/boutique\/[^/]+$/.test(location.pathname) ||
-    location.pathname.startsWith('/commande/') ||
+    location.pathname.startsWith('/commande') ||
+    location.pathname === '/compte' ||
     location.pathname === '/mentions-legales' ||
     location.pathname === '/cgv' ||
     location.pathname === '/confidentialite' ||
@@ -157,9 +161,11 @@ function Shell() {
               path="/boutique/:productId/configurer"
               element={<BoutiqueConfigurePage />}
             />
+            <Route path="/commande" element={<CommandePage />} />
+            <Route path="/compte" element={<ComptePage />} />
             <Route
               path="/commande/paiement"
-              element={<Navigate to="/configurateur" replace />}
+              element={<Navigate to="/commande" replace />}
             />
             <Route path="/configurateur" element={<ConfigurateurPage />} />
             <Route path="/concept" element={<ConceptPage />} />

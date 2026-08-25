@@ -31,7 +31,10 @@ CREATE TABLE IF NOT EXISTS orders (
   stripe_payment_intent TEXT,
   created_at TEXT NOT NULL,
   paid_at TEXT,
-  updated_at TEXT
+  updated_at TEXT,
+  user_id TEXT,
+  guest_email TEXT,
+  cgv_accepted_at TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_orders_session ON orders(stripe_session_id);

@@ -18,6 +18,8 @@ import { stripeRequest } from './stripe.js'
  * @param {Record<string, string>} [opts.metadata]
  * @param {string} [opts.locale='fr']
  * @param {string} [opts.paymentDescription]
+ * @param {string} [opts.customerId]
+ * @param {{ submit?: string, shipping?: string }} [opts.customText]
  * @returns {Promise<object>} session Stripe (contient url, id, …)
  */
 export async function createCheckoutSession(secretKey, opts) {
@@ -28,9 +30,11 @@ export async function createCheckoutSession(secretKey, opts) {
     cancelUrl,
     clientReferenceId,
     customerEmail,
+    customerId,
     metadata = {},
     locale = 'fr',
     paymentDescription,
+    customText = {},
   } = opts
 
   if (!priceId) throw new Error('priceId requis pour la Checkout Session')
@@ -44,8 +48,10 @@ export async function createCheckoutSession(secretKey, opts) {
     success_url: successUrl,
     cancel_url: cancelUrl,
     locale,
+    submit_type: 'pay',
     billing_address_collection: 'required',
     phone_number_collection: { enabled: true },
+    name_collection: { individual: { enabled: true } },
     tax_id_collection: { enabled: true },
     shipping_address_collection: {
       allowed_countries: [
@@ -63,10 +69,25 @@ export async function createCheckoutSession(secretKey, opts) {
     metadata,
   }
 
+  if (customText.submit) {
+    body.custom_text = {
+      ...(body.custom_text || {}),
+      submit: { message: String(customText.submit).slice(0, 1200) },
+    }
+  }
+  if (customText.shipping) {
+    body.custom_text = {
+      ...(body.custom_text || {}),
+      shipping_address: { message: String(customText.shipping).slice(0, 1200) },
+    }
+  }
+
   if (clientReferenceId) {
     body.client_reference_id = String(clientReferenceId).slice(0, 200)
   }
-  if (customerEmail) {
+  if (customerId) {
+    body.customer = customerId
+  } else if (customerEmail) {
     body.customer_email = String(customerEmail).slice(0, 256)
   }
   if (paymentDescription || metadata.order_id) {

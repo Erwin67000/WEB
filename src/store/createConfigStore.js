@@ -815,6 +815,10 @@ export function createConfigStore(opts = {}) {
           source: s.dimsLocked ? 'boutique' : 'configurator',
           quoteRef: s.quoteRef,
           productLabel: labelFromUnits(s.units),
+          lang:
+            typeof document !== 'undefined'
+              ? document.documentElement.lang || 'fr'
+              : 'fr',
           productId: s.catalogProductId || undefined,
           paymentMode: 'full',
           pricing: {

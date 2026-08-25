@@ -9,6 +9,7 @@ const NAV = [
   { to: '/configurateur', key: 'nav.configurator' },
   { to: '/concept', key: 'nav.concept' },
   { to: '/contact', key: 'nav.contact' },
+  { to: '/compte', key: 'nav.account' },
 ]
 
 const COMPACT_AFTER = 12
