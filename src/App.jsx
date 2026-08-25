@@ -19,6 +19,7 @@ import ConceptPage from './pages/ConceptPage.jsx'
 import ContactPage from './pages/ContactPage.jsx'
 import CheckoutSuccessPage from './pages/CheckoutSuccessPage.jsx'
 import CheckoutCancelPage from './pages/CheckoutCancelPage.jsx'
+import CheckoutPage from './pages/CheckoutPage.jsx'
 import LegalPage from './pages/LegalPage.jsx'
 import NotFoundPage from './pages/NotFoundPage.jsx'
 import { ConfigStoreProvider } from './store/ConfigStoreContext.jsx'
@@ -31,6 +32,9 @@ function pageTitle(pathname, t) {
   if (pathname.startsWith('/boutique/') && pathname.endsWith('/configurer')) {
     return t('meta.titleBoutiqueConfig')
   }
+  if (pathname.endsWith('/acheter') || pathname === '/commande/paiement') {
+    return t('meta.titleCheckout')
+  }
   if (pathname.startsWith('/boutique/')) return t('meta.titleShop')
   if (pathname === '/configurateur') return t('meta.titleConfig')
   if (pathname === '/concept' || pathname === '/atelier') return t('meta.titleConcept')
@@ -41,7 +45,8 @@ function pageTitle(pathname, t) {
     return t('meta.titlePrivacy')
   if (pathname === '/politique-cookies') return t('meta.titleCookies')
   if (pathname === '/livraison') return t('meta.titleShipping')
-  if (pathname.startsWith('/commande/')) return t('meta.titleDefault')
+  if (pathname.startsWith('/commande/') || pathname.includes('/acheter'))
+    return t('meta.titleCheckout')
   return t('meta.title404')
 }
 
@@ -60,6 +65,7 @@ function Shell() {
     location.pathname === '/boutique' ||
     /^\/boutique\/[^/]+$/.test(location.pathname) ||
     location.pathname.startsWith('/commande/') ||
+    /\/acheter$/.test(location.pathname) ||
     location.pathname === '/mentions-legales' ||
     location.pathname === '/cgv' ||
     location.pathname === '/confidentialite' ||
@@ -138,9 +144,14 @@ function Shell() {
             <Route path="/boutique" element={<BoutiquePage />} />
             <Route path="/boutique/:productId" element={<ArticlePage />} />
             <Route
+              path="/boutique/:productId/acheter"
+              element={<CheckoutPage />}
+            />
+            <Route
               path="/boutique/:productId/configurer"
               element={<BoutiqueConfigurePage />}
             />
+            <Route path="/commande/paiement" element={<CheckoutPage />} />
             <Route path="/configurateur" element={<ConfigurateurPage />} />
             <Route path="/concept" element={<ConceptPage />} />
             <Route path="/contact" element={<ContactPage />} />

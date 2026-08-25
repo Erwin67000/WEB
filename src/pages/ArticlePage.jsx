@@ -17,11 +17,7 @@ import {
 import { MODULE_KINDS } from '../1_STRUCTURE/00_matrice/matrice_configuration.js'
 import { getCatalogItem } from '../data/catalog.js'
 import FurniturePreview3D from '../components/FurniturePreview3D.jsx'
-import { createCheckoutSession } from '../lib/checkout.js'
 import { useI18n, useTId, useCatalogText } from '@texte/I18nProvider.jsx'
-import PayButton from '../components/PayButton.jsx'
-import CgvAccept from '../components/CgvAccept.jsx'
-import { STRIPE_ENABLED } from '../lib/payments.js'
 
 /** Prix TTC catalogue → ventilation HT / TVA 20 %. */
 function pricingFromTtc(ttc) {
@@ -264,9 +260,6 @@ export default function ArticlePage() {
   const catalog = useCatalogText()
   const [row, setRow] = useState(null)
   const [error, setError] = useState(null)
-  const [buyBusy, setBuyBusy] = useState(false)
-  const [buyMsg, setBuyMsg] = useState('')
-  const [acceptCgv, setAcceptCgv] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -313,62 +306,7 @@ export default function ArticlePage() {
     )
   }
 
-  const { ttc, pricing } = specs
-
-  async function handleBuyNow() {
-    if (!acceptCgv) {
-      setBuyMsg(t('checkout.needCgv'))
-      return
-    }
-    if (!STRIPE_ENABLED) {
-      setBuyMsg(t('checkout.stripeSoon'))
-      return
-    }
-    if (ttc < 0.5) {
-      navigate('/contact')
-      return
-    }
-    setBuyBusy(true)
-    setBuyMsg(t('article.preparingPay'))
-    try {
-      const dims = row.dims || { L: row.L_mm, W: row.W_mm, H: row.H_mm }
-      const dimLabel =
-        dims.L && dims.W && dims.H
-          ? ` (${Math.round(dims.L)}×${Math.round(dims.W)}×${Math.round(dims.H)} mm)`
-          : ''
-      const result = await createCheckoutSession({
-        source: 'boutique',
-        quoteRef: `CAT-${row.id}`,
-        productLabel: `${row.name || row.id}${dimLabel}`,
-        productId: row.id,
-        paymentMode: 'full',
-        pricing,
-        config: {
-          catalog: {
-            id: row.id,
-            name: row.name,
-            sku: row.sku,
-            dims,
-            modules: row.modules,
-            panneaux: row.panneaux,
-            ossature_finish: row.ossature_finish || row.texture,
-            wood_finish: row.wood_finish,
-            category: row.category,
-            tags: row.tags,
-          },
-        },
-      })
-      if (result.url) {
-        window.location.assign(result.url)
-        return
-      }
-      setBuyMsg(t('article.payUnavailable'))
-    } catch (e) {
-      setBuyMsg(e.message || t('article.payUnavailable'))
-    } finally {
-      setBuyBusy(false)
-    }
-  }
+  const { ttc } = specs
 
   return (
     <div className="page page-article page-site page-full">
@@ -448,13 +386,6 @@ export default function ArticlePage() {
 
           <p className="hint">{t('article.leadTime')}</p>
           <p className="hint">{t('article.ecoFrance')}</p>
-          <p className="hint">{t('checkout.withdrawCatalog')}</p>
-
-          <CgvAccept
-            id={`cgv-${row.id}`}
-            checked={acceptCgv}
-            onChange={setAcceptCgv}
-          />
 
           <div className="article-actions hero-actions article-actions-fold">
             <button
@@ -464,26 +395,15 @@ export default function ArticlePage() {
             >
               {t('article.configureBase')}
             </button>
-            <PayButton
-              disabled={buyBusy || !acceptCgv || !STRIPE_ENABLED}
-              onClick={handleBuyNow}
+            <Link
+              to={`/boutique/${row.id}/acheter`}
+              className="btn btn-wood"
             >
-              {buyBusy
-                ? t('article.redirecting')
-                : !STRIPE_ENABLED
-                  ? t('article.requestQuote')
-                  : ttc >= 0.5
-                    ? t('article.buy', { price: Math.round(ttc) })
-                    : t('article.requestQuote')}
-            </PayButton>
+              {ttc >= 0.5
+                ? t('article.buy', { price: Math.round(ttc) })
+                : t('article.requestQuote')}
+            </Link>
           </div>
-          {!STRIPE_ENABLED && (
-            <p className="hint article-order-hint">
-              {t('checkout.stripeSoon')}{' '}
-              <Link to="/contact">{t('checkout.contactUs')}</Link>
-            </p>
-          )}
-          {buyMsg && <p className="hint article-order-hint">{buyMsg}</p>}
 
           {specs.sections.map((section) =>
             section.rows.length ? (

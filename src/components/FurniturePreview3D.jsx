@@ -27,8 +27,11 @@ import CatalogGlbPreview, {
   catalogGlbUrl,
 } from './CatalogGlbPreview.jsx'
 import { useI18n } from '@texte/I18nProvider.jsx'
-
-const SCALE = 0.001
+import {
+  FURNITURE_SCALE as SCALE,
+  furnitureCenterThree,
+  furnitureCameraPos,
+} from '../lib/furnitureOrbit.js'
 
 const previewStoreCache = new Map()
 
@@ -101,11 +104,7 @@ function FrozenUnit({ unit }) {
 
 function PreviewScene({ unit, autoRotate = false }) {
   const maxDim = Math.max(unit.dims.L, unit.dims.W, unit.dims.H) * SCALE
-  const target = [
-    (unit.dims.L * SCALE) / 2,
-    (unit.dims.H * SCALE) / 2,
-    -(unit.dims.W * SCALE) / 2,
-  ]
+  const target = furnitureCenterThree(unit.dims)
 
   return (
     <>
@@ -217,6 +216,10 @@ export default function FurniturePreview3D({
       : catalogRow
 
   // Préférence : GLB catalogue (pas de recalcul) — sauf si couleur boutique live
+  const dims = catalogRow
+    ? { L: catalogRow.L_mm, W: catalogRow.W_mm, H: catalogRow.H_mm }
+    : unitProp?.dims
+
   if (glbUrl && !forceLive && !autoRotate && !panneauCouleur) {
     return (
       <CatalogGlbPreview
@@ -228,6 +231,7 @@ export default function FurniturePreview3D({
         dpr={dpr}
         freeOrbit={freeOrbit}
         interactive={interactive}
+        dims={dims}
       />
     )
   }
@@ -286,13 +290,10 @@ function LiveGeometryPreview({
     [unitProp, catalogRow],
   )
 
-  const cameraPos = useMemo(() => {
-    if (!unit) return [-1.35, 0.95, -1.7]
-    const { L, W, H } = unit.dims
-    const halfDiag = Math.sqrt(L * L + W * W + H * H) * SCALE * 0.5
-    const d = Math.max(0.95, halfDiag * 2.55)
-    return [-d * 0.82, d * 0.52, -d * 0.95]
-  }, [unit])
+  const cameraPos = useMemo(
+    () => (unit ? furnitureCameraPos(unit.dims) : [-1.35, 0.95, -1.7]),
+    [unit],
+  )
 
   if (!unit) {
     return (

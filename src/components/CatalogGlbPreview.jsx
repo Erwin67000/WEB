@@ -9,6 +9,11 @@ import { Canvas, useThree } from '@react-three/fiber'
 import { OrbitControls, useGLTF, Center, Bounds } from '@react-three/drei'
 import * as THREE from 'three'
 import { useI18n } from '@texte/I18nProvider.jsx'
+import {
+  furnitureCenterThree,
+  furnitureCameraPos,
+  furnitureMaxDim,
+} from '../lib/furnitureOrbit.js'
 
 const MAX_LIVE_CANVASES = 16
 const liveSlots = new Set()
@@ -72,7 +77,7 @@ export function preloadCatalogGlbs(ids = []) {
   }
 }
 
-function GlbModel({ url }) {
+function GlbModel({ url, lift = true }) {
   const { scene } = useGLTF(url)
   const clone = useMemo(() => {
     const c = scene.clone(true)
@@ -111,7 +116,7 @@ function GlbModel({ url }) {
     return c
   }, [scene])
   return (
-    <group position={[0, 0.02, 0]}>
+    <group position={[0, lift ? 0.02 : 0, 0]}>
       <primitive object={clone} />
     </group>
   )
@@ -146,7 +151,11 @@ function SnapshotCapture({ productId, onShot }) {
  * Bounds fit une seule fois (pas observe) : observe recadrait en boucle
  * et bloquait la rotation tout en laissant le zoom.
  */
-function Scene({ url, productId, onShot, freeOrbit = false }) {
+function Scene({ url, productId, onShot, freeOrbit = false, dims }) {
+  const useGeo = Boolean(freeOrbit && dims?.L && dims?.H)
+  const target = useGeo ? furnitureCenterThree(dims) : [0, 0, 0]
+  const maxDim = useGeo ? furnitureMaxDim(dims) : 1
+
   return (
     <>
       <color attach="background" args={['#f5f0e6']} />
@@ -155,11 +164,15 @@ function Scene({ url, productId, onShot, freeOrbit = false }) {
       <directionalLight position={[3.5, 5, 2.5]} intensity={1.4} color="#fff5e6" />
       <directionalLight position={[-2, 2.5, -3]} intensity={0.4} />
 
-      <Bounds fit clip={false} observe={false} margin={1.35}>
-        <Center>
-          <GlbModel url={url} />
-        </Center>
-      </Bounds>
+      {useGeo ? (
+        <GlbModel url={url} lift={false} />
+      ) : (
+        <Bounds fit clip={false} observe={false} margin={1.35}>
+          <Center>
+            <GlbModel url={url} />
+          </Center>
+        </Bounds>
+      )}
 
       <OrbitControls
         makeDefault
@@ -170,11 +183,11 @@ function Scene({ url, productId, onShot, freeOrbit = false }) {
         enableZoom
         rotateSpeed={0.85}
         zoomSpeed={0.9}
-        /* page produit : tour libre ; vignette boutique : un peu plus cadré */
+        target={target}
         minPolarAngle={freeOrbit ? 0.12 : 0.2}
         maxPolarAngle={freeOrbit ? Math.PI * 0.92 : Math.PI * 0.72}
-        minDistance={0.35}
-        maxDistance={freeOrbit ? 16 : 12}
+        minDistance={useGeo ? maxDim * 0.9 : 0.35}
+        maxDistance={useGeo ? Math.max(8, maxDim * 8) : freeOrbit ? 16 : 12}
       />
       <SnapshotCapture productId={productId} onShot={onShot} />
     </>
@@ -190,6 +203,8 @@ export default function CatalogGlbPreview({
   dpr = [1, 1.25],
   /** true = page produit (orbit large) ; false = vignette grille */
   freeOrbit = false,
+  /** Dims mm {L,W,H} : centre d’orbite = centre géométrique du meuble. */
+  dims,
   /** Monte le canvas seulement au hover / tap (grille boutique). */
   interactive = true,
   onCaptured,
@@ -314,7 +329,15 @@ export default function CatalogGlbPreview({
         <Canvas
           key={productId}
           dpr={dpr}
-          camera={{ position: [-1.6, 1.1, -2], fov: 38, near: 0.01, far: 80 }}
+          camera={{
+            position:
+              freeOrbit && dims?.L
+                ? furnitureCameraPos(dims)
+                : [-1.6, 1.1, -2],
+            fov: 38,
+            near: 0.01,
+            far: 80,
+          }}
           gl={{
             antialias: true,
             toneMapping: THREE.ACESFilmicToneMapping,
@@ -336,6 +359,7 @@ export default function CatalogGlbPreview({
               url={url}
               productId={productId}
               freeOrbit={freeOrbit}
+              dims={dims}
               onShot={(data) => {
                 setSnapshot(data)
                 snapshotCache.set(productId, data)

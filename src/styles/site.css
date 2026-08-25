@@ -3675,6 +3675,72 @@ body.config-lock {
   gap: 1rem;
 }
 
+.page-checkout-buy.page-full {
+  padding-bottom: 0;
+}
+
+.checkout-buy-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  min-height: calc(100dvh - var(--header-h, 64px));
+  width: 100%;
+}
+
+.checkout-buy-preview {
+  position: sticky;
+  top: var(--header-h, 64px);
+  height: calc(100dvh - var(--header-h, 64px));
+  background: var(--ivory, #f5f0e6);
+  border-right: 1px solid #ddd5c4;
+}
+
+.checkout-buy-info {
+  padding-top: 1.5rem;
+  padding-bottom: 2.5rem;
+}
+
+.checkout-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem 1rem;
+}
+
+.checkout-fields .field:nth-child(5),
+.checkout-fields .field:nth-child(n + 8) {
+  grid-column: 1 / -1;
+}
+
+.checkout-fields input,
+.checkout-fields select {
+  width: 100%;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid #d4cbb8;
+  background: #fffef8;
+  font: inherit;
+}
+
+@media (max-width: 900px) {
+  .checkout-buy-layout {
+    grid-template-columns: 1fr;
+  }
+  .checkout-buy-preview {
+    position: relative;
+    top: auto;
+    height: 50vw;
+    min-height: 260px;
+    max-height: 400px;
+    border-right: none;
+    border-bottom: 1px solid #ddd5c4;
+  }
+  .checkout-fields {
+    grid-template-columns: 1fr;
+  }
+  .checkout-fields .field:nth-child(5),
+  .checkout-fields .field:nth-child(n + 8) {
+    grid-column: auto;
+  }
+}
+
 /* —— Checkout Stripe (succès / annulation) —— */
 .page-checkout {
   display: flex;

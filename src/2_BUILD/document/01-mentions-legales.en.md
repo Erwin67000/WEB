@@ -16,8 +16,6 @@ Incorporation: 10 May 2026
 Share capital: €1,000  
 VAT number: FR33 105 007 066  
 
-Chair and publication director: **Romain FLEURY**.
-
 Contact: contact@philae.design
 
 ## 2. Host
