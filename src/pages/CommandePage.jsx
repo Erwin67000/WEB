@@ -427,22 +427,26 @@ export default function CommandePage() {
 
           {!loading && !user && (
             <div className="commande-card">
-              <div className="auth-social">
-                <a
-                  className="btn btn-ghost auth-social-btn"
-                  href="/api/auth/google"
-                  onClick={startGoogle}
-                >
-                  {t('account.google')}
-                </a>
-                {providers.apple && (
-                  <a className="btn btn-ghost auth-social-btn" href="/api/auth/apple">
-                    {t('account.apple')}
-                  </a>
-                )}
-              </div>
-              {!providers.google && (
-                <p className="hint">{t('account.googleHint')}</p>
+              {(providers.google || providers.apple) && (
+                <div className="auth-social">
+                  {providers.google && (
+                    <a
+                      className="btn btn-ghost auth-social-btn"
+                      href="/api/auth/google"
+                      onClick={startGoogle}
+                    >
+                      {t('account.google')}
+                    </a>
+                  )}
+                  {providers.apple && (
+                    <a
+                      className="btn btn-ghost auth-social-btn"
+                      href="/api/auth/apple"
+                    >
+                      {t('account.apple')}
+                    </a>
+                  )}
+                </div>
               )}
 
               <label className="field">
