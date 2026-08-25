@@ -17,11 +17,11 @@ export default function HomeManifesto() {
       </div>
       <div className="home-manifesto-inner">
         <h1 className="home-manifesto-title">
-          {t('home.titleLead')}
-          <span className="home-manifesto-and"> {t('home.titleAnd')} </span>
-          {t('home.titleTail')}
+          <span className="home-manifesto-line">{t('home.titleLead')}</span>
+          <span className="home-manifesto-and">{t('home.titleAnd')}</span>
+          <span className="home-manifesto-line">{t('home.titleTail')}</span>
         </h1>
-        <p className="section-kicker home-manifesto-kicker">{t('home.kicker')}</p>
+        <p className="home-manifesto-kicker">{t('home.kicker')}</p>
         <p className="home-manifesto-sub">{t('home.subtitle')}</p>
 
         <ul className="home-pillars">

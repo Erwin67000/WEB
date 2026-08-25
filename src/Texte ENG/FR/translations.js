@@ -44,12 +44,12 @@ export const translations = {
     },
     home: {
       manifestoAria: 'Form & Function',
-      kicker: 'Framed Furniture · Signature frame',
+      kicker: 'Framed Furniture',
       titleLead: 'Form',
       titleAnd: '&',
       titleTail: 'Function',
       subtitle:
-        'A solid-wood frame first. Functions, finishes and panels after.',
+        'A signature solid-wood frame. Functions, panels and options.',
       ctaShop: 'Visit the shop',
       ctaConfig: 'Configure your piece',
       scroll: 'Scroll to assemble',

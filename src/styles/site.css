@@ -761,7 +761,13 @@ body.story-mode {
 }
 
 .home-manifesto-kicker {
-  margin: 0.35rem 0 0.85rem !important;
+  margin: 0.45rem 0 0.7rem !important;
+  font-family: var(--font);
+  font-size: clamp(1.05rem, 2.1vw, 1.45rem) !important;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gold, #c9a227) !important;
 }
 
 .home-manifesto-title {
@@ -769,10 +775,26 @@ body.story-mode {
   font-size: clamp(2.8rem, 7.2vw, 5.6rem);
   font-weight: 400;
   letter-spacing: 0.02em;
-  line-height: 0.95;
+  line-height: 0.92;
   color: #12100c;
   margin: 0;
   max-width: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.home-manifesto-line {
+  display: block;
+}
+
+.home-manifesto-and {
+  display: block;
+  color: var(--gold, #c9a227);
+  font-style: normal;
+  letter-spacing: 0.04em;
+  line-height: 0.85;
 }
 
 .home-manifesto-sub {
@@ -795,11 +817,7 @@ body.story-mode {
   display: none;
 }
 
-.home-manifesto-and {
-  color: var(--gold, #c9a227);
-  font-style: normal;
-  letter-spacing: 0.04em;
-}
+
 
 .home-pillars {
   list-style: none;
