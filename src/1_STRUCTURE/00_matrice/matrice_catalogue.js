@@ -14,6 +14,7 @@
  * Cellule vide = non : pas de panneau, module ou option inventé.
  */
 import * as XLSX from 'xlsx'
+import { PRIX, TVA } from './matrice_constante.js'
 
 /** Colonnes documentées (format interne boutique / GLB). */
 export const CATALOGUE_COLUMNS = [
@@ -207,18 +208,46 @@ export function isModeleBoutiqueHeaders(headers) {
   return h.includes('id') && h.includes('nom') && (h.includes('l') || h.includes('l_mm'))
 }
 
+function panneauAreaM2(nom, { L, W, H }) {
+  if (nom === 'fond' || nom === 'porte') return (L * H) / 1e6
+  if (nom === 'joue1' || nom === 'joue2') return (W * H) / 1e6
+  if (
+    nom === 'dessus' ||
+    nom === 'dessus_interieur' ||
+    nom === 'dessus_exterieur' ||
+    nom === 'dessous'
+  ) {
+    return (L * W) / 1e6
+  }
+  return (L * H) / 1e6
+}
+
 /**
- * Prix indicatif simple si non fourni (HT ossature + modules + panneaux).
+ * Prix TTC boutique — mêmes variables PRIX que le configurateur.
  */
 function estimatePriceTtc({ L, W, H, modules, panneaux }) {
-  const ossature = 900 + (4 * (L + W + H)) / 1000 * 50
-  let mod = 0
-  for (const m of modules) {
-    if (m.kind === 'shelf') mod += 50 + (L * W) / 1e6 * 100
-    if (m.kind === 'drawer') mod += 250 + (L * W * 110) / 1e9 * 1000
+  const dims = { L, W, H }
+  const longueurM = (4 * (L + W + H)) / 1000
+  let ht = PRIX.ossatureForfait + longueurM * PRIX.ossatureParMetre
+
+  for (const nom of panneaux || []) {
+    ht += PRIX.panneauForfait + panneauAreaM2(nom, dims) * PRIX.panneauParM2
   }
-  const pan = (panneaux?.length || 0) * (50 + 0.3 * 100)
-  return Math.round((ossature + mod + pan) * 1.2)
+
+  for (const m of modules || []) {
+    if (m.kind === 'shelf') {
+      ht += PRIX.tabletteForfait + ((L * W) / 1e6) * PRIX.tabletteParM2
+    } else if (m.kind === 'drawer') {
+      const hMm = Number(m.hMm) || PRIX.tiroirHauteurDefautMm || 110
+      ht += PRIX.tiroirForfait + ((L * W * hMm) / 1e9) * PRIX.tiroirParM3
+    } else if (m.kind === 'door') {
+      ht += PRIX.porteForfait + ((L * H) / 1e6) * PRIX.porteParM2
+    } else if (m.kind === 'pied') {
+      ht += PRIX.piedForfait
+    }
+  }
+
+  return Math.round(ht * (1 + TVA))
 }
 
 /**
@@ -391,7 +420,7 @@ export function normalizeModeleBoutiqueRow(obj, index = 0, ctx = {}) {
     price_from: price,
     price_ttc_eur: price,
     price_furniture_ttc_eur: price,
-    price_model3d_ht_eur: 45,
+    price_model3d_ht_eur: PRIX.modele3d,
     price_json_ht_eur: 25,
     scene: 'none',
     short_description: short,

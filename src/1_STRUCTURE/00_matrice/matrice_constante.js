@@ -97,7 +97,7 @@ export const PRIX = {
    * Tiroir Würth type B : volume m³ = LIC × profondeur × H (mm → /1e9)
    * H parmi hauteurs Würth ASTUCIO (voir tiroir/wurth.js)
    */
-  tiroirForfait: 250,
+  tiroirForfait: 150,
   tiroirParM3: 1000,
   /** @deprecated → WURTH_HAUTEUR_DEFAUT_MM */
   tiroirHauteurDefautMm: 110,
