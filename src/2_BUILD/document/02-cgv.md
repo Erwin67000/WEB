@@ -51,6 +51,8 @@ Dès qu’une option, une cote ou une composition s’écarte du SKU catalogue s
 
 3.5. Le client est responsable de l’exactitude des cotes et options choisies, ainsi que de l’adresse et de l’accessibilité du lieu de livraison.
 
+3.6. **Interdictions.** Le Client s’engage à ne pas tenter de reproduire ou de commercialiser le système d’assemblage breveté des meubles PHILAE. Cette interdiction s’applique indépendamment de l’article 12.
+
 ## 4. Prix, TVA et éco-participation
 
 4.1. Les prix de vente sont indiqués en **euros TTC**.
@@ -164,7 +166,15 @@ Les pièces d’usure, un mauvais stockage, un usage détourné ou une modificat
 
 ## 12. Propriété intellectuelle
 
-Les dessins, fichiers 3D, le configurateur, la marque PHILAE et les photographies restent la propriété d’ATELIER PHILAE.
+12.1. **Système d’assemblage.** Les meubles PHILAE sont livrés en **kit**. La structure s’assemble en quelques minutes, **sans colle, vis ni clous** en usage final, selon la notice fournie. Ce système d’assemblage a fait l’objet de la **demande de brevet français n° FR2607257, déposée le 1er juin 2026** (titre : « Dispositif d’assemblage pour former une ossature et structures tridimensionnelles associées »). Toute reproduction, imitation, reverse-engineering ou utilisation non autorisée de ce système est interdite et susceptible de poursuites.
+
+12.2. L’ensemble des éléments constitutifs des meubles PHILAE, et notamment le système d’assemblage breveté, les designs, formes, plans, fichiers 3D, configurateur, photographies, textes et tout autre élément, sont protégés par le droit de la propriété intellectuelle (brevets, dessins et modèles, droits d’auteur, marques, etc.).
+
+12.3. Le Client s’interdit formellement de reproduire, copier, adapter, modifier, décompiler, reverse-engineer ou exploiter de quelque manière que ce soit le système d’assemblage breveté, ainsi que tout élément protégé, à des fins commerciales ou non, sans l’autorisation écrite préalable de PHILAE.
+
+12.4. Toute violation pourra entraîner des poursuites civiles et/ou pénales, outre le paiement de dommages et intérêts.
+
+12.5. Une commande n’emporte **aucun transfert** des droits sur les fichiers 3D, le configurateur, les dessins d’atelier, le système d’assemblage ou les autres éléments protégés, sauf clause écrite contraire. L’acheteur acquiert la propriété du meuble livré, pas des outils de conception ni du savoir-faire d’assemblage.
 
 ## 13. Responsabilité
 
@@ -174,7 +184,9 @@ Les dessins, fichiers 3D, le configurateur, la marque PHILAE et les photographie
 
 13.3. Le configurateur est un outil d’aide. Il appartient au client de vérifier que la pièce rentre dans le logement.
 
-13.4. Rien dans les CGV ne limite la responsabilité en cas de faute lourde ou dolosive, d’atteinte à la vie ou à l’intégrité corporelle, ou d’une garantie légale d’ordre public.
+13.4. ATELIER PHILAE ne saurait être tenu responsable de l’utilisation non conforme ou de tentatives d’imitation du système breveté par le Client.
+
+13.5. Rien dans les CGV ne limite la responsabilité en cas de faute lourde ou dolosive, d’atteinte à la vie ou à l’intégrité corporelle, ou d’une garantie légale d’ordre public.
 
 ## 14. Force majeure
 

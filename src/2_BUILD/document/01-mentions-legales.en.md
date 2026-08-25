@@ -39,7 +39,13 @@ Personal data: see the [privacy policy](/confidentialite).
 
 ## 5. Intellectual property
 
-The Site, texts, photographs, drawings, the **3D configurator**, **3D models** and PHILAE geometries are protected. An order does **not** transfer rights in 3D files or workshop drawings. The buyer acquires the delivered furniture, not the design tools.
+All constituent elements of PHILAE furniture — including the patented assembly system, designs, shapes, plans, 3D files, configurator, photographs, texts and any other element — are protected by intellectual-property law (patents, designs, copyright, trade marks, etc.).
+
+The assembly system (kit **without glue, screws or nails** in final use) is the subject of **French patent application no. FR2607257, filed on 1 June 2026** (title: “Dispositif d’assemblage pour former une ossature et structures tridimensionnelles associées”).
+
+Any reproduction, copy, adaptation, modification, decompilation, reverse-engineering or exploitation, for commercial or non-commercial purposes, without ATELIER PHILAE’s prior written authorisation, is prohibited and may give rise to civil and/or criminal proceedings, in addition to damages.
+
+An order does **not** transfer rights in 3D files, the configurator, workshop drawings or the assembly system. The buyer acquires the delivered furniture, not the design tools.
 
 ## 6. Credits
 

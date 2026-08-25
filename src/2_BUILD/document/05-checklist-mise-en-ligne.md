@@ -60,8 +60,9 @@ Quatre liens **permanents**, visibles sans compte, sur **toutes** les pages (y c
 - [ ] Décision : **auto-héberger Oswald et Stardos** (recommandé) **ou** assumer Google Fonts dans la politique
 - [ ] Après auto-hébergement : vérifier l’onglet Réseau (plus d’appel `googleapis` / `gstatic`)
 - [ ] Si seulement nécessaires + langue : pas de bandeau
-- [ ] Si analytics / pixel ajouté : bandeau CNIL **avant** dépôt, refus aussi visible qu’acceptation
-- [ ] Ne pas écrire « nous n’utilisons aucun cookie » (Cloudflare + langue)
+- [x] **Plausible** (`philae.design`) : pages vues sans cookie ; événements enrichis + newsletter via **bouton d’opt-in facultatif** (pas de case obligatoire, pas requis pour payer)
+- [ ] Si pixel pub ajouté : bandeau CNIL **avant** dépôt, refus aussi visible qu’acceptation
+- [ ] Ne pas écrire « nous n’utilisons aucun cookie » (Cloudflare + langue + consentement extras)
 
 ## G. Paiement, facture, atelier
 

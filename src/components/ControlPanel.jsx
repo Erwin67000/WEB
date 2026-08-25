@@ -25,6 +25,7 @@ import { FACE_PICK_DEFS } from '../1_STRUCTURE/02_agencement/FacePickPlanes.jsx'
 import { useI18n, useTId } from '@texte/I18nProvider.jsx'
 import PayButton from './PayButton.jsx'
 import CgvAccept from './CgvAccept.jsx'
+import SoftOptIn from './SoftOptIn.jsx'
 import { STRIPE_ENABLED, isFranceCountry } from '../lib/payments.js'
 
 /** Labels courts pour chips des panneaux actifs */
@@ -817,6 +818,7 @@ export default function ControlPanel() {
           checked={acceptCgv}
           onChange={setAcceptCgv}
         />
+        <SoftOptIn id="config-soft-optin" />
         <PayButton
           disabled={
             checkoutBusy ||
@@ -828,6 +830,8 @@ export default function ControlPanel() {
             !contact.lastName
           }
           onClick={async () => {
+            const { trackEvent } = await import('../lib/plausible.js')
+            trackEvent('Checkout intent', { source: 'configurator' })
             if (!acceptCgv) {
               notify(t('checkout.needCgv'))
               return

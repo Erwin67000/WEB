@@ -19,9 +19,11 @@ import { getCatalogItem } from '../data/catalog.js'
 import FurniturePreview3D from '../components/FurniturePreview3D.jsx'
 import { useI18n, useTId, useCatalogText } from '@texte/I18nProvider.jsx'
 import CgvAccept from '../components/CgvAccept.jsx'
+import SoftOptIn from '../components/SoftOptIn.jsx'
 import PayButton from '../components/PayButton.jsx'
 import { createCheckoutSession } from '../lib/checkout.js'
 import { STRIPE_ENABLED, isFranceCountry } from '../lib/payments.js'
+import { getExtrasConsent, trackEvent } from '../lib/plausible.js'
 
 /** Prix TTC catalogue → ventilation HT / TVA 20 %. */
 function pricingFromTtc(ttc) {
@@ -297,6 +299,11 @@ export default function ArticlePage() {
     }
   }, [productId])
 
+  useEffect(() => {
+    if (!row?.id) return
+    trackEvent('Product view', { product: row.id })
+  }, [row])
+
   const specs = useMemo(
     () => (row ? buildProductSpecs(row, t, tId, catalog, lang) : null),
     [row, t, tId, catalog, lang],
@@ -329,6 +336,7 @@ export default function ArticlePage() {
     setContact((c) => ({ ...c, [key]: e.target.value }))
 
   async function handlePay() {
+    trackEvent('Checkout intent', { product: row.id })
     if (!acceptCgv) {
       setBuyMsg(t('checkout.needCgv'))
       return
@@ -369,6 +377,7 @@ export default function ArticlePage() {
           contact,
           deliveryCountry: contact.country,
           ecoParticipation: france,
+          extrasConsent: getExtrasConsent(),
           catalog: {
             id: row.id,
             name: row.name,
@@ -514,6 +523,7 @@ export default function ArticlePage() {
             checked={acceptCgv}
             onChange={setAcceptCgv}
           />
+          <SoftOptIn id={`optin-${row.id}`} />
 
           <div className="article-actions hero-actions article-actions-fold">
             <button

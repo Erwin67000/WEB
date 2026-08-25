@@ -25,6 +25,7 @@ import NotFoundPage from './pages/NotFoundPage.jsx'
 import { ConfigStoreProvider } from './store/ConfigStoreContext.jsx'
 import { useConfigStore } from './store/useConfigStore.js'
 import { useI18n } from '@texte/I18nProvider.jsx'
+import { trackPageview } from './lib/plausible.js'
 
 function RedirectToProduct() {
   const { productId } = useParams()
@@ -73,6 +74,10 @@ function Shell() {
     location.pathname === '/politique-confidentialite' ||
     location.pathname === '/politique-cookies' ||
     location.pathname === '/livraison'
+
+  useEffect(() => {
+    trackPageview()
+  }, [location.pathname, location.search])
 
   useEffect(() => {
     document.documentElement.lang = lang

@@ -47,11 +47,13 @@ Les demandes relatives aux données personnelles : contact@philae.design (voir l
 
 ## 5. Propriété intellectuelle
 
-Le Site, sa structure, ses textes, photographies, dessins, nomenclatures, interfaces, le **configurateur 3D**, les **modèles 3D**, les géométries, finitions et compositions présentés sous la marque PHILAE sont protégés par le droit d’auteur, le droit des marques et, le cas échéant, les dessins et modèles.
+L’ensemble des éléments constitutifs des meubles PHILAE, et notamment le système d’assemblage breveté, les designs, formes, plans, fichiers 3D, configurateur, photographies, textes et tout autre élément, sont protégés par le droit de la propriété intellectuelle (brevets, dessins et modèles, droits d’auteur, marques, etc.).
 
-Toute reproduction, représentation, adaptation, extraction ou réutilisation, totale ou partielle, sans autorisation écrite d’ATELIER PHILAE, est interdite, hors exceptions légales.
+Le système d’assemblage (kit **sans colle, vis ni clous** en usage final) a fait l’objet de la **demande de brevet français n° FR2607257, déposée le 1er juin 2026** (titre : « Dispositif d’assemblage pour former une ossature et structures tridimensionnelles associées »).
 
-Une commande n’emporte **aucun transfert** des droits sur les fichiers 3D, le configurateur ou les dessins d’atelier, sauf clause écrite contraire. L’acheteur acquiert la propriété du meuble livré, pas des outils de conception.
+Toute reproduction, copie, adaptation, modification, décompilation, reverse-engineering ou exploitation, à des fins commerciales ou non, sans autorisation écrite préalable d’ATELIER PHILAE, est interdite. Toute violation pourra entraîner des poursuites civiles et/ou pénales, outre le paiement de dommages et intérêts.
+
+Une commande n’emporte **aucun transfert** des droits sur les fichiers 3D, le configurateur, les dessins d’atelier ou le système d’assemblage, sauf clause écrite contraire. L’acheteur acquiert la propriété du meuble livré, pas des outils de conception.
 
 ## 6. Crédits
 

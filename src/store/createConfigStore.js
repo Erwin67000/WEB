@@ -810,6 +810,7 @@ export function createConfigStore(opts = {}) {
         const { createCheckoutSession, labelFromUnits } = await import(
           '../lib/checkout.js'
         )
+        const { getExtrasConsent } = await import('../lib/plausible.js')
         const result = await createCheckoutSession({
           source: s.dimsLocked ? 'boutique' : 'configurator',
           quoteRef: s.quoteRef,
@@ -829,6 +830,7 @@ export function createConfigStore(opts = {}) {
             notes: s.notes,
             contact: s.contact,
             pricing,
+            extrasConsent: getExtrasConsent(),
           },
         })
 

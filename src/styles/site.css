@@ -4155,12 +4155,77 @@ body.config-lock {
 }
 
 .panel-buy-bar .cgv-accept {
-  color: #e8d5b5;
+  color: #1a1610;
   font-size: 0.75rem;
 }
 
 .panel-buy-bar .cgv-accept a {
+  color: inherit;
+}
+
+.soft-optin {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.35rem;
+  margin: 0.25rem 0 0.85rem;
+}
+
+.soft-optin-btn {
+  appearance: none;
+  font: inherit;
+  font-size: 0.82rem;
+  letter-spacing: 0.03em;
+  line-height: 1.35;
+  padding: 0.6rem 0.95rem;
+  border: 1px solid #c4b7a0;
+  background: #f5f0e6;
+  color: #1a1610;
+  cursor: pointer;
+  text-align: left;
+  border-radius: 2px;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.soft-optin-btn:hover {
+  background: #efe6d4;
+  border-color: #1a1610;
+}
+
+.soft-optin-btn.is-on {
+  background: #1a1610;
   color: #f5f0e6;
+  border-color: #1a1610;
+}
+
+.soft-optin-hint {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: #6a655c;
+}
+
+.soft-optin-hint a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.panel-buy-bar .soft-optin {
+  margin: 0.1rem 0 0.2rem;
+}
+
+.panel-buy-bar .soft-optin-btn {
+  width: 100%;
+  font-size: 0.75rem;
+  padding: 0.5rem 0.75rem;
+}
+
+.panel-buy-bar .soft-optin-hint {
+  font-size: 0.7rem;
 }
 
 .config-dims-help {

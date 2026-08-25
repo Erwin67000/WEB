@@ -27,6 +27,8 @@ Solid-wood geometric furniture. Natural grain, tone and small knots are part of 
 
 Until Stripe is enabled, the contract is formed on **written acceptance** of the offer / quote and, where applicable, receipt of the agreed deposit. When Stripe is enabled, the contract will be formed on **payment confirmation**.
 
+The Client undertakes **not to attempt to reproduce or commercialise** the patented assembly system of PHILAE furniture. See also article 12.
+
 ## 4. Prices, VAT and eco-contribution
 
 4.1. Prices are in **euros including VAT**.
@@ -67,9 +69,33 @@ Title passes on **full payment**.
 
 Conformity warranty (2 years from delivery — art. L. 217-3 et seq. Consumer Code) and hidden-defects warranty (art. 1641 et seq. Civil Code), including for made-to-order pieces.
 
-## 11–14. After-sales, IP, liability, force majeure
+## 11. After-sales
 
-After-sales outside warranty is quoted. 3D files and the configurator remain ATELIER PHILAE’s property. If force majeure lasts more than **60 days**, either party may terminate; unused deposits are refunded.
+After-sales outside warranty is quoted.
+
+## 12. Intellectual property
+
+12.1. **Assembly system.** PHILAE furniture ships as a **kit**. The frame is assembled in a few minutes **without glue, screws or nails** in final use, according to the supplied instructions. This assembly system is the subject of **French patent application no. FR2607257, filed on 1 June 2026** (title: “Dispositif d’assemblage pour former une ossature et structures tridimensionnelles associées” / Assembly device for forming a frame and associated three-dimensional structures). Any reproduction, imitation, reverse-engineering or unauthorised use of this system is prohibited and may give rise to proceedings.
+
+12.2. All constituent elements of PHILAE furniture, including in particular the patented assembly system, the designs, shapes, plans, 3D files, configurator, photographs, texts and any other element, are protected by intellectual-property law (patents, designs, copyright, trade marks, etc.).
+
+12.3. The Client strictly undertakes not to reproduce, copy, adapt, modify, decompile, reverse-engineer or otherwise exploit the patented assembly system, or any other protected element, for commercial or non-commercial purposes, without PHILAE’s prior written authorisation.
+
+12.4. Any infringement may give rise to civil and/or criminal proceedings, in addition to damages.
+
+12.5. An order does **not** transfer any rights in the 3D files, configurator, workshop drawings, assembly system or other protected elements, unless otherwise agreed in writing. The buyer acquires the delivered furniture, not the design tools or assembly know-how.
+
+## 13. Liability
+
+ATELIER PHILAE is responsible for proper performance of the contract, subject to events beyond its control. The configurator is an aid: the client must check that the piece fits the room.
+
+ATELIER PHILAE shall not be held liable for non-conforming use of the furniture, or for any attempt by the Client to imitate the patented system.
+
+Nothing in the Terms limits liability for wilful misconduct or gross negligence, death or personal injury, or a mandatory legal warranty.
+
+## 14. Force majeure
+
+If force majeure lasts more than **60 days**, either party may terminate; unused deposits are refunded.
 
 ## 15. Personal data
 
