@@ -18,7 +18,7 @@ import { MODULE_KINDS } from '../1_STRUCTURE/00_matrice/matrice_configuration.js
 import { getCatalogItem } from '../data/catalog.js'
 import FurniturePreview3D from '../components/FurniturePreview3D.jsx'
 import { createCheckoutSession } from '../lib/checkout.js'
-import { useI18n, useTId } from '@texte/I18nProvider.jsx'
+import { useI18n, useTId, useCatalogText } from '@texte/I18nProvider.jsx'
 import PayButton from '../components/PayButton.jsx'
 
 /** Prix TTC catalogue → ventilation HT / TVA 20 %. */
@@ -89,7 +89,7 @@ function summarizeModules(modules = [], t) {
  * Construit la fiche technique complète depuis une ligne catalogue.
  * Chaque champ présent dans la matrice apparaît automatiquement.
  */
-function buildProductSpecs(row, t, tId) {
+function buildProductSpecs(row, t, tId, catalog) {
   const L = row.L_mm || row.dims?.L || 0
   const W = row.W_mm || row.dims?.W || 0
   const H = row.H_mm || row.dims?.H || 0
@@ -114,7 +114,7 @@ function buildProductSpecs(row, t, tId) {
     {
       label: t('article.spec.category'),
       value: row.category
-        ? tId('catalog.category', row.category, row.category)
+        ? catalog.category(row)
         : null,
     },
   ].filter((r) => r.value)
@@ -248,6 +248,7 @@ export default function ArticlePage() {
   const navigate = useNavigate()
   const { t } = useI18n()
   const tId = useTId()
+  const catalog = useCatalogText()
   const [row, setRow] = useState(null)
   const [error, setError] = useState(null)
   const [buyBusy, setBuyBusy] = useState(false)
@@ -273,8 +274,8 @@ export default function ArticlePage() {
   }, [productId])
 
   const specs = useMemo(
-    () => (row ? buildProductSpecs(row, t, tId) : null),
-    [row, t, tId],
+    () => (row ? buildProductSpecs(row, t, tId, catalog) : null),
+    [row, t, tId, catalog],
   )
 
   if (error) {
@@ -361,11 +362,11 @@ export default function ArticlePage() {
 
           {row.category && (
             <p className="section-kicker">
-              {tId('catalog.category', row.category, row.category)}
+              {catalog.category(row)}
             </p>
           )}
           <h1 className="hero-title">
-            {tId('catalog.name', row.name, row.name)}
+            {catalog.name(row)}
           </h1>
           {row.short_description && (
             <p className="hero-lead">

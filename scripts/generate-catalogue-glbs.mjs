@@ -35,6 +35,11 @@ if (typeof globalThis.FileReader === 'undefined') {
 }
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
+const modeleXlsSrc = path.join(
+  root,
+  'src/1_STRUCTURE/03_bibliotheque/modele_boutique.xls',
+)
+const modeleXlsPublic = path.join(root, 'public/catalogue/modele_boutique.xls')
 const modelePath = path.join(root, 'public/catalogue/modele_boutique.csv')
 const modeleSrc = path.join(
   root,
@@ -85,6 +90,15 @@ function readCsvText(p) {
 }
 
 function loadCatalogueRows() {
+  for (const p of [modeleXlsSrc, modeleXlsPublic]) {
+    if (fs.existsSync(p)) {
+      const rows = parseMatriceCatalogueWorkbook(fs.readFileSync(p))
+      if (rows?.length) {
+        console.log('[generate-glbs] source XLS', path.relative(root, p))
+        return rows
+      }
+    }
+  }
   for (const p of [modelePath, modeleSrc, csvPath]) {
     if (fs.existsSync(p) && p.endsWith('.csv')) {
       const rows = parseMatriceCatalogue(readCsvText(p))

@@ -8,7 +8,7 @@ import {
 import { loadCatalog } from '../data/catalog.js'
 import FurniturePreview3D from '../components/FurniturePreview3D.jsx'
 import { preloadCatalogGlbs } from '../components/CatalogGlbPreview.jsx'
-import { useI18n, useTId } from '@texte/I18nProvider.jsx'
+import { useI18n, useTId, useCatalogText } from '@texte/I18nProvider.jsx'
 
 const SHOP_COLOR_KEY = 'philae-shop-panel-color'
 const PALETTE = Object.values(PANNEAU_COULEURS).filter((c) => c.id !== 'surmesure')
@@ -27,6 +27,7 @@ export default function BoutiquePage() {
   const navigate = useNavigate()
   const { t } = useI18n()
   const tId = useTId()
+  const catalog = useCatalogText()
   const [rows, setRows] = useState([])
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -67,19 +68,27 @@ export default function BoutiquePage() {
   }, [])
 
   const rooms = useMemo(() => {
-    const s = new Set()
+    const map = new Map()
     for (const r of rows) {
-      if (r.category) s.add(r.category)
+      if (r.category && !map.has(r.category)) {
+        map.set(r.category, r.categoryEn || '')
+      }
     }
-    return Array.from(s).sort((a, b) => a.localeCompare(b, 'fr'))
+    return Array.from(map.entries()).sort((a, b) =>
+      a[0].localeCompare(b[0], 'fr'),
+    )
   }, [rows])
 
   const names = useMemo(() => {
-    const s = new Set()
+    const map = new Map()
     for (const r of rows) {
-      if (r.name) s.add(r.name)
+      if (r.name && !map.has(r.name)) {
+        map.set(r.name, r.nameEn || '')
+      }
     }
-    return Array.from(s).sort((a, b) => a.localeCompare(b, 'fr'))
+    return Array.from(map.entries()).sort((a, b) =>
+      a[0].localeCompare(b[0], 'fr'),
+    )
   }, [rows])
 
   const visible = useMemo(() => {
@@ -99,8 +108,14 @@ export default function BoutiquePage() {
   }
 
   const filterLabel = [
-    ...activeRooms.map((c) => tId('catalog.category', c, c)),
-    ...activeNames.map((n) => tId('catalog.name', n, n)),
+    ...activeRooms.map((c) => {
+      const en = rooms.find(([fr]) => fr === c)?.[1]
+      return catalog.category(c, en)
+    }),
+    ...activeNames.map((n) => {
+      const en = names.find(([fr]) => fr === n)?.[1]
+      return catalog.name(n, en)
+    }),
   ].join(' · ')
 
   return (
@@ -124,14 +139,14 @@ export default function BoutiquePage() {
               >
                 {t('shop.all')}
               </button>
-              {rooms.map((room) => (
+              {rooms.map(([room, roomEn]) => (
                 <button
                   key={room}
                   type="button"
                   className={`tag-chip${activeRooms.includes(room) ? ' active' : ''}`}
                   onClick={() => toggle(activeRooms, setActiveRooms, room)}
                 >
-                  {tId('catalog.category', room, room)}
+                  {catalog.category(room, roomEn)}
                 </button>
               ))}
             </div>
@@ -147,14 +162,14 @@ export default function BoutiquePage() {
               >
                 {t('shop.all')}
               </button>
-              {names.map((name) => (
+              {names.map(([name, nameEn]) => (
                 <button
                   key={name}
                   type="button"
                   className={`tag-chip${activeNames.includes(name) ? ' active' : ''}`}
                   onClick={() => toggle(activeNames, setActiveNames, name)}
                 >
-                  {tId('catalog.name', name, name)}
+                  {catalog.name(name, nameEn)}
                 </button>
               ))}
             </div>
@@ -221,7 +236,7 @@ export default function BoutiquePage() {
               <div className="product-body">
                 <div className="product-meta">
                   <span className="product-cat">
-                    {tId('catalog.category', r.category, r.category)}
+                    {catalog.category(r)}
                   </span>
                   {r.featured && (
                     <span className="badge-gold">{t('shop.featured')}</span>
@@ -229,7 +244,7 @@ export default function BoutiquePage() {
                 </div>
                 <h2 className="product-name">
                   <Link to={`/boutique/${r.id}`} className="product-name-link">
-                    {tId('catalog.name', r.name, r.name)}
+                    {catalog.name(r)}
                   </Link>
                 </h2>
                 <p className="product-desc">

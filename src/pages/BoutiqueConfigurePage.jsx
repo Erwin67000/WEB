@@ -5,7 +5,7 @@ import { ConfigStoreProvider } from '../store/ConfigStoreContext.jsx'
 import { useBoutiqueSessionStore } from '../store/useBoutiqueSessionStore.js'
 import { useConfigStore } from '../store/useConfigStore.js'
 import { getCatalogItem } from '../data/catalog.js'
-import { useI18n, useTId } from '@texte/I18nProvider.jsx'
+import { useI18n, useCatalogText } from '@texte/I18nProvider.jsx'
 
 const Configurateur3D = lazy(() => import('../2_BUILD/3Dconfigurateur.jsx'))
 
@@ -37,7 +37,7 @@ export default function BoutiqueConfigurePage() {
   const { productId } = useParams()
   const navigate = useNavigate()
   const { t } = useI18n()
-  const tId = useTId()
+  const catalog = useCatalogText()
   const [row, setRow] = useState(null)
   const [error, setError] = useState(null)
   const [ready, setReady] = useState(false)
@@ -118,7 +118,7 @@ export default function BoutiqueConfigurePage() {
             </button>
             <div className="session-title">
               <span className="section-kicker">{t('boutiqueSession.kicker')}</span>
-              <strong>{tId('catalog.name', row.name, row.name)}</strong>
+              <strong>{catalog.name(row)}</strong>
               <span className="hint">{t('boutiqueSession.hint')}</span>
             </div>
           </div>

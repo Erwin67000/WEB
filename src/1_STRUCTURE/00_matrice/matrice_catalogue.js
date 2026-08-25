@@ -1,16 +1,16 @@
 /**
  * Catalogue boutique — source unique :
- *   src/1_STRUCTURE/03_bibliotheque/modele_boutique.csv
+ *   src/1_STRUCTURE/03_bibliotheque/modele_boutique.xls
  * Servi en dev/prod via (après sync) :
- *   /catalogue/modele_boutique.csv
+ *   /catalogue/modele_boutique.xls (+ csv généré)
  *
  * Schéma d’entrée (modele_boutique) :
- *   ID, Type, Nom, L, P, H, Description, taille, tags,
- *   couleur_ossature, couleur_panneau,
+ *   Boutique (O = visible), ID, Piece/Room, Nom/Name, L, P, H,
+ *   Description, taille, tags, couleur_ossature, couleur_panneau,
  *   porte (O/N), fond, joue1, joue2, socle, dessus,
  *   # tiroir, # tablette, Options
  *
- * Une ligne = un modèle préconfiguré (L/P/H renseignés = actif).
+ * Une ligne = un modèle préconfiguré (Boutique = O + L/P/H renseignés).
  */
 import * as XLSX from 'xlsx'
 
@@ -39,11 +39,12 @@ export const CATALOGUE_COLUMNS = [
   'sku',
 ]
 
-/** URL principale — nouveau catalogue atelier. */
-export const MATRICE_CATALOGUE_URL = '/catalogue/modele_boutique.csv'
+/** URL principale — Excel atelier (colonne Boutique). */
+export const MATRICE_CATALOGUE_URL = '/catalogue/modele_boutique.xls'
 
-/** Fallbacks (ancien pipeline). */
+/** Fallbacks (CSV généré + ancien pipeline). */
 export const MATRICE_CATALOGUE_FALLBACKS = [
+  '/catalogue/modele_boutique.csv',
   '/catalogue/matrice_catalogue.csv',
   '/catalogue/matrice_catalogue.xlsx',
 ]
@@ -177,6 +178,11 @@ function isOn(v) {
   return s === 'O' || s === 'OUI' || s === 'Y' || s === 'YES' || s === '1' || s === 'TRUE'
 }
 
+function hasHeader(obj, ...keys) {
+  const want = new Set(keys.map((k) => String(k).trim().toLowerCase()))
+  return Object.keys(obj).some((h) => want.has(h.trim().toLowerCase()))
+}
+
 function cellStr(v) {
   if (v == null) return ''
   return String(v).trim()
@@ -234,11 +240,13 @@ export function normalizeModeleBoutiqueRow(obj, index = 0, ctx = {}) {
   }
 
   const rawId = cellStr(get('ID', 'id'))
-  const typeCell = cellStr(get('Type', 'type', 'category'))
-  // Type hérité seulement pour les lignes sans ID (variantes du même modèle)
+  const typeCell = cellStr(get('Type', 'type', 'Piece', 'piece', 'category'))
+  // Type / pièce hérités seulement pour les lignes sans ID (variantes)
   const type =
     typeCell || (!rawId ? cellStr(ctx.lastType) : '') || ''
-  const nom = cellStr(get('Nom', 'nom', 'name'))
+  const nom = cellStr(get('Nom', 'nom'))
+  const nameEnCell = cellStr(get('Name', 'name_en'))
+  const roomEnCell = cellStr(get('Room', 'room'))
   const L = Number(get('L', 'L_mm')) || 0
   const P = Number(get('P', 'W_mm', 'W')) || 0 // P = profondeur = W meuble
   const H = Number(get('H', 'H_mm')) || 0
@@ -275,6 +283,16 @@ export function normalizeModeleBoutiqueRow(obj, index = 0, ctx = {}) {
     id = [nomSlug, tailleSlug || `${L}x${P}x${H}`].filter(Boolean).join('-')
   }
   if (type) ctx.lastType = type
+  if (nom !== ctx.lastNom) {
+    ctx.lastNameEn = nameEnCell
+    ctx.lastRoomEn = roomEnCell
+  } else {
+    if (nameEnCell) ctx.lastNameEn = nameEnCell
+    if (roomEnCell) ctx.lastRoomEn = roomEnCell
+  }
+  ctx.lastNom = nom
+  const nameEn = nameEnCell || ctx.lastNameEn || ''
+  const categoryEn = roomEnCell || ctx.lastRoomEn || ''
 
   // Modules
   const modParts = []
@@ -338,10 +356,15 @@ export function normalizeModeleBoutiqueRow(obj, index = 0, ctx = {}) {
       .filter(Boolean)
       .join(' · ')
 
+  const boutiqueCol = hasHeader(obj, 'Boutique')
+  const active = boutiqueCol ? isOn(get('Boutique', 'boutique')) : true
+
   return {
     id,
-    name: nom + (taille ? ` ${taille.replace(/^#/, '')}` : ''),
+    name: nom,
+    nameEn,
     category: type || 'Autres',
+    categoryEn,
     tags,
     L_mm: L,
     W_mm: P,
@@ -363,7 +386,7 @@ export function normalizeModeleBoutiqueRow(obj, index = 0, ctx = {}) {
     scene: 'none',
     short_description: short,
     featured: index < 3,
-    active: true,
+    active,
     sort_order: Number(rawId) || (ctx.lastIdNum || 0) * 10 + index + 1,
     docs_ready: false,
     sku: `PHL-${idNum || id.toUpperCase().slice(0, 12)}`,

@@ -8,7 +8,7 @@
  */
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { OrbitControls, ContactShadows } from '@react-three/drei'
+import { OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
 import OssatureView from '../1_STRUCTURE/01_meuble3D/OssatureView.jsx'
 import {
@@ -119,13 +119,6 @@ function PreviewScene({ unit, autoRotate = false }) {
       />
       <directionalLight position={[-2, 2, -3]} intensity={0.35} />
       <FrozenUnit unit={unit} />
-      <ContactShadows
-        position={[0, 0.001, 0]}
-        opacity={0.4}
-        scale={Math.max(4, maxDim * 6)}
-        blur={2.2}
-        far={3}
-      />
       <OrbitControls
         makeDefault
         enableDamping

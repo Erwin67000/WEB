@@ -85,3 +85,26 @@ export function useTId() {
     return t(`${prefix}.${id}`, { default: fallback ?? String(id) })
   }
 }
+
+/** Nom / pièce catalogue : colonne Nom/Piece en FR, Name/Room en EN. */
+export function useCatalogText() {
+  const { lang } = useI18n()
+  const tId = useTId()
+  return {
+    name(rowOrFr, en) {
+      const fr = rowOrFr && typeof rowOrFr === 'object' ? rowOrFr.name : rowOrFr
+      const enName =
+        rowOrFr && typeof rowOrFr === 'object' ? rowOrFr.nameEn : en
+      if (lang === 'en' && enName) return enName
+      return tId('catalog.name', fr, fr)
+    },
+    category(rowOrFr, en) {
+      const fr =
+        rowOrFr && typeof rowOrFr === 'object' ? rowOrFr.category : rowOrFr
+      const enCat =
+        rowOrFr && typeof rowOrFr === 'object' ? rowOrFr.categoryEn : en
+      if (lang === 'en' && enCat) return enCat
+      return tId('catalog.category', fr, fr)
+    },
+  }
+}
