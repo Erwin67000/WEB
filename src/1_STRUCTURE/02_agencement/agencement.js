@@ -8,6 +8,7 @@ import {
   EPAISSEUR_PORTE,
   TOLERANCE,
   DECALAGE_PANNEAU,
+  DRAWER_STACK_GAP_MM,
   PRIX,
   areteExtrusionMm,
 } from '../00_matrice/matrice_constante.js'
@@ -403,10 +404,13 @@ export function moduleLayout(mod, { L, W, H }, moduleList = []) {
     if (mod.zMm != null && Number.isFinite(Number(mod.zMm))) {
       zSideBottom = Math.min(zMax, Math.max(zMin, Number(mod.zMm)))
     } else {
-      const gap = 8
-      const stackH = drawerH + gap
-      zSideBottom = zMin + i * stackH
-      zSideBottom = Math.min(zMax, Math.max(zMin, zSideBottom))
+      // Tiroir 1 toujours en bas ; suivants = haut du précédent + jeu Z.
+      const gap = Number(DRAWER_STACK_GAP_MM) || 40
+      let z = zMin
+      for (let k = 0; k < i; k++) {
+        z += drawerHeightMm(sameKind[k]) + gap
+      }
+      zSideBottom = Math.min(zMax, Math.max(zMin, z))
     }
     const zCenter = zSideBottom + drawerH / 2
     const open = (mod.openFactor || 0) * (Math.max(wurth.depthMm, 1) * 0.55)

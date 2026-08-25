@@ -49,6 +49,12 @@ export const EPAISSEURS_PORTE = [15]
 /** Décalage face panneau depuis le point d’arête (mm) — fixe, plus de slider. */
 export const DECALAGE_PANNEAU = 0
 
+/**
+ * Jeu Z entre deux tiroirs empilés (mm).
+ * Tiroir 1 au plus bas ; tiroir n+1 = haut du tiroir n + ce décalage.
+ */
+export const DRAWER_STACK_GAP_MM = 40
+
 /** Angle géométrique signature (rad) — tan(angle) ≈ 1/√2. */
 export const ANGLE_GEOMETRIE = 0.6155
 

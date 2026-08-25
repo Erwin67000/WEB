@@ -80,6 +80,8 @@ function FrozenUnit({ unit }) {
               dims={dims}
               panneaux={unit.panneaux || []}
               woodFinish={unit.woodFinish}
+              panneauCouleur={unit.panneauCouleur}
+              panneauCouleurHex={unit.panneauCouleurHex}
             />
           </group>
         </group>
@@ -88,6 +90,8 @@ function FrozenUnit({ unit }) {
             dims={dims}
             modules={unit.modules || []}
             woodFinish={unit.woodFinish}
+            panneauCouleur={unit.panneauCouleur}
+            panneauCouleurHex={unit.panneauCouleurHex}
           />
         </group>
       </group>
@@ -105,7 +109,7 @@ function PreviewScene({ unit, autoRotate = false }) {
 
   return (
     <>
-      <color attach="background" args={['#141210']} />
+      <color attach="background" args={['#f5f0e6']} />
       <ambientLight intensity={0.55} />
       <hemisphereLight args={['#e8f0ff', '#3a3020', 0.45]} />
       <directionalLight
@@ -161,8 +165,13 @@ export function unitFromCatalogRow(row) {
       kind: m.kind,
       bayIndex: m.bayIndex ?? i,
       openFactor: m.openFactor ?? 0,
+      hMm: m.hMm,
+      zMm: m.zMm,
     })),
     panneaux: [...panneaux],
+    panneauCouleur:
+      row.panneauCouleur || row.panneau_couleur || 'gris_cendre',
+    panneauCouleurHex: row.panneauCouleurHex || row.panneau_couleur_hex,
     positionMm: { x: 0, y: 0, z: 0 },
     rotationZ: 0,
   }
@@ -198,12 +207,24 @@ export default function FurniturePreview3D({
   /** Orbit large (page produit) */
   freeOrbit = false,
   interactive = true,
+  panneauCouleur,
+  panneauCouleurHex,
 }) {
   const productId = productIdProp || catalogRow?.id || unitProp?.id
   const glbUrl = productId ? catalogGlbUrl(productId) : null
+  const rowWithColor =
+    catalogRow && (panneauCouleur || panneauCouleurHex)
+      ? {
+          ...catalogRow,
+          panneauCouleur: panneauCouleur || catalogRow.panneauCouleur,
+          panneau_couleur: panneauCouleur || catalogRow.panneau_couleur,
+          panneauCouleurHex:
+            panneauCouleurHex || catalogRow.panneauCouleurHex,
+        }
+      : catalogRow
 
-  // Préférence : GLB catalogue (pas de recalcul)
-  if (glbUrl && !forceLive && !autoRotate) {
+  // Préférence : GLB catalogue (pas de recalcul) — sauf si couleur boutique live
+  if (glbUrl && !forceLive && !autoRotate && !panneauCouleur) {
     return (
       <CatalogGlbPreview
         productId={productId}
@@ -218,11 +239,11 @@ export default function FurniturePreview3D({
     )
   }
 
-  // Fallback calculé (session custom / debug)
+  // Fallback calculé (session custom / debug / couleur boutique)
   return (
     <LiveGeometryPreview
       unitProp={unitProp}
-      catalogRow={catalogRow}
+      catalogRow={rowWithColor}
       height={height}
       className={className}
       hint={hint}

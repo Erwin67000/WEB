@@ -2224,6 +2224,28 @@ body.config-lock {
   border-radius: 2px;
 }
 
+.boutique-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  flex: 1;
+  min-width: min(100%, 280px);
+}
+
+.filter-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.filter-label {
+  font-family: var(--font);
+  font-size: var(--fs-label, 0.8125rem);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gold, #c9a227);
+}
+
 .tag-filter {
   display: flex;
   flex-wrap: wrap;
@@ -2232,14 +2254,56 @@ body.config-lock {
   min-width: min(100%, 280px);
 }
 
+.shop-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.shop-swatch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid #d4cbb8;
+  background: #fffef8;
+  color: #3a352c;
+  font-family: var(--font);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  padding: 0.28rem 0.65rem 0.28rem 0.35rem;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.shop-swatch:hover,
+.shop-swatch.active {
+  border-color: var(--gold, #c9a227);
+}
+
+.shop-swatch.active {
+  background: rgba(201, 162, 39, 0.16);
+}
+
+.shop-swatch-chip {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid rgba(26, 22, 16, 0.2);
+  display: block;
+}
+
+.shop-swatch-name {
+  line-height: 1;
+}
+
 .tag-chip {
   border: 1px solid var(--border);
   background: transparent;
   color: var(--muted);
   font-family: var(--philae-font);
-  font-size: 0.68rem;
-  letter-spacing: 0.06em;
-  text-transform: lowercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: none;
   padding: 0.35rem 0.7rem;
   border-radius: 999px;
   cursor: pointer;

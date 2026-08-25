@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   FINITIONS_OSSATURE,
+  PANNEAU_COULEURS,
   resolveOssatureFinish,
 } from '../1_STRUCTURE/00_matrice/matrice_constante.js'
 import { loadCatalog } from '../data/catalog.js'
@@ -9,10 +10,17 @@ import FurniturePreview3D from '../components/FurniturePreview3D.jsx'
 import { preloadCatalogGlbs } from '../components/CatalogGlbPreview.jsx'
 import { useI18n, useTId } from '@texte/I18nProvider.jsx'
 
-function tagKey(tag) {
-  return String(tag || '')
-    .replace(/^#/, '')
-    .toLowerCase()
+const SHOP_COLOR_KEY = 'philae-shop-panel-color'
+const PALETTE = Object.values(PANNEAU_COULEURS).filter((c) => c.id !== 'surmesure')
+
+function readShopColor() {
+  try {
+    const v = localStorage.getItem(SHOP_COLOR_KEY)
+    if (v && PANNEAU_COULEURS[v] && v !== 'surmesure') return v
+  } catch {
+    /* ignore */
+  }
+  return null
 }
 
 export default function BoutiquePage() {
@@ -22,12 +30,18 @@ export default function BoutiquePage() {
   const [rows, setRows] = useState([])
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [activeTags, setActiveTags] = useState([])
+  const [activeRooms, setActiveRooms] = useState([])
+  const [activeNames, setActiveNames] = useState([])
+  const [panelColor, setPanelColor] = useState(readShopColor)
 
-  const formatTagLabel = (tag) => {
-    const raw = tagKey(tag)
-    const label = tId('catalog.tag', raw, raw)
-    return `#${label}`
+  const setColor = (id) => {
+    setPanelColor(id)
+    try {
+      if (id) localStorage.setItem(SHOP_COLOR_KEY, id)
+      else localStorage.removeItem(SHOP_COLOR_KEY)
+    } catch {
+      /* ignore */
+    }
   }
 
   useEffect(() => {
@@ -52,24 +66,42 @@ export default function BoutiquePage() {
     }
   }, [])
 
-  const allTags = useMemo(() => {
+  const rooms = useMemo(() => {
     const s = new Set()
     for (const r of rows) {
-      for (const tg of r.tags) s.add(tg)
+      if (r.category) s.add(r.category)
+    }
+    return Array.from(s).sort((a, b) => a.localeCompare(b, 'fr'))
+  }, [rows])
+
+  const names = useMemo(() => {
+    const s = new Set()
+    for (const r of rows) {
+      if (r.name) s.add(r.name)
     }
     return Array.from(s).sort((a, b) => a.localeCompare(b, 'fr'))
   }, [rows])
 
   const visible = useMemo(() => {
-    if (activeTags.length === 0) return rows
-    return rows.filter((r) => activeTags.every((tg) => r.tags.includes(tg)))
-  }, [rows, activeTags])
+    return rows.filter((r) => {
+      const roomOk =
+        activeRooms.length === 0 || activeRooms.includes(r.category)
+      const nameOk =
+        activeNames.length === 0 || activeNames.includes(r.name)
+      return roomOk && nameOk
+    })
+  }, [rows, activeRooms, activeNames])
 
-  const toggleTag = (tag) => {
-    setActiveTags((prev) =>
-      prev.includes(tag) ? prev.filter((tg) => tg !== tag) : [...prev, tag],
+  const toggle = (list, setList, value) => {
+    setList((prev) =>
+      prev.includes(value) ? prev.filter((x) => x !== value) : [...prev, value],
     )
   }
+
+  const filterLabel = [
+    ...activeRooms.map((c) => tId('catalog.category', c, c)),
+    ...activeNames.map((n) => tId('catalog.name', n, n)),
+  ].join(' · ')
 
   return (
     <div className="page page-boutique page-site page-full">
@@ -78,28 +110,75 @@ export default function BoutiquePage() {
         <h1 className="hero-title">{t('shop.title')}</h1>
         <p className="hero-lead">{t('shop.lead')}</p>
         <p className="price-disclaimer">{t('shop.priceDisclaimer')}</p>
-        <p className="hint page-pad-x" style={{ paddingLeft: 0 }} />
       </header>
 
       <div className="boutique-toolbar page-pad-x">
-        <div className="tag-filter" role="group" aria-label={t('shop.filterAria')}>
-          <button
-            type="button"
-            className={`tag-chip${activeTags.length === 0 ? ' active' : ''}`}
-            onClick={() => setActiveTags([])}
-          >
-            {t('shop.all')}
-          </button>
-          {allTags.map((tag) => (
-            <button
-              key={tag}
-              type="button"
-              className={`tag-chip${activeTags.includes(tag) ? ' active' : ''}`}
-              onClick={() => toggleTag(tag)}
-            >
-              {formatTagLabel(tag)}
-            </button>
-          ))}
+        <div className="boutique-filters">
+          <div className="filter-row">
+            <span className="filter-label">{t('shop.filterRooms')}</span>
+            <div className="tag-filter" role="group" aria-label={t('shop.filterRooms')}>
+              <button
+                type="button"
+                className={`tag-chip${activeRooms.length === 0 ? ' active' : ''}`}
+                onClick={() => setActiveRooms([])}
+              >
+                {t('shop.all')}
+              </button>
+              {rooms.map((room) => (
+                <button
+                  key={room}
+                  type="button"
+                  className={`tag-chip${activeRooms.includes(room) ? ' active' : ''}`}
+                  onClick={() => toggle(activeRooms, setActiveRooms, room)}
+                >
+                  {tId('catalog.category', room, room)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="filter-row">
+            <span className="filter-label">{t('shop.filterModels')}</span>
+            <div className="tag-filter" role="group" aria-label={t('shop.filterModels')}>
+              <button
+                type="button"
+                className={`tag-chip${activeNames.length === 0 ? ' active' : ''}`}
+                onClick={() => setActiveNames([])}
+              >
+                {t('shop.all')}
+              </button>
+              {names.map((name) => (
+                <button
+                  key={name}
+                  type="button"
+                  className={`tag-chip${activeNames.includes(name) ? ' active' : ''}`}
+                  onClick={() => toggle(activeNames, setActiveNames, name)}
+                >
+                  {tId('catalog.name', name, name)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="filter-row">
+            <span className="filter-label">{t('shop.panelColor')}</span>
+            <div className="shop-swatches" role="group" aria-label={t('shop.panelColor')}>
+              {PALETTE.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  className={`shop-swatch${panelColor === c.id ? ' active' : ''}`}
+                  title={tId('panelColor', c.id, c.label)}
+                  onClick={() => setColor(panelColor === c.id ? null : c.id)}
+                >
+                  <span className="shop-swatch-chip" style={{ background: c.color }} />
+                  <span className="shop-swatch-name">
+                    {tId('panelColor', c.id, c.label)}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
         <span className="hint">
           {loading
@@ -107,11 +186,7 @@ export default function BoutiquePage() {
             : visible.length === 1
               ? t('shop.countOne')
               : t('shop.countMany', { n: visible.length })}
-          {activeTags.length > 0
-            ? t('shop.filterBy', {
-                filter: activeTags.map(formatTagLabel).join(' '),
-              })
-            : ''}
+          {filterLabel ? t('shop.filterBy', { filter: filterLabel }) : ''}
         </span>
       </div>
 
@@ -139,6 +214,8 @@ export default function BoutiquePage() {
                   interactive
                   freeOrbit
                   eager={index < 8}
+                  forceLive={Boolean(panelColor)}
+                  panneauCouleur={panelColor || undefined}
                 />
               </div>
               <div className="product-body">
@@ -151,10 +228,7 @@ export default function BoutiquePage() {
                   )}
                 </div>
                 <h2 className="product-name">
-                  <Link
-                    to={`/boutique/${r.id}`}
-                    className="product-name-link"
-                  >
+                  <Link to={`/boutique/${r.id}`} className="product-name-link">
                     {tId('catalog.name', r.name, r.name)}
                   </Link>
                 </h2>
@@ -166,22 +240,6 @@ export default function BoutiquePage() {
                   ×{r.W_mm}×{r.H_mm} mm
                   {r.sku ? ` · ${r.sku}` : ''}
                 </p>
-                <div className="product-tags">
-                  {r.tags.map((tg) => (
-                    <button
-                      key={tg}
-                      type="button"
-                      className="product-tag"
-                      onClick={() =>
-                        setActiveTags((prev) =>
-                          prev.includes(tg) ? prev : [...prev, tg],
-                        )
-                      }
-                    >
-                      {formatTagLabel(tg)}
-                    </button>
-                  ))}
-                </div>
                 <div className="product-footer">
                   <span className="product-price">
                     {r.price_from
