@@ -10,7 +10,7 @@ import { OrbitControls, useGLTF, Center, Bounds } from '@react-three/drei'
 import * as THREE from 'three'
 import { useI18n } from '@texte/I18nProvider.jsx'
 
-const MAX_LIVE_CANVASES = 10
+const MAX_LIVE_CANVASES = 16
 const liveSlots = new Set()
 /** @type {{ id: string, resolve: (v: boolean) => void, cancelled: boolean }[]} */
 const waitQueue = []

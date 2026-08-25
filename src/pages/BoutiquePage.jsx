@@ -6,6 +6,7 @@ import {
 } from '../1_STRUCTURE/00_matrice/matrice_constante.js'
 import { loadCatalog } from '../data/catalog.js'
 import FurniturePreview3D from '../components/FurniturePreview3D.jsx'
+import { preloadCatalogGlbs } from '../components/CatalogGlbPreview.jsx'
 import { useI18n, useTId } from '@texte/I18nProvider.jsx'
 
 function tagKey(tag) {
@@ -37,7 +38,7 @@ export default function BoutiquePage() {
         if (!cancelled) {
           setRows(data)
           setError(null)
-          /* posters : snapshot au premier hover, pas 16 WebGL d’un coup */
+          preloadCatalogGlbs(data.map((r) => r.id))
         }
       })
       .catch((e) => {
@@ -119,7 +120,7 @@ export default function BoutiquePage() {
       )}
 
       <div className="product-grid page-pad-x">
-        {visible.map((r) => {
+        {visible.map((r, index) => {
           const finishId = resolveOssatureFinish(
             r.ossature_finish || r.texture || r.wood_finish,
           )
@@ -134,8 +135,10 @@ export default function BoutiquePage() {
                   catalogRow={r}
                   height={220}
                   className="product-mini-3d"
-                  hint={false}
-                  interactive={false}
+                  hint
+                  interactive
+                  freeOrbit
+                  eager={index < 8}
                 />
               </div>
               <div className="product-body">
