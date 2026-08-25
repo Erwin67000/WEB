@@ -155,7 +155,13 @@ export default function CommandePage() {
       if (data.magicUrl) setDevLink(data.magicUrl)
       setMsg(t('account.magicSent'))
     } catch (e) {
-      setMsg(e.code === 'CGV_REQUIRED' ? t('checkout.needCgv') : e.message)
+      setMsg(
+        e.code === 'CGV_REQUIRED'
+          ? t('checkout.needCgv')
+          : /no such table|D1_ERROR/i.test(String(e.message || ''))
+            ? t('account.dbWarm')
+            : e.message,
+      )
     } finally {
       setBusy(false)
     }
@@ -184,7 +190,13 @@ export default function CommandePage() {
       })
       setUser(data.user)
     } catch (e) {
-      setMsg(e.code === 'CGV_REQUIRED' ? t('checkout.needCgv') : e.message)
+      setMsg(
+        e.code === 'CGV_REQUIRED'
+          ? t('checkout.needCgv')
+          : /no such table|D1_ERROR/i.test(String(e.message || ''))
+            ? t('account.dbWarm')
+            : e.message,
+      )
     } finally {
       setBusy(false)
     }

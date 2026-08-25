@@ -454,7 +454,23 @@ export async function handleAuth(request, env, cors) {
     if (!providers(env).google) {
       const origin = siteOrigin(request, env)
       return new Response(
-        `<!doctype html><meta charset="utf-8"><title>Google</title><body style="font-family:sans-serif;padding:2rem;max-width:36rem"><p>Google n’est pas encore configuré.</p><p>Dans le Cloud Console : type <strong>Web</strong>, origine <code>${origin}</code>, URI de redirection <code>${origin}/api/auth/callback/google</code>.</p><p>Puis coller <code>GOOGLE_CLIENT_ID</code> et <code>GOOGLE_CLIENT_SECRET</code> dans <code>.dev.vars</code> et relancer <code>npm run dev:api</code>.</p><p><a href="/commande">Retour à la commande</a></p></body>`,
+        `<!doctype html><meta charset="utf-8"><title>Google</title>
+<body style="font-family:sans-serif;padding:2rem;max-width:38rem;line-height:1.5">
+<p>Google n’est pas encore branché sur ce serveur.</p>
+<p>Cloud Console → ID client OAuth → type <strong>Application Web</strong>.</p>
+<p>Origines : <code>https://philae.design</code>, <code>https://www.philae.design</code>, <code>http://localhost:3102</code></p>
+<p>Redirections :<br>
+<code>https://www.philae.design/api/auth/callback/google</code><br>
+<code>https://philae.design/api/auth/callback/google</code><br>
+<code>http://localhost:3102/api/auth/callback/google</code></p>
+<p><strong>En local</strong> : coller les clés dans <code>.dev.vars</code> puis <code>npm run dev:api</code>.</p>
+<p><strong>En live</strong> (ce site) :</p>
+<pre style="background:#f5f0e6;padding:0.8rem">npx wrangler secret put GOOGLE_CLIENT_ID
+npx wrangler secret put GOOGLE_CLIENT_SECRET
+npx wrangler secret put SITE_URL
+# SITE_URL = https://www.philae.design</pre>
+<p><a href="/commande">Retour à la commande</a></p>
+</body>`,
         { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8' } },
       )
     }

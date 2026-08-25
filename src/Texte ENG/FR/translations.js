@@ -345,7 +345,8 @@ export const translations = {
       resumeConfig: 'Resume this piece',
       savedPiece: 'Piece in progress',
       googleHint:
-        'Google sign-in needs GOOGLE_CLIENT_ID / SECRET in .dev.vars (see docs/TEST-PREMIER-CLIENT.md).',
+        'Google is not wired yet. Live: wrangler secret put GOOGLE_CLIENT_ID then GOOGLE_CLIENT_SECRET. Local: .dev.vars.',
+      dbWarm: 'Account database is starting up — wait a few seconds and try again.',
     },
     boutiqueSession: {
       missing: 'This model could not be found.',
@@ -959,7 +960,8 @@ export const translations = {
       resumeConfig: 'Reprendre ce meuble',
       savedPiece: 'Meuble en cours',
       googleHint:
-        'Google n’est pas encore branché : ajoute GOOGLE_CLIENT_ID et GOOGLE_CLIENT_SECRET dans .dev.vars (voir docs/TEST-PREMIER-CLIENT.md).',
+        'Google n’est pas encore branché. En live : wrangler secret put GOOGLE_CLIENT_ID puis GOOGLE_CLIENT_SECRET. En local : .dev.vars (docs/TEST-PREMIER-CLIENT.md).',
+      dbWarm: 'La base comptes démarre — patientez quelques secondes et réessayez.',
     },
     boutiqueSession: {
       missing: 'Ce modèle est introuvable.',

@@ -28,6 +28,7 @@ import { presentOrder, isoCountry } from './orderPresentation.js'
 import { handleAuth, getSessionUser } from './auth.js'
 import { handleDrafts } from './drafts.js'
 import { sendMail, orderConfirmationCopy } from './mail.js'
+import { ensureSchema } from './ensureSchema.js'
 
 /** Acompte futur : 100 = paiement total. Override via env.DEPOSIT_PERCENT */
 const DEFAULT_DEPOSIT_PERCENT = 100
@@ -449,6 +450,8 @@ async function handleApi(request, env, _ctx) {
   }
 
   try {
+    if (env.DB) await ensureSchema(env.DB)
+
     if (path.startsWith('/api/auth') || path.startsWith('/api/account')) {
       const authRes = await handleAuth(request, env, cors)
       if (authRes) return authRes

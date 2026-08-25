@@ -26,6 +26,27 @@ GOOGLE_CLIENT_SECRET=GOCSPX-xxxxx
 
 6. Relancer `npm run dev:api`.
 
+## Live (philae.design) — pas `.dev.vars`
+
+`.dev.vars` ne sert **qu’en local**. En production :
+
+```bash
+npx wrangler secret put GOOGLE_CLIENT_ID
+npx wrangler secret put GOOGLE_CLIENT_SECRET
+npx wrangler secret put SITE_URL
+```
+
+`SITE_URL` = `https://www.philae.design`
+
+Mêmes origines / redirects Google, plus :
+
+- `https://www.philae.design`
+- `https://philae.design`
+- `https://www.philae.design/api/auth/callback/google`
+- `https://philae.design/api/auth/callback/google`
+
+Pas besoin de redéployer le code après un `secret put` : le Worker relit les secrets.
+
 ## 2. E-mails réels (optionnel)
 
 Stripe en **mode test** envoie déjà un reçu si `receipt_email` est renseigné (ton e-mail).
