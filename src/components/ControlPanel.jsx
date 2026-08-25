@@ -22,10 +22,10 @@ import {
 import { DIM_LIMITS } from '../3_INPUT/matrice_input.js'
 
 import { FACE_PICK_DEFS } from '../1_STRUCTURE/02_agencement/FacePickPlanes.jsx'
-import { useNavigate } from 'react-router-dom'
 import { useI18n, useTId } from '@texte/I18nProvider.jsx'
 import PayButton from './PayButton.jsx'
-import { writeCheckoutDraft } from '../lib/checkoutDraft.js'
+import CgvAccept from './CgvAccept.jsx'
+import { STRIPE_ENABLED, isFranceCountry } from '../lib/payments.js'
 
 /** Labels courts pour chips des panneaux actifs */
 const PANNEAU_CHIP_LABELS = Object.fromEntries(
@@ -118,7 +118,9 @@ export default function ControlPanel() {
   const setWireframe = useActiveConfigStore((s) => s.setWireframe)
   const setPanneauPickMode = useActiveConfigStore((s) => s.setPanneauPickMode)
   const requestModele3D = useActiveConfigStore((s) => s.requestModele3D)
-  const navigate = useNavigate()
+  const requestAcheter = useActiveConfigStore((s) => s.requestAcheter)
+  const setContact = useActiveConfigStore((s) => s.setContact)
+  const contact = useActiveConfigStore((s) => s.contact)
 
   const storeApi = useActiveConfigStoreApi()
 
@@ -136,6 +138,7 @@ export default function ControlPanel() {
   const tId = useTId()
   const [flash, setFlash] = useState('')
   const [checkoutBusy, setCheckoutBusy] = useState(false)
+  const [acceptCgv, setAcceptCgv] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   /** Chip en cours de renommage (id meuble) */
   const [editingUnitId, setEditingUnitId] = useState(null)
@@ -151,6 +154,7 @@ export default function ControlPanel() {
     modules: !!dimsLocked,
     panneaux: !!dimsLocked,
     scene: false,
+    contact: false,
     devis: false,
   }))
 
@@ -753,29 +757,115 @@ export default function ControlPanel() {
           )}
         </section>
 
+        <section className="panel-section">
+          <button
+            type="button"
+            className="section-head"
+            onClick={() => toggle('contact')}
+          >
+            <span>{t('checkout.contactTitle')}</span>
+            <span className="chev">{openSections.contact ? '▾' : '▸'}</span>
+          </button>
+          {openSections.contact && (
+            <div className="section-body">
+              {[
+                ['firstName', 'text'],
+                ['lastName', 'text'],
+                ['email', 'email'],
+                ['phone', 'tel'],
+                ['addressLine1', 'text'],
+                ['postalCode', 'text'],
+                ['city', 'text'],
+              ].map(([key, type]) => (
+                <label key={key} className="field">
+                  <span className="field-label">{t(`client.${key}`)}</span>
+                  <input
+                    type={type}
+                    value={contact[key] || ''}
+                    onChange={(e) => setContact({ [key]: e.target.value })}
+                  />
+                </label>
+              ))}
+              <label className="field">
+                <span className="field-label">{t('client.country')}</span>
+                <select
+                  value={contact.country || 'FR'}
+                  onChange={(e) => setContact({ country: e.target.value })}
+                >
+                  <option value="FR">{t('checkout.countryFR')}</option>
+                  <option value="EU">{t('checkout.countryEU')}</option>
+                  <option value="WORLD">{t('checkout.countryWorld')}</option>
+                </select>
+              </label>
+              <p className="muted">
+                {isFranceCountry(contact.country)
+                  ? t('checkout.ecoYes')
+                  : t('checkout.ecoNo')}
+              </p>
+            </div>
+          )}
+        </section>
+
       </div>
       <div className="panel-buy-bar">
         <div className="panel-buy-price">
           <span>{t('config.ttc')}</span>
           <strong>{pricing.ttc.toFixed(2)} €</strong>
         </div>
+        <CgvAccept
+          id="config-accept-cgv"
+          checked={acceptCgv}
+          onChange={setAcceptCgv}
+        />
         <PayButton
-          disabled={checkoutBusy || pricing.ttc < 0.5}
-          onClick={() => {
-            const st = storeApi.getState()
-            writeCheckoutDraft({
-              source: 'configurator',
-              productId: st.catalogProductId || null,
-              units: st.getSnapshot().units,
-              pricing: st.getPricing(),
-              notes: st.notes,
-              contact: st.contact,
-            })
-            navigate('/commande/paiement')
+          disabled={
+            checkoutBusy ||
+            !acceptCgv ||
+            !STRIPE_ENABLED ||
+            pricing.ttc < 0.5 ||
+            !contact.email ||
+            !contact.firstName ||
+            !contact.lastName
+          }
+          onClick={async () => {
+            if (!acceptCgv) {
+              notify(t('checkout.needCgv'))
+              return
+            }
+            if (!STRIPE_ENABLED) {
+              notify(t('checkout.stripeSoon'))
+              return
+            }
+            setCheckoutBusy(true)
+            notify(t('config.preparingPay'))
+            try {
+              const result = await requestAcheter()
+              if (result?.error === 'STRIPE_DISABLED') {
+                notify(t('checkout.stripeSoon'))
+                return
+              }
+              if (result?.error) {
+                notify(result.error)
+                return
+              }
+              if (result?.url) {
+                notify(t('config.redirectStripe'))
+                return
+              }
+              notify(t('config.payUnavailable'))
+            } finally {
+              setCheckoutBusy(false)
+            }
           }}
         >
           {t('config.buyPrice', { price: pricing.ttc.toFixed(0) })}
         </PayButton>
+        {!STRIPE_ENABLED && (
+          <p className="panel-buy-hint">{t('checkout.stripeSoon')}</p>
+        )}
+        {(!contact.email || !contact.firstName || !contact.lastName) && (
+          <p className="panel-buy-hint">{t('config.buyNeedContact')}</p>
+        )}
         <button
           type="button"
           className="panel-buy-secondary"

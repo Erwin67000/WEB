@@ -5,6 +5,7 @@ import {
   Route,
   Navigate,
   useLocation,
+  useParams,
 } from 'react-router-dom'
 import SiteHeader from './components/SiteHeader.jsx'
 import SiteFooter from './components/SiteFooter.jsx'
@@ -19,21 +20,22 @@ import ConceptPage from './pages/ConceptPage.jsx'
 import ContactPage from './pages/ContactPage.jsx'
 import CheckoutSuccessPage from './pages/CheckoutSuccessPage.jsx'
 import CheckoutCancelPage from './pages/CheckoutCancelPage.jsx'
-import CheckoutPage from './pages/CheckoutPage.jsx'
 import LegalPage from './pages/LegalPage.jsx'
 import NotFoundPage from './pages/NotFoundPage.jsx'
 import { ConfigStoreProvider } from './store/ConfigStoreContext.jsx'
 import { useConfigStore } from './store/useConfigStore.js'
 import { useI18n } from '@texte/I18nProvider.jsx'
 
+function RedirectToProduct() {
+  const { productId } = useParams()
+  return <Navigate to={`/boutique/${productId}`} replace />
+}
+
 function pageTitle(pathname, t) {
   if (pathname === '/') return t('meta.titleHome')
   if (pathname === '/boutique') return t('meta.titleShop')
   if (pathname.startsWith('/boutique/') && pathname.endsWith('/configurer')) {
     return t('meta.titleBoutiqueConfig')
-  }
-  if (pathname.endsWith('/acheter') || pathname === '/commande/paiement') {
-    return t('meta.titleCheckout')
   }
   if (pathname.startsWith('/boutique/')) return t('meta.titleShop')
   if (pathname === '/configurateur') return t('meta.titleConfig')
@@ -65,7 +67,6 @@ function Shell() {
     location.pathname === '/boutique' ||
     /^\/boutique\/[^/]+$/.test(location.pathname) ||
     location.pathname.startsWith('/commande/') ||
-    /\/acheter$/.test(location.pathname) ||
     location.pathname === '/mentions-legales' ||
     location.pathname === '/cgv' ||
     location.pathname === '/confidentialite' ||
@@ -145,13 +146,16 @@ function Shell() {
             <Route path="/boutique/:productId" element={<ArticlePage />} />
             <Route
               path="/boutique/:productId/acheter"
-              element={<CheckoutPage />}
+              element={<RedirectToProduct />}
             />
             <Route
               path="/boutique/:productId/configurer"
               element={<BoutiqueConfigurePage />}
             />
-            <Route path="/commande/paiement" element={<CheckoutPage />} />
+            <Route
+              path="/commande/paiement"
+              element={<Navigate to="/configurateur" replace />}
+            />
             <Route path="/configurateur" element={<ConfigurateurPage />} />
             <Route path="/concept" element={<ConceptPage />} />
             <Route path="/contact" element={<ContactPage />} />

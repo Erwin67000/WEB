@@ -18,6 +18,10 @@ import { MODULE_KINDS } from '../1_STRUCTURE/00_matrice/matrice_configuration.js
 import { getCatalogItem } from '../data/catalog.js'
 import FurniturePreview3D from '../components/FurniturePreview3D.jsx'
 import { useI18n, useTId, useCatalogText } from '@texte/I18nProvider.jsx'
+import CgvAccept from '../components/CgvAccept.jsx'
+import PayButton from '../components/PayButton.jsx'
+import { createCheckoutSession } from '../lib/checkout.js'
+import { STRIPE_ENABLED, isFranceCountry } from '../lib/payments.js'
 
 /** Prix TTC catalogue → ventilation HT / TVA 20 %. */
 function pricingFromTtc(ttc) {
@@ -260,6 +264,19 @@ export default function ArticlePage() {
   const catalog = useCatalogText()
   const [row, setRow] = useState(null)
   const [error, setError] = useState(null)
+  const [acceptCgv, setAcceptCgv] = useState(false)
+  const [buyBusy, setBuyBusy] = useState(false)
+  const [buyMsg, setBuyMsg] = useState('')
+  const [contact, setContact] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    addressLine1: '',
+    postalCode: '',
+    city: '',
+    country: 'FR',
+  })
 
   useEffect(() => {
     let cancelled = false
@@ -306,7 +323,77 @@ export default function ArticlePage() {
     )
   }
 
-  const { ttc } = specs
+  const { ttc, pricing } = specs
+  const france = isFranceCountry(contact.country)
+  const setField = (key) => (e) =>
+    setContact((c) => ({ ...c, [key]: e.target.value }))
+
+  async function handlePay() {
+    if (!acceptCgv) {
+      setBuyMsg(t('checkout.needCgv'))
+      return
+    }
+    if (!contact.email || !contact.firstName || !contact.lastName) {
+      setBuyMsg(t('config.buyNeedContact'))
+      return
+    }
+    if (!STRIPE_ENABLED) {
+      setBuyMsg(t('checkout.stripeSoon'))
+      return
+    }
+    if (ttc < 0.5) {
+      navigate('/contact')
+      return
+    }
+    setBuyBusy(true)
+    setBuyMsg(t('article.preparingPay'))
+    try {
+      const dims = row.dims || { L: row.L_mm, W: row.W_mm, H: row.H_mm }
+      const dimLabel =
+        dims.L && dims.W && dims.H
+          ? ` (${Math.round(dims.L)}×${Math.round(dims.W)}×${Math.round(dims.H)} mm)`
+          : ''
+      const result = await createCheckoutSession({
+        source: 'boutique',
+        quoteRef: `CAT-${row.id}`,
+        productLabel: `${row.name || row.id}${dimLabel}`,
+        productId: row.id,
+        paymentMode: 'full',
+        pricing,
+        contact: {
+          name: `${contact.firstName} ${contact.lastName}`.trim(),
+          email: contact.email,
+          phone: contact.phone,
+        },
+        config: {
+          contact,
+          deliveryCountry: contact.country,
+          ecoParticipation: france,
+          catalog: {
+            id: row.id,
+            name: row.name,
+            sku: row.sku,
+            dims,
+            modules: row.modules,
+            panneaux: row.panneaux,
+            ossature_finish: row.ossature_finish || row.texture,
+            wood_finish: row.wood_finish,
+            category: row.category,
+          },
+        },
+      })
+      if (result.url) {
+        window.location.assign(result.url)
+        return
+      }
+      setBuyMsg(t('article.payUnavailable'))
+    } catch (e) {
+      if (e.message === 'STRIPE_DISABLED') setBuyMsg(t('checkout.stripeSoon'))
+      else setBuyMsg(e.message || t('article.payUnavailable'))
+    } finally {
+      setBuyBusy(false)
+    }
+  }
 
   return (
     <div className="page page-article page-site page-full">
@@ -385,7 +472,48 @@ export default function ArticlePage() {
           </div>
 
           <p className="hint">{t('article.leadTime')}</p>
-          <p className="hint">{t('article.ecoFrance')}</p>
+          <p className="hint">
+            {france ? t('checkout.ecoYes') : t('checkout.ecoNo')}
+          </p>
+          <p className="hint">{t('checkout.withdrawCatalog')}</p>
+
+          <section className="article-spec-section">
+            <h2 className="article-spec-title">{t('checkout.contactTitle')}</h2>
+            <div className="checkout-fields">
+              {[
+                ['firstName', 'text'],
+                ['lastName', 'text'],
+                ['email', 'email'],
+                ['phone', 'tel'],
+                ['addressLine1', 'text'],
+                ['postalCode', 'text'],
+                ['city', 'text'],
+              ].map(([key, type]) => (
+                <label key={key} className="field">
+                  <span className="field-label">{t(`client.${key}`)}</span>
+                  <input
+                    type={type}
+                    value={contact[key] || ''}
+                    onChange={setField(key)}
+                  />
+                </label>
+              ))}
+              <label className="field">
+                <span className="field-label">{t('client.country')}</span>
+                <select value={contact.country} onChange={setField('country')}>
+                  <option value="FR">{t('checkout.countryFR')}</option>
+                  <option value="EU">{t('checkout.countryEU')}</option>
+                  <option value="WORLD">{t('checkout.countryWorld')}</option>
+                </select>
+              </label>
+            </div>
+          </section>
+
+          <CgvAccept
+            id={`cgv-${row.id}`}
+            checked={acceptCgv}
+            onChange={setAcceptCgv}
+          />
 
           <div className="article-actions hero-actions article-actions-fold">
             <button
@@ -395,15 +523,29 @@ export default function ArticlePage() {
             >
               {t('article.configureBase')}
             </button>
-            <Link
-              to={`/boutique/${row.id}/acheter`}
-              className="btn btn-wood"
+            <PayButton
+              disabled={
+                buyBusy ||
+                !acceptCgv ||
+                !STRIPE_ENABLED ||
+                !contact.email ||
+                !contact.firstName ||
+                !contact.lastName
+              }
+              onClick={handlePay}
             >
-              {ttc >= 0.5
-                ? t('article.buy', { price: Math.round(ttc) })
-                : t('article.requestQuote')}
-            </Link>
+              {buyBusy
+                ? t('article.redirecting')
+                : t('article.buy', { price: Math.round(ttc) })}
+            </PayButton>
           </div>
+          {!STRIPE_ENABLED && (
+            <p className="hint article-order-hint">
+              {t('checkout.stripeSoon')}{' '}
+              <Link to="/contact">{t('checkout.contactUs')}</Link>
+            </p>
+          )}
+          {buyMsg && <p className="hint article-order-hint">{buyMsg}</p>}
 
           {specs.sections.map((section) =>
             section.rows.length ? (
