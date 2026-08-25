@@ -28,23 +28,27 @@ function pricingFromTtc(ttc) {
   return { ht, tva: t - ht, ttc: t }
 }
 
-function formatMm(n) {
-  const v = Math.round(Number(n) || 0)
-  return `${v.toLocaleString('fr-FR')} mm`
+function localeOf(lang) {
+  return lang === 'en' ? 'en-GB' : 'fr-FR'
 }
 
-function formatEuro(n) {
+function formatMm(n, lang = 'fr') {
+  const v = Math.round(Number(n) || 0)
+  return `${v.toLocaleString(localeOf(lang))} mm`
+}
+
+function formatEuro(n, lang = 'fr') {
   if (!Number.isFinite(n) || n <= 0) return '—'
-  return new Intl.NumberFormat('fr-FR', {
+  return new Intl.NumberFormat(localeOf(lang), {
     style: 'currency',
     currency: 'EUR',
     maximumFractionDigits: 0,
   }).format(n)
 }
 
-function formatEuro2(n) {
+function formatEuro2(n, lang = 'fr') {
   if (!Number.isFinite(n)) return '—'
-  return new Intl.NumberFormat('fr-FR', {
+  return new Intl.NumberFormat(localeOf(lang), {
     style: 'currency',
     currency: 'EUR',
     minimumFractionDigits: 2,
@@ -89,7 +93,7 @@ function summarizeModules(modules = [], t) {
  * Construit la fiche technique complète depuis une ligne catalogue.
  * Chaque champ présent dans la matrice apparaît automatiquement.
  */
-function buildProductSpecs(row, t, tId, catalog) {
+function buildProductSpecs(row, t, tId, catalog, lang = 'fr') {
   const L = row.L_mm || row.dims?.L || 0
   const W = row.W_mm || row.dims?.W || 0
   const H = row.H_mm || row.dims?.H || 0
@@ -122,15 +126,15 @@ function buildProductSpecs(row, t, tId, catalog) {
   const dimensions = [
     {
       label: t('article.spec.length'),
-      value: L > 0 ? formatMm(L) : null,
+      value: L > 0 ? formatMm(L, lang) : null,
     },
     {
       label: t('article.spec.depth'),
-      value: W > 0 ? formatMm(W) : null,
+      value: W > 0 ? formatMm(W, lang) : null,
     },
     {
       label: t('article.spec.height'),
-      value: H > 0 ? formatMm(H) : null,
+      value: H > 0 ? formatMm(H, lang) : null,
     },
   ].filter((r) => r.value)
 
@@ -166,21 +170,28 @@ function buildProductSpecs(row, t, tId, catalog) {
       label: t('article.spec.modules'),
       value: summarizeModules(modules, t) || t('article.spec.none'),
     },
+    {
+      label: t('article.spec.drawerHeight'),
+      value: (() => {
+        const h = modules.find((m) => m.kind === 'drawer' && m.hMm)?.hMm
+        return h ? formatMm(h, lang) : null
+      })(),
+    },
   ].filter((r) => r.value)
 
   const pricingRows = [
     {
       label: t('article.spec.priceTtc'),
-      value: ttc > 0 ? formatEuro(ttc) : t('article.spec.onQuote'),
+      value: ttc > 0 ? formatEuro(ttc, lang) : t('article.spec.onQuote'),
       emphasize: true,
     },
     {
       label: t('article.spec.ofHt'),
-      value: ttc > 0 ? formatEuro2(pricing.ht) : null,
+      value: ttc > 0 ? formatEuro2(pricing.ht, lang) : null,
     },
     {
       label: t('article.spec.ofVat'),
-      value: ttc > 0 ? formatEuro2(pricing.tva) : null,
+      value: ttc > 0 ? formatEuro2(pricing.tva, lang) : null,
     },
   ].filter((r) => r.value)
 
@@ -246,7 +257,7 @@ function SpecRow({ row }) {
 export default function ArticlePage() {
   const { productId } = useParams()
   const navigate = useNavigate()
-  const { t } = useI18n()
+  const { t, lang } = useI18n()
   const tId = useTId()
   const catalog = useCatalogText()
   const [row, setRow] = useState(null)
@@ -274,8 +285,8 @@ export default function ArticlePage() {
   }, [productId])
 
   const specs = useMemo(
-    () => (row ? buildProductSpecs(row, t, tId, catalog) : null),
-    [row, t, tId, catalog],
+    () => (row ? buildProductSpecs(row, t, tId, catalog, lang) : null),
+    [row, t, tId, catalog, lang],
   )
 
   if (error) {
@@ -342,7 +353,7 @@ export default function ArticlePage() {
       }
       setBuyMsg(t('article.payUnavailable'))
     } catch (e) {
-      setBuyMsg(e.message || 'Erreur paiement')
+      setBuyMsg(e.message || t('article.payUnavailable'))
     } finally {
       setBuyBusy(false)
     }
@@ -351,7 +362,7 @@ export default function ArticlePage() {
   return (
     <div className="page page-article page-site page-full">
       <div className="article-layout">
-        <div className="article-info article-top page-pad-x">
+        <div className="article-info page-pad-x">
           <button
             type="button"
             className="link-back"
@@ -361,18 +372,13 @@ export default function ArticlePage() {
           </button>
 
           {row.category && (
-            <p className="section-kicker">
-              {catalog.category(row)}
-            </p>
+            <p className="section-kicker">{catalog.category(row)}</p>
           )}
-          <h1 className="hero-title">
-            {catalog.name(row)}
-          </h1>
+          <h1 className="hero-title">{catalog.name(row)}</h1>
           {catalog.desc(row) ? (
             <p className="hero-lead">{catalog.desc(row)}</p>
           ) : null}
 
-          {/* Encart dimensions + finition (toujours visible en tête) */}
           <div className="article-highlights">
             {specs.L > 0 && (
               <div className="article-highlight">
@@ -409,7 +415,9 @@ export default function ArticlePage() {
                   {t('article.highlights.price')}
                 </span>
                 <strong className="product-price">
-                  {t('article.highlights.ttc', { price: formatEuro(ttc) })}
+                  {t('article.highlights.ttc', {
+                    price: formatEuro(ttc, lang),
+                  })}
                 </strong>
               </div>
             )}
@@ -432,22 +440,7 @@ export default function ArticlePage() {
             </PayButton>
           </div>
           {buyMsg && <p className="hint article-order-hint">{buyMsg}</p>}
-        </div>
 
-        <div className="article-preview">
-          <FurniturePreview3D
-            catalogRow={row}
-            height="100%"
-            className="article-mini"
-            hint
-            eager
-            freeOrbit
-            dpr={[1, 1.5]}
-          />
-        </div>
-
-        <div className="article-info article-specs page-pad-x">
-          {/* Fiche technique complète auto */}
           {specs.sections.map((section) =>
             section.rows.length ? (
               <section key={section.id} className="article-spec-section">
@@ -463,6 +456,18 @@ export default function ArticlePage() {
 
           <p className="price-disclaimer">{t('article.priceDisclaimer')}</p>
           <p className="hint article-order-hint">{t('article.payHint')}</p>
+        </div>
+
+        <div className="article-preview">
+          <FurniturePreview3D
+            catalogRow={row}
+            height="100%"
+            className="article-mini"
+            hint
+            eager
+            freeOrbit
+            dpr={[1, 1.5]}
+          />
         </div>
       </div>
     </div>

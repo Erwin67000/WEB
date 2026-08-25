@@ -108,8 +108,8 @@ export function useCatalogText() {
     },
     desc(row) {
       if (!row || typeof row !== 'object') return ''
-      if (lang === 'en' && row.descriptionEn) return row.descriptionEn
-      return row.short_description || ''
+      if (lang === 'en') return row.descriptionEn || ''
+      return row.descriptionFr || ''
     },
   }
 }

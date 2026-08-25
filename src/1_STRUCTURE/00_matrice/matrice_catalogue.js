@@ -424,6 +424,7 @@ export function normalizeModeleBoutiqueRow(obj, index = 0, ctx = {}) {
     price_json_ht_eur: 25,
     scene: 'none',
     short_description: short,
+    descriptionFr: descriptionFr || '',
     descriptionEn: descriptionEn || '',
     featured: index < 3,
     active,

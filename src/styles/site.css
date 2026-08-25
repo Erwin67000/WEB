@@ -2581,13 +2581,18 @@ body.config-lock {
   color: var(--muted);
 }
 
+.product-dims-k {
+  font-weight: 600;
+  color: inherit;
+}
+
 .product-footer {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  margin-top: 0.75rem;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.7rem;
+  margin-top: auto;
+  padding-top: 0.65rem;
 }
 
 .product-price {
@@ -2599,48 +2604,145 @@ body.config-lock {
 
 .product-actions {
   display: flex;
-  gap: 0.35rem;
+  gap: 0.45rem;
 }
 
-/* ——— Page article ——— */
+/* Magic UI / 21st.dev interactive-hover-button */
+.shop-hover-btn {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.45rem;
+  padding: 0.55rem 0.9rem;
+  border-radius: 4px;
+  border: 1px solid #a67c52;
+  font-family: var(--philae-font);
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  color: #f5f0e6;
+  background: #3d2e22;
+}
+
+.shop-hover-btn-primary {
+  background: linear-gradient(180deg, #6b4e32 0%, #4a3422 100%);
+  border-color: #a67c52;
+}
+
+.shop-hover-btn-wood {
+  background: #3d2e22;
+}
+
+.shop-hover-btn-dot {
+  position: absolute;
+  left: 0.7rem;
+  top: 50%;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: #f5f0e6;
+  transform: translateY(-50%);
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.shop-hover-btn-idle {
+  position: relative;
+  z-index: 1;
+  padding-left: 0.85rem;
+  transition: transform 0.32s ease, opacity 0.32s ease;
+}
+
+.shop-hover-btn-active {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.28rem;
+  color: #3d2e22;
+  opacity: 0;
+  transform: translateX(1.1rem);
+  transition: transform 0.32s ease, opacity 0.32s ease;
+  pointer-events: none;
+}
+
+.shop-hover-btn-arrow {
+  display: block;
+}
+
+.shop-hover-btn:hover .shop-hover-btn-dot,
+.shop-hover-btn:focus-visible .shop-hover-btn-dot {
+  transform: translateY(-50%) scale(28);
+}
+
+.shop-hover-btn:hover .shop-hover-btn-idle,
+.shop-hover-btn:focus-visible .shop-hover-btn-idle {
+  opacity: 0;
+  transform: translateX(1.15rem);
+}
+
+.shop-hover-btn:hover .shop-hover-btn-active,
+.shop-hover-btn:focus-visible .shop-hover-btn-active {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.shop-hover-btn:focus-visible {
+  outline: 2px solid var(--gold, #c9a227);
+  outline-offset: 2px;
+}
+
+.site-main:has(.page-article) {
+  overflow: hidden;
+  height: calc(100dvh - var(--header-h, 64px));
+}
+
+/* ——— Page article : 3D collé à droite, infos qui scrollent ——— */
+.page-article.page-full {
+  height: calc(100dvh - var(--header-h, 64px));
+  max-height: calc(100dvh - var(--header-h, 64px));
+  min-height: 0;
+  padding-bottom: 0;
+  overflow: hidden;
+}
+
 .article-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
-  grid-template-areas:
-    'preview top'
-    'preview specs';
-  min-height: calc(100dvh - 64px);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  grid-template-areas: 'info preview';
+  height: 100%;
   width: 100%;
+}
+
+.article-info {
+  grid-area: info;
+  height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-top: 1.5rem;
+  padding-bottom: 2.5rem;
 }
 
 .article-preview {
   grid-area: preview;
-}
-
-.article-top {
-  grid-area: top;
-}
-
-.article-specs {
-  grid-area: specs;
-}
-
-.article-preview {
-  min-height: 320px;
   height: 100%;
+  min-height: 0;
   background: var(--ivory, #f5f0e6);
-  border-right: 1px solid #ddd5c4;
+  border-left: 1px solid #ddd5c4;
 }
 
 .article-mini {
   height: 100% !important;
-  min-height: calc(100dvh - 64px);
-}
-
-.article-info {
-  padding-top: 1.5rem;
-  padding-bottom: 2.5rem;
-  overflow: auto;
+  min-height: 100% !important;
 }
 
 .link-back {
@@ -2955,18 +3057,27 @@ body.config-lock {
 }
 
 @media (max-width: 900px) {
+  .page-article.page-full {
+    height: auto;
+    max-height: none;
+    overflow: visible;
+  }
   .article-layout {
     grid-template-columns: 1fr;
     grid-template-areas:
-      'top'
       'preview'
-      'specs';
+      'info';
+    height: auto;
+  }
+  .article-info {
+    height: auto;
+    overflow: visible;
   }
   .article-preview {
     min-height: 280px;
     height: 50vw;
     max-height: 420px;
-    border-right: none;
+    border-left: none;
     border-bottom: 1px solid var(--border);
   }
   .article-mini {

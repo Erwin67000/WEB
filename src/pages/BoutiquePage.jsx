@@ -1,14 +1,23 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import {
-  FINITIONS_OSSATURE,
-  PANNEAU_COULEURS,
-  resolveOssatureFinish,
-} from '../1_STRUCTURE/00_matrice/matrice_constante.js'
+import { PANNEAU_COULEURS } from '../1_STRUCTURE/00_matrice/matrice_constante.js'
 import { loadCatalog } from '../data/catalog.js'
 import FurniturePreview3D from '../components/FurniturePreview3D.jsx'
 import { preloadCatalogGlbs } from '../components/CatalogGlbPreview.jsx'
+import ShopHoverButton from '../components/ShopHoverButton.jsx'
 import { useI18n, useTId, useCatalogText } from '@texte/I18nProvider.jsx'
+
+function cardSpecsLine(row, t) {
+  const extras = [`${row.L_mm}×${row.W_mm}×${row.H_mm} mm`]
+  const modules = row.modules || []
+  const shelves = modules.filter((m) => m.kind === 'shelf').length
+  const drawers = modules.filter((m) => m.kind === 'drawer').length
+  if (shelves === 1) extras.push(t('moduleCount.shelfOne'))
+  else if (shelves > 1) extras.push(t('moduleCount.shelf', { n: shelves }))
+  if (drawers === 1) extras.push(t('moduleCount.drawerOne'))
+  else if (drawers > 1) extras.push(t('moduleCount.drawer', { n: drawers }))
+  return extras.join(' · ')
+}
 
 const SHOP_COLOR_KEY = 'philae-shop-panel-color'
 const PALETTE = Object.values(PANNEAU_COULEURS).filter((c) => c.id !== 'surmesure')
@@ -211,10 +220,6 @@ export default function BoutiquePage() {
 
       <div className="product-grid page-pad-x">
         {visible.map((r, index) => {
-          const finishId = resolveOssatureFinish(
-            r.ossature_finish || r.texture || r.wood_finish,
-          )
-          const fin = FINITIONS_OSSATURE[finishId]
           return (
             <article
               key={r.id}
@@ -247,13 +252,10 @@ export default function BoutiquePage() {
                     {catalog.name(r)}
                   </Link>
                 </h2>
-                {catalog.desc(r) ? (
-                  <p className="product-desc">{catalog.desc(r)}</p>
-                ) : null}
                 <p className="product-dims">
-                  {tId('finish', finishId, fin?.label || r.wood_finish)} · {r.L_mm}
-                  ×{r.W_mm}×{r.H_mm} mm
-                  {r.sku ? ` · ${r.sku}` : ''}
+                  <span className="product-dims-k">{t('shop.dimsLabel')}</span>
+                  {' · '}
+                  {cardSpecsLine(r, t)}
                 </p>
                 <div className="product-footer">
                   <span className="product-price">
@@ -262,19 +264,15 @@ export default function BoutiquePage() {
                       : t('shop.onQuote')}
                   </span>
                   <div className="product-actions">
-                    <Link
-                      to={`/boutique/${r.id}`}
-                      className="btn btn-wood btn-sm-site"
-                    >
+                    <ShopHoverButton variant="wood" to={`/boutique/${r.id}`}>
                       {t('shop.detail')}
-                    </Link>
-                    <button
-                      type="button"
-                      className="btn btn-primary btn-sm-site"
+                    </ShopHoverButton>
+                    <ShopHoverButton
+                      variant="primary"
                       onClick={() => navigate(`/boutique/${r.id}/configurer`)}
                     >
                       {t('shop.configure')}
-                    </button>
+                    </ShopHoverButton>
                   </div>
                 </div>
               </div>
