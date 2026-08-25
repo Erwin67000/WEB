@@ -1,9 +1,6 @@
 /**
- * Plausible (philae.design) — pages vues sans cookie ;
- * événements enrichis + newsletter uniquement après opt-in facultatif.
- *
- * Stockage : localStorage `philae-consent-extras`.
- * Le paiement n’en dépend pas.
+ * Plausible (philae.design) — pages vues sans cookie.
+ * Newsletter : opt-in facultatif (bouton), hors parcours de paiement.
  */
 
 export const CONSENT_EXTRAS_KEY = 'philae-consent-extras'
@@ -14,7 +11,7 @@ const SCRIPT_SRC =
   'https://plausible.io/js/script.manual.tagged-events.js'
 
 function emptyConsent() {
-  return { analyticsEnhanced: false, newsletter: false, at: null }
+  return { newsletter: false, at: null }
 }
 
 function queuePlausible() {
@@ -32,26 +29,21 @@ export function getExtrasConsent() {
     const raw = localStorage.getItem(CONSENT_EXTRAS_KEY)
     if (!raw) return emptyConsent()
     const parsed = JSON.parse(raw)
-    return {
-      analyticsEnhanced: Boolean(
-        parsed.analyticsEnhanced ?? parsed.on ?? parsed.optIn,
-      ),
-      newsletter: Boolean(parsed.newsletter ?? parsed.on ?? parsed.optIn),
-      at: parsed.at || null,
-    }
+    const newsletter = Boolean(
+      parsed.newsletter ?? parsed.on ?? parsed.optIn ?? parsed.analyticsEnhanced,
+    )
+    return { newsletter, at: parsed.at || null }
   } catch {
     return emptyConsent()
   }
 }
 
-export function isExtrasOptedIn() {
-  const c = getExtrasConsent()
-  return Boolean(c.analyticsEnhanced || c.newsletter)
+export function isNewsletterOptedIn() {
+  return Boolean(getExtrasConsent().newsletter)
 }
 
-function persistConsent({ analyticsEnhanced, newsletter }) {
+function persistConsent(newsletter) {
   const value = {
-    analyticsEnhanced: Boolean(analyticsEnhanced),
     newsletter: Boolean(newsletter),
     at: new Date().toISOString(),
   }
@@ -68,25 +60,20 @@ function persistConsent({ analyticsEnhanced, newsletter }) {
   return value
 }
 
-export function setExtrasConsent({ analyticsEnhanced, newsletter }) {
-  const value = persistConsent({ analyticsEnhanced, newsletter })
-  if (value.analyticsEnhanced || value.newsletter) {
+export function setNewsletterConsent(newsletter) {
+  const value = persistConsent(newsletter)
+  if (value.newsletter) {
     ensurePlausible()
-    trackEvent('Extras opt-in')
-    if (value.newsletter) trackEvent('Newsletter opt-in')
+    trackEvent('Newsletter opt-in')
   }
   return value
 }
 
-export function toggleExtrasConsent() {
-  const on = isExtrasOptedIn()
-  return setExtrasConsent({
-    analyticsEnhanced: !on,
-    newsletter: !on,
-  })
+export function toggleNewsletterConsent() {
+  return setNewsletterConsent(!isNewsletterOptedIn())
 }
 
-export function subscribeExtrasConsent(callback) {
+export function subscribeNewsletterConsent(callback) {
   if (typeof window === 'undefined') return () => {}
   const handler = () => callback(getExtrasConsent())
   window.addEventListener(CONSENT_EXTRAS_EVENT, handler)
@@ -111,19 +98,19 @@ export function ensurePlausible() {
   document.head.appendChild(script)
 }
 
-/** Pages vues : mesure de base, sans cookie, pas d’opt-in. */
+/** Pages vues : mesure de base, sans cookie. */
 export function trackPageview() {
   queuePlausible()
   window.plausible('pageview')
 }
 
 /**
- * Événements enrichis : uniquement si l’opt-in facultatif est actif.
+ * Événements liés à la newsletter / au parcours, uniquement si inscrit.
  * @param {string} name
  * @param {Record<string, string|number|boolean>} [props]
  */
 export function trackEvent(name, props) {
-  if (!name || !getExtrasConsent().analyticsEnhanced) return
+  if (!name || !isNewsletterOptedIn()) return
   queuePlausible()
   if (props && Object.keys(props).length) {
     window.plausible(name, { props })

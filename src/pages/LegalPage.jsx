@@ -21,15 +21,12 @@ const DOCS = {
 }
 
 export default function LegalPage({ kind }) {
-  const { t, lang } = useI18n()
+  const { lang } = useI18n()
   const key = DOCS[kind] ? kind : 'legal'
   const source = DOCS[key][lang] || DOCS[key].fr
 
   return (
     <div className="page page-site page-legal">
-      <header className="page-head">
-        <p className="section-kicker">{t('legalPage.updated')}</p>
-      </header>
       <MarkdownDoc source={source} />
     </div>
   )

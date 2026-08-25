@@ -2,20 +2,16 @@
 
 Last updated: 25 August 2026.
 
-How **ATELIER PHILAE** processes personal data on https://www.philae.design/, under the GDPR and French data-protection law.
+**ATELIER PHILAE** (SASU, 28 rue Kuhn, 67000 Strasbourg — contact@philae.design) uses your data to reply, make, deliver and invoice: identity, contact, address, piece configuration. When online payment opens, it will be handled by Stripe; we do not keep card numbers.
 
-**Controller:** ATELIER PHILAE, SASU, 28 rue Kuhn, 67000 Strasbourg, France. Contact: contact@philae.design. No DPO has been appointed.
+The **newsletter** is sent only after you opt in. It is not required to order. Unsubscribe anytime via the same button or by e-mail.
 
-**Data:** identity and contact; order/configuration; delivery address (including country, to determine French eco-contribution); technical CDN logs (Cloudflare); language preference; optional newsletter (opt-in via a **non-mandatory** button on the product / configurator purchase flow); audience measurement via **Plausible**. **Stripe is not yet enabled**; no card numbers are stored. **Google Fonts** may collect IP addresses. No Meta pixel, no Google Analytics.
+Site traffic is measured with **Plausible** (aggregated stats, no advertising cookies). Your e-mail is not sent to Plausible.
 
-**Purposes:** contract performance (order, manufacture, delivery); legal duties (accounts, warranties, eco-contribution for France deliveries); security; replies to messages; consent for newsletter and enriched Plausible events; legitimate interest / CNIL exemption for cookieless basic pageviews.
+We do not sell your data. It is shared only as needed: workshop, carrier, Cloudflare, Plausible, and Stripe when payment is enabled. For deliveries in France, the eco-contribution is declared to Ecomaison.
 
-**Recipients:** ATELIER PHILAE staff; Stripe when online payment is enabled; Cloudflare; the carrier; **Ecomaison** (market-placement declarations for France deliveries, not the full customer file); **CM2C** if mediation is opened; accountant, counsel, authorities if required; Google (fonts); **Plausible Analytics** (Plausible Insights OÜ, Estonia) for aggregated stats.
+Retention: orders as required by law; newsletter until you unsubscribe.
 
-**Retention:** orders/invoices 5–10 years; unused leads 3 years; newsletter until unsubscribe; extras consent (`philae-consent-extras` in local storage) until withdrawn or the browser data is cleared.
-
-**Rights:** access, rectification, erasure, restriction, portability, objection. Withdraw newsletter / enriched-analytics consent via the same optional button, or by writing to contact@philae.design. CNIL: https://www.cnil.fr
-
-Basic Plausible pageviews are cookieless. Enriched events and the newsletter are **optional**, separate from accepting the Terms, and **not required to order**.
+Your rights (access, rectification, erasure, objection): contact@philae.design. Complaint: [CNIL](https://www.cnil.fr).
 
 See also the [cookie policy](/politique-cookies).

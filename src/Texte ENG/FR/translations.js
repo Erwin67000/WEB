@@ -312,11 +312,8 @@ export const translations = {
       countryWorld: 'Rest of the world',
       ecoYes: 'French eco-contribution included (delivery in France).',
       ecoNo: 'No French eco-contribution (delivery outside France).',
-      optInOff: 'Optional: newsletter & richer analytics',
-      optInOn: 'Newsletter & richer analytics — on',
-      optInHint:
-        'Not required to order. Audience measurement via Plausible, no advertising cookies. Click again to turn off.',
-      optInCookies: 'Cookie policy',
+      optInOff: 'Join the newsletter',
+      optInOn: 'Newsletter — signed up',
     },
     boutiqueSession: {
       missing: 'This model could not be found.',
@@ -897,11 +894,8 @@ export const translations = {
       countryWorld: 'Reste du monde',
       ecoYes: 'Éco-participation française incluse (livraison en France).',
       ecoNo: 'Pas d’éco-participation française (livraison hors France).',
-      optInOff: 'Facultatif : newsletter et suivi enrichi',
-      optInOn: 'Newsletter et suivi enrichi — activés',
-      optInHint:
-        'Ce choix n’est pas requis pour commander. Mesure d’audience Plausible, sans cookie publicitaire. Recliquez pour désactiver.',
-      optInCookies: 'Politique cookies',
+      optInOff: 'Recevoir la newsletter',
+      optInOn: 'Inscrit à la newsletter',
     },
     boutiqueSession: {
       missing: 'Ce modèle est introuvable.',

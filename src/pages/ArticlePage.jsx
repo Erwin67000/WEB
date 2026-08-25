@@ -523,7 +523,6 @@ export default function ArticlePage() {
             checked={acceptCgv}
             onChange={setAcceptCgv}
           />
-          <SoftOptIn id={`optin-${row.id}`} />
 
           <div className="article-actions hero-actions article-actions-fold">
             <button
@@ -548,6 +547,7 @@ export default function ArticlePage() {
                 ? t('article.redirecting')
                 : t('article.buy', { price: Math.round(ttc) })}
             </PayButton>
+            <SoftOptIn id={`optin-${row.id}`} />
           </div>
           {!STRIPE_ENABLED && (
             <p className="hint article-order-hint">
