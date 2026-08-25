@@ -11,7 +11,7 @@ function ViewportFallback() {
   const { t } = useI18n()
   return (
     <div className="viewport-3d config-loader">
-      <img src="/logo-philae.svg" alt="" className="config-loader-mark" />
+      <img src="/logo-philae.jpg" alt="" className="config-loader-mark" />
       <p className="config-loader-brand">{t('config.loadingBrand')}</p>
       <span className="config-loader-bar" aria-hidden />
       <p className="config-loader-caption">{t('config.loading3d')}</p>
