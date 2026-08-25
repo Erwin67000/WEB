@@ -19,7 +19,7 @@ Toute facture, paiement ou réclamation se rattache uniquement à la SASU ATELIE
 
 1.3. Toute commande implique l’**acceptation expresse des CGV** en vigueur au moment de la commande, via une case à cocher sur le parcours d’achat. **Sans cette acceptation, le paiement en ligne n’est pas accessible.** Les CGV sont consultables en permanence sur le Site. ATELIER PHILAE peut les modifier pour l’avenir ; la version applicable est celle acceptée lors de la commande.
 
-1.4. **Paiement en ligne.** Le paiement par Stripe n’est **pas encore ouvert**. Tant que cette mention figure ici, les commandes se passent par e-mail (contact@philae.design) après acceptation des présentes CGV. Lorsque Stripe sera activé, l’acceptation des CGV restera obligatoire **avant** tout accès au lien de paiement.
+1.4. **Paiement en ligne.** Le paiement est assuré par **Stripe**. L’acceptation des CGV est obligatoire **avant** tout accès au lien de paiement.
 
 1.5. Les prestations de design / aménagement hors boutique en ligne font l’objet d’un devis et, le cas échéant, d’un contrat distinct.
 
@@ -45,7 +45,7 @@ Dès qu’une option, une cote ou une composition s’écarte du SKU catalogue s
 
 3.2. Le client sélectionne le produit ou configure la pièce, renseigne l’adresse de livraison et de facturation, accepte les CGV, et prend connaissance, le cas échéant, de l’information sur l’absence de droit de rétractation pour les pièces personnalisées.
 
-3.3. Tant que Stripe n’est pas activé, le contrat est formé à l’**acceptation écrite** de l’offre / du devis par les deux parties et, le cas échéant, à la réception de l’acompte convenu. Lorsque Stripe sera activé, le contrat sera **formé à la confirmation du paiement**. ATELIER PHILAE envoie un e-mail de confirmation récapitulant la commande, le prix TTC (dont éco-participation si applicable), le délai, l’adresse et, pour les pièces personnalisées, le rappel de l’article 9.
+3.3. Le contrat est **formé à la confirmation du paiement** (Stripe) ou, pour une commande hors Site, à l’acceptation écrite de l’offre / du devis et, le cas échéant, à la réception de l’acompte convenu. ATELIER PHILAE envoie un e-mail de confirmation récapitulant la commande, le prix TTC (dont éco-participation si applicable), le délai, l’adresse et, pour les pièces personnalisées, le rappel de l’article 9.
 
 3.4. ATELIER PHILAE peut refuser ou annuler une commande en cas d’erreur manifeste de prix, de soupçon de fraude, d’impossibilité technique de fabriquer la configuration, ou de force majeure. Les sommes débitées sont alors restituées.
 
@@ -73,11 +73,9 @@ Dès qu’une option, une cote ou une composition s’écarte du SKU catalogue s
 
 5.1. Sauf mention contraire (acompte, échéancier), le prix est **payable selon les modalités indiquées** avant fabrication.
 
-5.2. **Stripe n’est pas encore activé.** Aucun paiement par carte n’est encaissé sur le Site tant que cette mention n’est pas levée. Les instructions de paiement (virement, acompte) sont communiquées par e-mail.
+5.2. Le paiement en ligne est réalisé via **Stripe**. ATELIER PHILAE ne stocke pas les numéros de carte. **L’accès au lien de paiement est conditionné à l’acceptation préalable des CGV.**
 
-5.3. Lorsque Stripe sera activé : le paiement sera traité sur l’infrastructure du prestataire ; ATELIER PHILAE ne stockera pas les numéros de carte. **L’accès au lien de paiement Stripe sera conditionné à l’acceptation préalable des CGV.**
-
-5.4. La commande n’entre en fabrication qu’après paiement effectif (ou selon l’échéancier convenu par écrit).
+5.3. La commande n’entre en fabrication qu’après paiement effectif (ou selon l’échéancier convenu par écrit).
 
 ## 6. Délais de fabrication
 

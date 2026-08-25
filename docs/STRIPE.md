@@ -63,8 +63,9 @@ VITE_STRIPE_PUBLISHABLE_KEY=pk_test_...
 
 ## Base D1 (plus tard — désactivée par défaut)
 
-Le binding D1 est **commenté** dans `wrangler.toml` tant que Stripe n’est pas activé
-(sinon le deploy échoue sur un `database_id` placeholder).
+Le binding D1 `philae-orders` est **actif** dans `wrangler.toml`.
+
+Front : `STRIPE_ENABLED = true` dans `src/lib/payments.js`.
 
 ```bash
 npx wrangler d1 create philae-orders

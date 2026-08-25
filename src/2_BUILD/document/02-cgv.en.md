@@ -17,7 +17,7 @@ Contact: contact@philae.design
 
 1.3. Any order requires **express acceptance of the Terms** via a checkbox. **Without that acceptance, online payment is not available.** The applicable version is the one accepted when ordering.
 
-1.4. **Online payment.** Stripe is **not yet enabled**. Until this notice is lifted, orders are placed by e-mail (contact@philae.design) after acceptance of these Terms. When Stripe is enabled, acceptance of the Terms will remain **mandatory before** accessing the payment link.
+1.4. **Online payment.** Payment is handled by **Stripe**. Acceptance of the Terms is **mandatory before** accessing the payment link.
 
 ## 2. Products
 
@@ -25,7 +25,7 @@ Solid-wood geometric furniture. Natural grain, tone and small knots are part of 
 
 ## 3. Contract formation
 
-Until Stripe is enabled, the contract is formed on **written acceptance** of the offer / quote and, where applicable, receipt of the agreed deposit. When Stripe is enabled, the contract will be formed on **payment confirmation**.
+The contract is formed on **payment confirmation** (Stripe) or, for an off-site order, on **written acceptance** of the offer / quote and, where applicable, receipt of the agreed deposit.
 
 The Client undertakes **not to attempt to reproduce or commercialise** the patented assembly system of PHILAE furniture. See also article 12.
 
@@ -43,7 +43,7 @@ The Client undertakes **not to attempt to reproduce or commercialise** the paten
 
 ## 5. Payment
 
-Stripe is **not yet enabled**. No card payment is taken on the Site. When Stripe is enabled, **access to the Stripe payment link will require prior acceptance of the Terms**. Production starts only after effective payment (or an agreed schedule).
+Online payment is handled by **Stripe**. ATELIER PHILAE does not store card numbers. **Access to the payment link requires prior acceptance of the Terms**. Production starts only after effective payment (or an agreed schedule).
 
 ## 6. Production lead time
 

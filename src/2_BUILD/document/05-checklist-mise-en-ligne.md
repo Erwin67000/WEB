@@ -31,7 +31,7 @@ Quatre liens **permanents**, visibles sans compte, sur **toutes** les pages (y c
 ## C. Checkout
 
 - [x] Case **obligatoire** : « J’accepte les CGV » + lien cliquable vers les CGV
-- [x] Stripe **désactivé** jusqu’à activation explicite (`STRIPE_ENABLED = false`)
+- [x] Stripe **activé** (`STRIPE_ENABLED = true`) — mode test tant que les clés `sk_test_` / `pk_test_` sont utilisées
 - [ ] **Avertissement rétractation**, lisible **avant** le paiement, distinct ou clairement inclus :
   - modèle **catalogue non personnalisé** : droit de 14 jours à réception ;
   - pièce **configurée / à mes specs** : pas de droit légal de rétractation **une fois la fabrication commencée** (art. L. 221-28 3°) ;

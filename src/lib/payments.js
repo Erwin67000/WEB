@@ -1,8 +1,8 @@
 /**
- * Paiement en ligne. Laisser `false` jusqu’à activation Stripe.
+ * Paiement en ligne Stripe Checkout.
  * L’acceptation des CGV reste obligatoire avant tout accès au paiement.
  */
-export const STRIPE_ENABLED = false
+export const STRIPE_ENABLED = true
 
 export function isFranceCountry(country) {
   const s = String(country || '')

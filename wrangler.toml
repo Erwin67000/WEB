@@ -5,11 +5,14 @@ main = "worker/index.js"
 compatibility_date = "2025-03-01"
 workers_dev = true
 
-# Secrets Stripe (plus tard, quand tu actives le paiement) :
+# Secrets Stripe (jamais dans ce fichier) :
 #   wrangler secret put STRIPE_SECRET_KEY
 #   wrangler secret put STRIPE_WEBHOOK_SECRET
 #   wrangler secret put SITE_URL
-# Local : copier .dev.vars.example → .dev.vars
+# Local : .dev.vars
+
+[vars]
+CORS_ORIGINS = "https://philae.design,https://www.philae.design,http://localhost:3102"
 
 [assets]
 directory = "./dist"
@@ -19,18 +22,7 @@ not_found_handling = "single-page-application"
 html_handling = "auto-trailing-slash"
 run_worker_first = ["/api/*"]
 
-# ---------------------------------------------------------------------------
-# D1 commandes — DÉSACTIVÉ tant que Stripe / commandes ne sont pas activés.
-# Sans binding DB, le site statique + Worker API se déploient normalement ;
-# /api/checkout renverra 503 tant que STRIPE_SECRET_KEY n’est pas configuré.
-#
-# Pour activer plus tard :
-#   1. npx wrangler d1 create philae-orders
-#   2. coller le database_id ci-dessous
-#   3. décommenter le bloc [[d1_databases]]
-#   4. npm run db:init:remote
-# ---------------------------------------------------------------------------
-# [[d1_databases]]
-# binding = "DB"
-# database_name = "philae-orders"
-# database_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+[[d1_databases]]
+binding = "DB"
+database_name = "philae-orders"
+database_id = "d6b30c2c-f666-463d-a8c7-8fbf6a320e2f"

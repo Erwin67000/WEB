@@ -46,6 +46,14 @@ export async function createCheckoutSession(secretKey, opts) {
     locale,
     billing_address_collection: 'required',
     phone_number_collection: { enabled: true },
+    tax_id_collection: { enabled: true },
+    shipping_address_collection: {
+      allowed_countries: [
+        'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE',
+        'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL', 'PL', 'PT',
+        'RO', 'SK', 'SI', 'ES', 'SE', 'CH', 'GB', 'MC',
+      ],
+    },
     line_items: [
       {
         price: priceId,
