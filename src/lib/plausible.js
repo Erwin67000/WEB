@@ -104,7 +104,9 @@ export function ensurePlausible() {
   const script = document.createElement('script')
   script.id = SCRIPT_ID
   script.defer = true
-  script.dataset.domain = DOMAIN
+  const host =
+    (typeof location !== 'undefined' && location.hostname) || DOMAIN
+  script.dataset.domain = host.replace(/^www\./, '') || DOMAIN
   script.src = SCRIPT_SRC
   document.head.appendChild(script)
 }

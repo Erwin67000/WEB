@@ -93,4 +93,4 @@ Voir la [politique cookies](/politique-cookies).
 
 La date en tête fait foi. En cas de changement important (activation de Stripe, nouvel outil), cette page est mise à jour.
 
-**Plausible.** La mesure d’audience de base est conçue sans cookie et sans identifiant publicitaire. Les événements enrichis et l’inscription newsletter ne sont activés qu’après un **opt-in facultatif**, distinct de l’acceptation des CGV, et **non requis** pour commander.
+**Plausible.** La mesure d’audience de base est conçue sans cookie et sans identifiant publicitaire. Les événements enrichis et l’inscription newsletter ne sont activés qu’après un **opt-in facultatif**, distinct de l’acceptation des CGV, et **non requis** pour commander. L’adresse e-mail n’est **pas** transmise à Plausible.
