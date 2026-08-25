@@ -32,6 +32,15 @@ npm run preview
 
 ### Option A — Pages (recommandé, simple)
 
+**Push GitHub ≠ mise en ligne.** Le Worker `philaedesign2` se déploie par `npm run deploy` (local) ou par GitHub Actions (`.github/workflows/deploy.yml`).
+
+Secrets GitHub à créer une fois (Settings du repo → Secrets → Actions) :
+
+- `CLOUDFLARE_API_TOKEN` — [Créer un jeton](https://dash.cloudflare.com/profile/api-tokens) (modèle « Edit Cloudflare Workers »)
+- `CLOUDFLARE_ACCOUNT_ID` — `587779ab28b7fbf3b38a730c732a7b56`
+
+Ensuite chaque push sur `main` met à jour philae.design. En attendant : `npm run deploy` depuis ce dossier.
+
 1. Cloudflare → **Workers & Pages** → **Create** → **Pages** → Connect GitHub  
 2. Repo : **`Erwin67000/WEB`**  
 3. Settings :

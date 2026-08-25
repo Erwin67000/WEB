@@ -1,0 +1,41 @@
+# Push sur main → build Vite → wrangler deploy (Worker philaedesign2 + assets).
+# Secrets GitHub (Settings → Secrets and variables → Actions) :
+#   CLOUDFLARE_API_TOKEN   — jeton API Cloudflare (Workers Scripts:Edit + Account:Read)
+#   CLOUDFLARE_ACCOUNT_ID  — 587779ab28b7fbf3b38a730c732a7b56
+
+name: Deploy Cloudflare
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-cloudflare
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      # Les GLB catalogue sont déjà dans public/ — pas de generate-catalogue-glbs en CI
+      - name: Build
+        run: npx vite build
+
+      - name: Deploy Worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy
