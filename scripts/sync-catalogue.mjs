@@ -1,7 +1,7 @@
 /**
  * Source unique des modèles préconfigurés :
- *   src/1_STRUCTURE/03_bibliotheque/modele_boutique.xlsx  (prioritaire)
- *   src/1_STRUCTURE/03_bibliotheque/modele_boutique.xls
+ *   src/1_STRUCTURE/03_bibliotheque/modele_boutique.xls  (prioritaire)
+ *   src/1_STRUCTURE/03_bibliotheque/modele_boutique.xlsx
  *   src/1_STRUCTURE/03_bibliotheque/modele_boutique.csv
  *
  * Copie vers public pour le navigateur + scripts GLB :
@@ -34,7 +34,11 @@ const targetXlsx = path.join(targetDir, 'modele_boutique.xlsx')
 
 fs.mkdirSync(targetDir, { recursive: true })
 
-const excelSource = fs.existsSync(xlsxSource) ? xlsxSource : fs.existsSync(xlsSource) ? xlsSource : null
+const excelSource = fs.existsSync(xlsSource)
+  ? xlsSource
+  : fs.existsSync(xlsxSource)
+    ? xlsxSource
+    : null
 
 if (excelSource) {
   const wb = XLSX.read(fs.readFileSync(excelSource), { type: 'buffer' })

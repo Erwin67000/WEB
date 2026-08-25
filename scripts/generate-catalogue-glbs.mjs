@@ -95,7 +95,7 @@ function readCsvText(p) {
 }
 
 function loadCatalogueRows() {
-  for (const p of [modeleXlsxSrc, modeleXlsxPublic, modeleXlsSrc, modeleXlsPublic]) {
+  for (const p of [modeleXlsSrc, modeleXlsPublic, modeleXlsxSrc, modeleXlsxPublic]) {
     if (fs.existsSync(p)) {
       const rows = parseMatriceCatalogueWorkbook(fs.readFileSync(p))
       if (rows?.length) {

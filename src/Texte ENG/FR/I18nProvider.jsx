@@ -106,5 +106,10 @@ export function useCatalogText() {
       if (lang === 'en' && enCat) return enCat
       return tId('catalog.category', fr, fr)
     },
+    desc(row) {
+      if (!row || typeof row !== 'object') return ''
+      if (lang === 'en' && row.descriptionEn) return row.descriptionEn
+      return row.short_description || ''
+    },
   }
 }

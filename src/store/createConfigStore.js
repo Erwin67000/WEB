@@ -545,6 +545,8 @@ export function createConfigStore(opts = {}) {
           kind: m.kind,
           bayIndex: m.bayIndex ?? i,
           openFactor: m.openFactor ?? 0,
+          ...(m.hMm != null ? { hMm: m.hMm } : {}),
+          ...(m.zMm != null ? { zMm: m.zMm } : {}),
         }))
       }
       let panneaux = row.panneaux

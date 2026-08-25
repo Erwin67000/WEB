@@ -247,9 +247,9 @@ export default function BoutiquePage() {
                     {catalog.name(r)}
                   </Link>
                 </h2>
-                <p className="product-desc">
-                  {tId('catalog.desc', r.short_description, r.short_description)}
-                </p>
+                {catalog.desc(r) ? (
+                  <p className="product-desc">{catalog.desc(r)}</p>
+                ) : null}
                 <p className="product-dims">
                   {tId('finish', finishId, fin?.label || r.wood_finish)} · {r.L_mm}
                   ×{r.W_mm}×{r.H_mm} mm

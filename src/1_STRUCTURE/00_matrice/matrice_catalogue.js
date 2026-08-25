@@ -5,12 +5,13 @@
  *   /catalogue/modele_boutique.xls (+ csv généré)
  *
  * Schéma d’entrée (modele_boutique) :
- *   Boutique (O = visible), ID, Piece/Room, Nom/Name, L, P, H,
- *   Description, taille, tags, couleur_ossature, couleur_panneau,
- *   porte (O/N), fond, joue1, joue2, socle, dessus,
- *   # tiroir, # tablette, Options
+ *   Boutique (O = visible, vide/autre = masqué), ID, Piece/Room, Nom/Name,
+ *   L, P, H, Description FR/ENG, tags, couleur_ossature,
+ *   porte / fond / joue1 / joue2 / socle / dessus (O = oui, vide = non),
+ *   # tiroir, hauteur_tiroir, # tablette, Options
  *
  * Une ligne = un modèle préconfiguré (Boutique = O + L/P/H renseignés).
+ * Cellule vide = non : pas de panneau, module ou option inventé.
  */
 import * as XLSX from 'xlsx'
 
@@ -40,12 +41,12 @@ export const CATALOGUE_COLUMNS = [
 ]
 
 /** URL principale — Excel atelier (colonne Boutique). */
-export const MATRICE_CATALOGUE_URL = '/catalogue/modele_boutique.xlsx'
+export const MATRICE_CATALOGUE_URL = '/catalogue/modele_boutique.xls'
 
 /** Fallbacks (CSV généré + ancien pipeline). */
 export const MATRICE_CATALOGUE_FALLBACKS = [
-  '/catalogue/modele_boutique.xls',
   '/catalogue/modele_boutique.csv',
+  '/catalogue/modele_boutique.xlsx',
   '/catalogue/matrice_catalogue.csv',
   '/catalogue/matrice_catalogue.xlsx',
 ]
@@ -88,6 +89,8 @@ export function parseModulesSpec(spec) {
       kind: m.kind,
       bayIndex: m.bayIndex ?? i,
       openFactor: m.openFactor ?? 0,
+      ...(m.hMm != null ? { hMm: m.hMm } : {}),
+      ...(m.zMm != null ? { zMm: m.zMm } : {}),
     }))
   }
   if (spec == null || !String(spec).trim()) return []
@@ -172,11 +175,9 @@ function asBool(v, defaultTrue = false) {
   return s === 'true' || s === '1' || s === 'oui' || s === 'yes' || s === 'o'
 }
 
+/** Uniquement « O » (insensible à la casse). Vide, N, ou tout autre = non. */
 function isOn(v) {
-  const s = String(v ?? '')
-    .trim()
-    .toUpperCase()
-  return s === 'O' || s === 'OUI' || s === 'Y' || s === 'YES' || s === '1' || s === 'TRUE'
+  return String(v ?? '').trim().toUpperCase() === 'O'
 }
 
 function hasHeader(obj, ...keys) {
@@ -251,13 +252,19 @@ export function normalizeModeleBoutiqueRow(obj, index = 0, ctx = {}) {
   const L = Number(get('L', 'L_mm')) || 0
   const P = Number(get('P', 'W_mm', 'W')) || 0 // P = profondeur = W meuble
   const H = Number(get('H', 'H_mm')) || 0
-  const description = cellStr(get('Description', 'description', 'short_description'))
+  const descriptionFr = cellStr(
+    get('Description FR', 'Description', 'description', 'short_description'),
+  )
+  const descriptionEn = cellStr(
+    get('Description ENG', 'Description EN', 'description_en', 'desc_en'),
+  )
   const taille = cellStr(get('taille', 'Taille'))
   const tagsRaw = cellStr(get('tags', 'Tags'))
   const couleurOss = cellStr(get('couleur_ossature', 'texture', 'ossature_finish'))
   const couleurPan = cellStr(get('couleur_panneau', 'panneauCouleur'))
   const nTiroir = Number(get('# tiroir', 'nb_tiroir', 'tiroirs')) || 0
   const nTablette = Number(get('# tablette', 'nb_tablette', 'tablettes')) || 0
+  const hTiroir = Number(get('hauteur_tiroir', 'hauteur tiroir', 'h_tiroir')) || 0
   const options = cellStr(get('Options', 'options'))
 
   // Actif seulement si dimensions + nom
@@ -300,7 +307,9 @@ export function normalizeModeleBoutiqueRow(obj, index = 0, ctx = {}) {
   if (nTablette > 0) modParts.push(`shelf:${nTablette}`)
   if (nTiroir > 0) modParts.push(`drawer:${nTiroir}`)
   const modulesSpec = modParts.join('|')
-  const modules = parseModulesSpec(modulesSpec)
+  const modules = parseModulesSpec(modulesSpec).map((m) =>
+    m.kind === 'drawer' && hTiroir > 0 ? { ...m, hMm: hTiroir } : m,
+  )
 
   // Panneaux O/N
   const panneaux = []
@@ -316,7 +325,7 @@ export function normalizeModeleBoutiqueRow(obj, index = 0, ctx = {}) {
       )
       if (found) val = obj[found]
     }
-    if (isOn(val)) panneaux.push(panneauId)
+    if (isOn(val) && !panneaux.includes(panneauId)) panneaux.push(panneauId)
   }
   // Alias colonnes courantes
   if (isOn(get('porte (O/N)', 'porte'))) {
@@ -346,7 +355,7 @@ export function normalizeModeleBoutiqueRow(obj, index = 0, ctx = {}) {
   const price = estimatePriceTtc({ L, W: P, H, modules, panneaux })
 
   const short =
-    description ||
+    descriptionFr ||
     [
       nom,
       taille ? `(${taille.replace(/^#/, '')})` : '',
@@ -386,6 +395,7 @@ export function normalizeModeleBoutiqueRow(obj, index = 0, ctx = {}) {
     price_json_ht_eur: 25,
     scene: 'none',
     short_description: short,
+    descriptionEn: descriptionEn || '',
     featured: index < 3,
     active,
     sort_order: Number(rawId) || (ctx.lastIdNum || 0) * 10 + index + 1,

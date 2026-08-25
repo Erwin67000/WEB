@@ -1,69 +1,61 @@
 {
-  "generatedAt": "2026-08-05T14:32:05.160Z",
+  "generatedAt": "2026-08-25T13:39:48.302Z",
   "items": [
     {
-      "id": "001-table-chevet-petite",
-      "glb": "/catalogue/glb/001-table-chevet-petite.glb"
+      "id": "001-table-chevet",
+      "glb": "/catalogue/glb/001-table-chevet.glb"
     },
     {
-      "id": "002-table-chevet-moyenne",
-      "glb": "/catalogue/glb/002-table-chevet-moyenne.glb"
+      "id": "002-table-chevet",
+      "glb": "/catalogue/glb/002-table-chevet.glb"
     },
     {
-      "id": "003-table-chevet-grande",
-      "glb": "/catalogue/glb/003-table-chevet-grande.glb"
+      "id": "003-table-chevet",
+      "glb": "/catalogue/glb/003-table-chevet.glb"
     },
     {
-      "id": "004-commode-petite",
-      "glb": "/catalogue/glb/004-commode-petite.glb"
+      "id": "004-commode",
+      "glb": "/catalogue/glb/004-commode.glb"
     },
     {
-      "id": "005-commode-moyenne",
-      "glb": "/catalogue/glb/005-commode-moyenne.glb"
+      "id": "005-commode",
+      "glb": "/catalogue/glb/005-commode.glb"
     },
     {
-      "id": "006-commode-grande",
-      "glb": "/catalogue/glb/006-commode-grande.glb"
+      "id": "007-dressing",
+      "glb": "/catalogue/glb/007-dressing.glb"
     },
     {
-      "id": "007-dressing-petite",
-      "glb": "/catalogue/glb/007-dressing-petite.glb"
+      "id": "008-dressing",
+      "glb": "/catalogue/glb/008-dressing.glb"
     },
     {
-      "id": "008-dressing-moyenne",
-      "glb": "/catalogue/glb/008-dressing-moyenne.glb"
-    },
-    {
-      "id": "009-dressing-grande",
-      "glb": "/catalogue/glb/009-dressing-grande.glb"
+      "id": "009-dressing",
+      "glb": "/catalogue/glb/009-dressing.glb"
     },
     {
       "id": "010-coffre",
       "glb": "/catalogue/glb/010-coffre.glb"
     },
     {
-      "id": "012-servante-petite",
-      "glb": "/catalogue/glb/012-servante-petite.glb"
+      "id": "025-meuble-bas",
+      "glb": "/catalogue/glb/025-meuble-bas.glb"
     },
     {
-      "id": "013-bibliotheque-petite",
-      "glb": "/catalogue/glb/013-bibliotheque-petite.glb"
+      "id": "047-cube",
+      "glb": "/catalogue/glb/047-cube.glb"
     },
     {
-      "id": "servante-moyenne",
-      "glb": "/catalogue/glb/servante-moyenne.glb"
+      "id": "048-cube",
+      "glb": "/catalogue/glb/048-cube.glb"
     },
     {
-      "id": "servante-grande",
-      "glb": "/catalogue/glb/servante-grande.glb"
+      "id": "049-cube",
+      "glb": "/catalogue/glb/049-cube.glb"
     },
     {
-      "id": "bibliotheque-moyenne",
-      "glb": "/catalogue/glb/bibliotheque-moyenne.glb"
-    },
-    {
-      "id": "bibliotheque-grande",
-      "glb": "/catalogue/glb/bibliotheque-grande.glb"
+      "id": "050-cube",
+      "glb": "/catalogue/glb/050-cube.glb"
     }
   ]
 }

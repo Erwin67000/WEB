@@ -368,11 +368,9 @@ export default function ArticlePage() {
           <h1 className="hero-title">
             {catalog.name(row)}
           </h1>
-          {row.short_description && (
-            <p className="hero-lead">
-              {tId('catalog.desc', row.short_description, row.short_description)}
-            </p>
-          )}
+          {catalog.desc(row) ? (
+            <p className="hero-lead">{catalog.desc(row)}</p>
+          ) : null}
 
           {/* Encart dimensions + finition (toujours visible en tête) */}
           <div className="article-highlights">
