@@ -770,6 +770,16 @@ export function createConfigStore(opts = {}) {
       const pricing = computePricing(s.units)
       set((st) => ({ cartCount: st.cartCount + 1 }))
 
+      const { STRIPE_ENABLED } = await import('../lib/payments.js')
+      if (!STRIPE_ENABLED) {
+        return {
+          url: null,
+          pricing,
+          quoteRef: s.quoteRef,
+          error: 'STRIPE_DISABLED',
+        }
+      }
+
       if (!Number.isFinite(pricing.ttc) || pricing.ttc < 0.5) {
         return {
           url: null,

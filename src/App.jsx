@@ -37,7 +37,9 @@ function pageTitle(pathname, t) {
   if (pathname === '/contact') return t('meta.titleContact')
   if (pathname === '/mentions-legales') return t('meta.titleLegal')
   if (pathname === '/cgv') return t('meta.titleTerms')
-  if (pathname === '/confidentialite') return t('meta.titlePrivacy')
+  if (pathname === '/confidentialite' || pathname === '/politique-confidentialite')
+    return t('meta.titlePrivacy')
+  if (pathname === '/politique-cookies') return t('meta.titleCookies')
   if (pathname === '/livraison') return t('meta.titleShipping')
   if (pathname.startsWith('/commande/')) return t('meta.titleDefault')
   return t('meta.title404')
@@ -61,6 +63,8 @@ function Shell() {
     location.pathname === '/mentions-legales' ||
     location.pathname === '/cgv' ||
     location.pathname === '/confidentialite' ||
+    location.pathname === '/politique-confidentialite' ||
+    location.pathname === '/politique-cookies' ||
     location.pathname === '/livraison'
 
   useEffect(() => {
@@ -147,6 +151,11 @@ function Shell() {
             <Route path="/mentions-legales" element={<LegalPage kind="legal" />} />
             <Route path="/cgv" element={<LegalPage kind="terms" />} />
             <Route path="/confidentialite" element={<LegalPage kind="privacy" />} />
+            <Route
+              path="/politique-confidentialite"
+              element={<LegalPage kind="privacy" />}
+            />
+            <Route path="/politique-cookies" element={<LegalPage kind="cookies" />} />
             <Route path="/livraison" element={<LegalPage kind="shipping" />} />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>

@@ -45,6 +45,7 @@ export default function SiteFooter() {
             <Link to="/mentions-legales">{t('footer.legal')}</Link>
             <Link to="/cgv">{t('footer.terms')}</Link>
             <Link to="/confidentialite">{t('footer.privacy')}</Link>
+            <Link to="/politique-cookies">{t('footer.cookies')}</Link>
             <Link to="/livraison">{t('footer.shipping')}</Link>
           </div>
         </div>

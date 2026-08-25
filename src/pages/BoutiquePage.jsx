@@ -134,6 +134,8 @@ export default function BoutiquePage() {
         <h1 className="hero-title">{t('shop.title')}</h1>
         <p className="hero-lead">{t('shop.lead')}</p>
         <p className="price-disclaimer">{t('shop.priceDisclaimer')}</p>
+        <p className="price-disclaimer">{t('shop.leadTime')}</p>
+        <p className="price-disclaimer">{t('shop.ecoFrance')}</p>
       </header>
 
       <div className="boutique-toolbar page-pad-x">

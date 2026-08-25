@@ -6,10 +6,10 @@ Document interne. À cocher avant d’ouvrir le paiement. Date de passage : ____
 
 Quatre liens **permanents**, visibles sans compte, sur **toutes** les pages (y compris checkout et configurateur) :
 
-- [ ] Mentions légales
-- [ ] CGV
-- [ ] Politique de confidentialité
-- [ ] Politique cookies
+- [x] Mentions légales
+- [x] CGV
+- [x] Politique de confidentialité
+- [x] Politique cookies
 
 Également :
 
@@ -30,7 +30,8 @@ Quatre liens **permanents**, visibles sans compte, sur **toutes** les pages (y c
 
 ## C. Checkout
 
-- [ ] Case **obligatoire** : « J’accepte les CGV » + lien cliquable vers les CGV
+- [x] Case **obligatoire** : « J’accepte les CGV » + lien cliquable vers les CGV
+- [x] Stripe **désactivé** jusqu’à activation explicite (`STRIPE_ENABLED = false`)
 - [ ] **Avertissement rétractation**, lisible **avant** le paiement, distinct ou clairement inclus :
   - modèle **catalogue non personnalisé** : droit de 14 jours à réception ;
   - pièce **configurée / à mes specs** : pas de droit légal de rétractation **une fois la fabrication commencée** (art. L. 221-28 3°) ;
@@ -48,7 +49,8 @@ Quatre liens **permanents**, visibles sans compte, sur **toutes** les pages (y c
 
 ## E. Éco-participation
 
-- [ ] Adhésion [[ECO_ORGANISME]] (Ecomaison / Eco-mobilier ou successeur) + **identifiant unique**
+- [x] Adhésion **Ecomaison** (DEA) — éco-participation **uniquement si livraison en France**
+- [ ] Porter l’**identifiant unique (IDU)** exact sur la facture (à coller dès réception)
 - [ ] Affichage sur **chaque** fiche produit : prix TTC **dont éco-participation X,XX €**
 - [ ] Idem panier, checkout, facture
 - [ ] Luminaires : vérifier si une autre filière (DEA / éco-organisme éclairage) s’ajoute
@@ -65,7 +67,7 @@ Quatre liens **permanents**, visibles sans compte, sur **toutes** les pages (y c
 
 - [ ] Stripe au nom de **ATELIER PHILAE** SASU (pas l’EI)
 - [ ] Mentions facture : dénomination, SIRET, TVA, siège, n° facture, date, éco-part, CGV
-- [ ] Délai 4–8 semaines (indicatif) aligné e-mail / site / atelier ; le ferme est celui de la confirmation
+- [x] Délai **6 à 8 semaines** aligné CGV / boutique / fiche produit ; le ferme est celui de la confirmation
 - [ ] Kit : notice de montage jointe (quelques minutes, sans colle/vis/clous)
 - [ ] Transporteur nommé ; zone France métropolitaine, UE sur devis
 - [ ] Process 48 h « pas encore en production » : qui coupe la mise en fabrication
@@ -75,7 +77,7 @@ Quatre liens **permanents**, visibles sans compte, sur **toutes** les pages (y c
 - [ ] contact@philae.design = boîte lue (peut = contact)
 - [ ] Mini registre des traitements (même un tableur)
 - [ ] DPA Cloudflare + prestataire de paiement
-- [ ] **[[MEDIATEUR]]** : contrat d’adhésion signé, coordonnées dans les CGV (obligation)
+- [x] **CM2C** : coordonnées et lien de saisine dans les CGV et mentions légales
 - [ ] Lien ODR https://ec.europa.eu/consumers/odr dans les CGV
 
 ## I. Pièges

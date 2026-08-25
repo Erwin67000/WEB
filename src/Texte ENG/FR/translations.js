@@ -10,6 +10,7 @@ export const translations = {
       titleLegal: 'Philae — Legal notice',
       titleTerms: 'Philae — Terms of sale',
       titlePrivacy: 'Philae — Privacy',
+      titleCookies: 'Philae — Cookies',
       titleShipping: 'Philae — Shipping & assembly',
       title404: 'Philae — Page not found',
       titleConfig: 'Philae — Configurator',
@@ -38,6 +39,7 @@ export const translations = {
       legal: 'Legal notice',
       terms: 'Terms of sale',
       privacy: 'Privacy',
+      cookies: 'Cookies',
       shipping: 'Shipping & assembly',
       rights: '© {year} Philae. All rights reserved.',
       credit: 'Design & making — Atelier Philae',
@@ -129,6 +131,9 @@ export const translations = {
       detail: 'Details',
       configure: 'Configure',
       dimsLabel: 'Dimensions',
+      leadTime: 'Made to order · 6–8 weeks',
+      ecoFrance:
+        'French eco-contribution included for delivery in France. Not charged for the rest of the EU or worldwide.',
     },
     article: {
       missing: 'This model could not be found.',
@@ -140,6 +145,9 @@ export const translations = {
       configureBase: 'Configure this base',
       buy: 'Buy · {price} € incl. VAT',
       requestQuote: 'Request a quote',
+      leadTime: 'Production 6–8 weeks from confirmation',
+      ecoFrance:
+        'Eco-contribution (Ecomaison) included only if the delivery address is in France.',
       redirecting: 'Redirecting…',
       preparingPay: 'Preparing secure payment…',
       payUnavailable: 'Payment unavailable — contact@philae.design',
@@ -280,6 +288,16 @@ export const translations = {
       shop: 'Shop',
       configurator: 'Configurator',
       contactUs: 'Contact us',
+      acceptCgvBefore: 'I have read and accept the ',
+      acceptCgvLink: 'terms of sale',
+      acceptCgvAfter: '.',
+      stripeSoon:
+        'Online payment is not open yet. Write to contact@philae.design to order.',
+      needCgv: 'Accept the terms of sale to continue.',
+      withdrawCatalog:
+        'Unchanged catalogue model: 14-day withdrawal from receipt.',
+      withdrawCustom:
+        'Configured piece: no legal withdrawal once production has started.',
     },
     boutiqueSession: {
       missing: 'This model could not be found.',
@@ -527,7 +545,8 @@ export const translations = {
       home: 'Back to home',
     },
     legalPage: {
-      updated: 'Last updated: August 2026',
+      updated: 'Last updated: 25 August 2026',
+      cookies: { title: 'Cookies' },
       legal: {
         title: 'Legal notice',
         body: 'Publisher: Philae — geometric furniture, solid wood, made to order in France. Contact: contact@philae.design. Hosting: Cloudflare. The site presents a 3D configurator and a made-to-order catalogue. Prices are indicative including VAT unless stated otherwise.',
@@ -559,6 +578,7 @@ export const translations = {
       titleLegal: 'Philae — Mentions légales',
       titleTerms: 'Philae — CGV',
       titlePrivacy: 'Philae — Confidentialité',
+      titleCookies: 'Philae — Cookies',
       titleShipping: 'Philae — Livraison & montage',
       title404: 'Philae — Page introuvable',
     },
@@ -584,6 +604,7 @@ export const translations = {
       legal: 'Mentions légales',
       terms: 'CGV',
       privacy: 'Confidentialité',
+      cookies: 'Cookies',
       shipping: 'Livraison & montage',
       rights: '© {year} Philae. Tous droits réservés.',
       credit: 'Conception & fabrication — atelier Philae',
@@ -675,6 +696,9 @@ export const translations = {
       detail: 'Détails',
       configure: 'Configurer',
       dimsLabel: 'Dimensions',
+      leadTime: 'Fabrication sur commande · 6 à 8 semaines',
+      ecoFrance:
+        'Éco-participation française incluse pour une livraison en France. Non facturée dans le reste de l’UE et hors UE.',
     },
     article: {
       missing: 'Ce modèle est introuvable.',
@@ -686,6 +710,9 @@ export const translations = {
       configureBase: 'Configurer cette base',
       buy: 'Acheter · {price} € TTC',
       requestQuote: 'Demander un devis',
+      leadTime: 'Fabrication 6 à 8 semaines à compter de la confirmation',
+      ecoFrance:
+        'Éco-participation (Ecomaison) incluse uniquement si l’adresse de livraison est en France.',
       redirecting: 'Redirection…',
       preparingPay: 'Préparation du paiement sécurisé…',
       payUnavailable: 'Paiement indisponible — contact@philae.design',
@@ -827,6 +854,16 @@ export const translations = {
       shop: 'Boutique',
       configurator: 'Configurateur',
       contactUs: 'Nous contacter',
+      acceptCgvBefore: 'J’ai lu et j’accepte les ',
+      acceptCgvLink: 'conditions générales de vente',
+      acceptCgvAfter: '.',
+      stripeSoon:
+        'Le paiement en ligne n’est pas encore ouvert. Écrivez à contact@philae.design pour commander.',
+      needCgv: 'Acceptez les CGV pour continuer.',
+      withdrawCatalog:
+        'Modèle catalogue non modifié : droit de rétractation de 14 jours à réception.',
+      withdrawCustom:
+        'Pièce configurée : pas de droit légal de rétractation une fois la fabrication commencée.',
     },
     boutiqueSession: {
       missing: 'Ce modèle est introuvable.',
@@ -1075,7 +1112,8 @@ export const translations = {
       home: 'Retour à l’accueil',
     },
     legalPage: {
-      updated: 'Dernière mise à jour : août 2026',
+      updated: 'Dernière mise à jour : 25 août 2026',
+      cookies: { title: 'Cookies' },
       legal: {
         title: 'Mentions légales',
         body: 'Éditeur : Philae — mobilier géométrique, bois massif, fabrication sur commande en France. Contact : contact@philae.design. Hébergement : Cloudflare. Le site présente un configurateur 3D et un catalogue sur mesure. Prix indicatifs TTC sauf mention contraire.',

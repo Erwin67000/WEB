@@ -23,6 +23,8 @@ import { CLIENT_FIELDS } from '../3_INPUT/matrice_client.js'
 import { FACE_PICK_DEFS } from '../1_STRUCTURE/02_agencement/FacePickPlanes.jsx'
 import { useI18n, useTId } from '@texte/I18nProvider.jsx'
 import PayButton from './PayButton.jsx'
+import CgvAccept from './CgvAccept.jsx'
+import { STRIPE_ENABLED } from '../lib/payments.js'
 
 /** Labels courts pour chips des panneaux actifs */
 const PANNEAU_CHIP_LABELS = Object.fromEntries(
@@ -136,6 +138,7 @@ export default function ControlPanel() {
   const tId = useTId()
   const [flash, setFlash] = useState('')
   const [checkoutBusy, setCheckoutBusy] = useState(false)
+  const [acceptCgv, setAcceptCgv] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   /** Chip en cours de renommage (id meuble) */
   const [editingUnitId, setEditingUnitId] = useState(null)
@@ -788,19 +791,39 @@ export default function ControlPanel() {
           <span>{t('config.ttc')}</span>
           <strong>{pricing.ttc.toFixed(2)} €</strong>
         </div>
+        <CgvAccept
+          id="config-accept-cgv"
+          checked={acceptCgv}
+          onChange={setAcceptCgv}
+        />
+        <p className="panel-buy-hint">{t('checkout.withdrawCustom')}</p>
         <PayButton
           disabled={
             checkoutBusy ||
+            !acceptCgv ||
+            !STRIPE_ENABLED ||
             pricing.ttc < 0.5 ||
             !contact.email ||
             !contact.firstName ||
             !contact.lastName
           }
           onClick={async () => {
+            if (!acceptCgv) {
+              notify(t('checkout.needCgv'))
+              return
+            }
+            if (!STRIPE_ENABLED) {
+              notify(t('checkout.stripeSoon'))
+              return
+            }
             setCheckoutBusy(true)
             notify(t('config.preparingPay'))
             try {
               const result = await requestAcheter()
+              if (result?.error === 'STRIPE_DISABLED') {
+                notify(t('checkout.stripeSoon'))
+                return
+              }
               if (result?.error) {
                 notify(result.error)
                 return
@@ -819,6 +842,9 @@ export default function ControlPanel() {
             ? t('config.redirecting')
             : t('config.buyPrice', { price: pricing.ttc.toFixed(0) })}
         </PayButton>
+        {!STRIPE_ENABLED && (
+          <p className="panel-buy-hint">{t('checkout.stripeSoon')}</p>
+        )}
         {(!contact.email || !contact.firstName || !contact.lastName) && (
           <p className="panel-buy-hint">{t('config.buyNeedContact')}</p>
         )}

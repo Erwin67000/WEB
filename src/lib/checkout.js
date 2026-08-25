@@ -25,7 +25,12 @@
  *   amountChargedCents: number,
  * }>}
  */
+import { STRIPE_ENABLED } from './payments.js'
+
 export async function createCheckoutSession(payload) {
+  if (!STRIPE_ENABLED) {
+    throw new Error('STRIPE_DISABLED')
+  }
   const res = await fetch('/api/checkout', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
