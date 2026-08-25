@@ -722,7 +722,10 @@ function StoryWorld({ progressRef }) {
     [ossEnd],
   )
   const shelves = useMemo(
-    () => [0, 1].map((i) => createModule('shelf', i)),
+    () => [
+      createModule('shelf', 0, { zMm: FINAL_H / 3 }),
+      createModule('shelf', 1, { zMm: (2 * FINAL_H) / 3 }),
+    ],
     [],
   )
 
