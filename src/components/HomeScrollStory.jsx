@@ -30,6 +30,7 @@ import {
 } from '../1_STRUCTURE/00_matrice/matrice_geometrie.js'
 import {
   buildPanneauComplet,
+  buildTablette,
   createModule,
   moduleLayout,
 } from '../1_STRUCTURE/02_agencement/agencement.js'
@@ -38,6 +39,7 @@ import {
   PANNEAU_COULEURS,
   ARETE_EDGE_COLOR,
   ARETE_EDGE_WIDTH,
+  EPAISSEUR_PANNEAU,
 } from '../1_STRUCTURE/00_matrice/matrice_constante.js'
 
 extend({ LineSegments2, LineSegmentsGeometry, LineMaterial })
@@ -606,6 +608,98 @@ function PanneauSolid({ nom, dims }) {
   )
 }
 
+/** Tablette réelle : plateau octogone + 2 traverses bois (coords mm SketchUp). */
+function TabletteSolid({ dims, zTopMm, plateColor, woodColor }) {
+  const data = useMemo(() => {
+    try {
+      return buildTablette(dims, zTopMm, { epaisseurMm: EPAISSEUR_PANNEAU })
+    } catch {
+      return null
+    }
+  }, [dims.L, dims.W, dims.H, zTopMm])
+
+  const parts = useMemo(() => {
+    if (!data?.plate) return []
+    const list = [
+      {
+        id: 'plate',
+        positions: data.plate.positions,
+        indices: data.plate.indices,
+        wire: data.plate.wire,
+        color: plateColor,
+      },
+      ...data.traverses.map((tr) => ({
+        id: tr.id,
+        positions: tr.positions,
+        indices: tr.indices,
+        wire: tr.wire,
+        color: woodColor,
+      })),
+    ]
+    return list.map((part) => {
+      const geo = new THREE.BufferGeometry()
+      geo.setAttribute(
+        'position',
+        new THREE.BufferAttribute(part.positions.slice(), 3),
+      )
+      geo.setIndex(new THREE.BufferAttribute(part.indices.slice(), 1))
+      geo.computeVertexNormals()
+      const edgeGeo = new THREE.BufferGeometry()
+      edgeGeo.setAttribute(
+        'position',
+        new THREE.BufferAttribute(part.wire.slice(), 3),
+      )
+      return { ...part, geo, edgeGeo }
+    })
+  }, [data, plateColor, woodColor])
+
+  useEffect(
+    () => () => {
+      for (const p of parts) {
+        p.geo.dispose()
+        p.edgeGeo.dispose()
+      }
+    },
+    [parts],
+  )
+
+  if (!parts.length) return null
+
+  return (
+    <group>
+      {parts.map((p) => (
+        <group key={p.id}>
+          <mesh geometry={p.geo}>
+            <meshStandardMaterial
+              color={p.color}
+              roughness={0.55}
+              metalness={0.04}
+              side={THREE.DoubleSide}
+              transparent
+              opacity={1}
+              polygonOffset
+              polygonOffsetFactor={1}
+              polygonOffsetUnits={1}
+            />
+          </mesh>
+          <lineSegments geometry={p.edgeGeo} renderOrder={2}>
+            <lineBasicMaterial
+              color={PANEL_EDGE}
+              depthTest
+              depthWrite={false}
+              transparent
+              opacity={1}
+              polygonOffset
+              polygonOffsetFactor={-2}
+              polygonOffsetUnits={-2}
+            />
+          </lineSegments>
+        </group>
+      ))}
+    </group>
+  )
+}
+
 function StoryWorld({ progressRef }) {
   const primaryRefs = useRef({})
   const restRefs = useRef({})
@@ -746,17 +840,12 @@ function StoryWorld({ progressRef }) {
       setGroupOpacity(g, smoothstep(start, end, pRest))
     })
 
-    // Tablettes
+    // Tablettes (octogone + 2 traverses)
     if (shelvesGroup.current) {
       shelvesGroup.current.visible = pShelves > 0.02
-      shelvesGroup.current.traverse((o) => {
-        if (!o.material || o.userData.shelfIndex == null) return
-        const i = o.userData.shelfIndex
+      shelvesGroup.current.children.forEach((child, i) => {
         const oShelf = clamp01((pShelves - i * 0.22) / 0.55)
-        o.material.transparent = true
-        o.material.opacity = oShelf
-        if (o.isMesh) o.material.depthWrite = oShelf > 0.9
-        o.visible = oShelf > 0.02
+        setGroupOpacity(child, oShelf)
       })
     }
 
@@ -868,74 +957,25 @@ function StoryWorld({ progressRef }) {
               <PanneauSolid nom="dessous" dims={finalDims} />
             </group>
           </group>
-        </group>
 
-        {/* Tablettes en repère Three déjà converti */}
-        <group ref={shelvesGroup} visible={false}>
-          {shelves.map((mod, i) => {
-            const layout = moduleLayout(mod, finalDims, shelves)
-            const sx = layout.size[0] * SCALE
-            const sy = layout.size[2] * SCALE
-            const sz = layout.size[1] * SCALE
-            const hx = sx / 2
-            const hy = sy / 2
-            const hz = sz / 2
-            const wire = new Float32Array([
-              -hx, -hy, -hz, hx, -hy, -hz,
-              hx, -hy, -hz, hx, -hy, hz,
-              hx, -hy, hz, -hx, -hy, hz,
-              -hx, -hy, hz, -hx, -hy, -hz,
-              -hx, hy, -hz, hx, hy, -hz,
-              hx, hy, -hz, hx, hy, hz,
-              hx, hy, hz, -hx, hy, hz,
-              -hx, hy, hz, -hx, hy, -hz,
-              -hx, -hy, -hz, -hx, hy, -hz,
-              hx, -hy, -hz, hx, hy, -hz,
-              hx, -hy, hz, hx, hy, hz,
-              -hx, -hy, hz, -hx, hy, hz,
-            ])
-            return (
-              <group
-                key={mod.id}
-                userData={{ shelfIndex: i }}
-                position={[
-                  layout.center[0] * SCALE,
-                  layout.center[2] * SCALE,
-                  -layout.center[1] * SCALE,
-                ]}
-              >
-                <mesh userData={{ shelfIndex: i }}>
-                  <boxGeometry args={[sx, sy, sz]} />
-                  <meshStandardMaterial
-                    color={PANEL}
-                    roughness={0.55}
-                    metalness={0.04}
-                    transparent
-                    polygonOffset
-                    polygonOffsetFactor={1}
-                    polygonOffsetUnits={1}
+          {/* Tablettes : octogone + 2 traverses bois */}
+          <group ref={shelvesGroup} visible={false}>
+            {shelves.map((mod) => {
+              const layout = moduleLayout(mod, finalDims, shelves)
+              const zTop =
+                layout.zTopMm ?? layout.zMm ?? layout.center[2]
+              return (
+                <group key={mod.id}>
+                  <TabletteSolid
+                    dims={finalDims}
+                    zTopMm={zTop}
+                    plateColor={PANEL}
+                    woodColor={WOOD}
                   />
-                </mesh>
-                <lineSegments userData={{ shelfIndex: i }} renderOrder={2}>
-                  <bufferGeometry>
-                    <bufferAttribute
-                      attach="attributes-position"
-                      args={[wire, 3]}
-                    />
-                  </bufferGeometry>
-                  <lineBasicMaterial
-                    color={PANEL_EDGE}
-                    depthTest
-                    depthWrite={false}
-                    transparent
-                    polygonOffset
-                    polygonOffsetFactor={-2}
-                    polygonOffsetUnits={-2}
-                  />
-                </lineSegments>
-              </group>
-            )
-          })}
+                </group>
+              )
+            })}
+          </group>
         </group>
       </group>
     </group>

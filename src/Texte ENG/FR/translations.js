@@ -43,17 +43,17 @@ export const translations = {
       credit: 'Design & making — Atelier Philae',
     },
     home: {
-      manifestoAria: 'Form and Function',
+      manifestoAria: 'Form & Function',
       kicker: 'Framed Furniture · Signature frame',
       titleLead: 'Form',
       titleAnd: '&',
       titleTail: 'Function',
       subtitle:
         'A solid-wood frame first. Functions, finishes and panels after.',
-      ctaShop: 'See the shop',
-      ctaConfig: 'Configure a piece',
+      ctaShop: 'Visit the shop',
+      ctaConfig: 'Configure your piece',
       scroll: 'Scroll to assemble',
-      closeTitle: 'Your piece, in the round',
+      closeTitle: 'Your intention, made real',
       closeLead:
         'Turn it, zoom, then open the configurator — or pick a model from the shop.',
       pillarDesign: 'Design',
@@ -76,27 +76,27 @@ export const translations = {
       one: {
         kicker: 'LEVEL 01 · Origin',
         title: 'The intention',
-        text: 'Two points. One dimension. The game starts here.',
+        text: 'Two points, One dimension',
       },
       assemble: {
-        kicker: 'LEVEL 02 · Apex',
+        kicker: 'LEVEL 02 · Vertex',
         title: 'Triple meeting',
-        text: 'Three edges collide — the first vertex is born.',
+        text: 'Three edges assemble as one geometric signature',
       },
       stretch: {
         kicker: 'LEVEL 03 · Volume',
         title: 'Stretch the world',
-        text: 'L, D, H: three axes, one geometric signature.',
+        text: 'Length, Depth, Height = total control',
       },
       frame: {
         kicker: 'LEVEL 04 · Frame',
-        title: 'Boss fight · 12 edges',
+        title: 'Assemble 12 edges',
         text: 'The full skeleton. Structure before skin.',
       },
       shelves: {
         kicker: 'LEVEL 05 · Powers',
         title: 'Functions unlocked',
-        text: 'Shelves, uses, modules — you equip the piece.',
+        text: 'Shelves, drawers, modules — you equip according to your needs.',
       },
       panels: {
         kicker: 'LEVEL 06 · Skin',
