@@ -543,13 +543,13 @@ export const translations = {
       credit: 'Conception & fabrication — atelier Philae',
     },
     home: {
-      manifestoAria: 'Forme et fonction',
-      kicker: 'Bois massif · Ossature signature',
+      manifestoAria: 'Forme & Fonction',
+      kicker: 'Ossature signature',
       titleLead: 'Forme',
-      titleAnd: 'et',
-      titleTail: 'fonction',
+      titleAnd: '&',
+      titleTail: 'Fonction',
       subtitle:
-        'D’abord une ossature en bois massif. Ensuite les fonctions, finitions et panneaux.',
+        'Un cadre en bois massif. Fonctions, finitions et options.',
       ctaShop: 'Voir la boutique',
       ctaConfig: 'Configurer une pièce',
       scroll: 'Scroller pour assembler',
