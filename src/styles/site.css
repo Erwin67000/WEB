@@ -293,10 +293,10 @@ body.theme-ivory,
   color: #0a0a0a !important;
 }
 
-/* Boutons produit / fiche : libellés ivoire */
+/* Boutons produit / fiche : libellés foncés sur fonds bois clairs */
 .site-root.theme-ivory .product-actions .btn,
 .site-root.theme-ivory .article-actions .btn {
-  color: #f5f0e6 !important;
+  color: #1a1610 !important;
 }
 
 .site-root.theme-ivory .section-kicker {
@@ -2622,12 +2622,13 @@ body.config-lock {
   border: 1px solid #a67c52;
   font-family: var(--philae-font);
   font-size: 0.68rem;
+  font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   text-decoration: none;
   cursor: pointer;
-  color: #f5f0e6;
-  background: #3d2e22;
+  color: #1a1610;
+  background: #c4a574;
 }
 
 .product-actions .shop-hover-btn {
@@ -2642,12 +2643,13 @@ body.config-lock {
 }
 
 .shop-hover-btn-primary {
-  background: linear-gradient(180deg, #6b4e32 0%, #4a3422 100%);
-  border-color: #a67c52;
+  background: #8a6a42;
+  border-color: #8a6a42;
 }
 
 .shop-hover-btn-wood {
-  background: #3d2e22;
+  background: #c4a574;
+  border-color: #c4a574;
 }
 
 .shop-hover-btn-dot {
@@ -2679,7 +2681,7 @@ body.config-lock {
   align-items: center;
   justify-content: center;
   gap: 0.28rem;
-  color: #3d2e22;
+  color: #1a1610;
   opacity: 0;
   transform: translateX(1.1rem);
   transition: transform 0.32s ease, opacity 0.32s ease;
@@ -3152,33 +3154,35 @@ body.config-lock {
   padding: 0.7rem 1.4rem;
   border-radius: 4px;
   font-family: var(--philae-font);
+  font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   font-size: 0.72rem;
-  border: 1px solid #a67c52;
-  background: #3d2e22;
-  color: #e8d5b5;
+  border: 1px solid #c4a574;
+  background: #c4a574;
+  color: #1a1610;
   cursor: pointer;
   transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
 
 .page .btn:hover,
 .hero-actions .btn:hover {
-  background: #524033;
-  color: #f5f0e6;
-  border-color: #c4a574;
+  background: #b8956a;
+  color: #1a1610;
+  border-color: #b8956a;
 }
 
 .page .btn-primary,
 .hero-actions .btn-primary {
-  background: linear-gradient(180deg, #6b4e32 0%, #4a3422 100%);
-  border-color: #a67c52;
-  color: #f5f0e6 !important;
+  background: #8a6a42;
+  border-color: #8a6a42;
+  color: #1a1610 !important;
+  font-weight: 700;
 }
 
 .page .btn-primary:hover {
-  background: linear-gradient(180deg, #7d5c3c 0%, #5a4030 100%);
-  color: #f5f0e6 !important;
+  background: #7a5c38;
+  color: #1a1610 !important;
 }
 
 .page .btn-wood {
@@ -3190,10 +3194,11 @@ body.config-lock {
   color: #ffffff !important;
 }
 
-/* Boutons gamme / fiche produit : libellés ivoire */
+/* Boutons gamme / fiche produit : libellés gras, lisibles */
 .product-actions .btn,
 .article-actions .btn {
-  color: #f5f0e6 !important;
+  color: #1a1610 !important;
+  font-weight: 700;
 }
 
 .page .btn-ghost {
@@ -3851,7 +3856,7 @@ body.config-lock {
   color: #f5f0e6;
   font-family: var(--philae-font);
   font-size: 0.82rem;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: 0.06em;
   cursor: pointer;
   box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.12);

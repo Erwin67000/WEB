@@ -39,10 +39,10 @@ export default function HomeManifesto() {
         </ul>
 
         <div className="home-manifesto-ctas">
-          <ShopHoverButton variant="primary" size="lg" to="/boutique">
+          <ShopHoverButton variant="wood" size="lg" to="/boutique">
             {t('home.ctaShop')}
           </ShopHoverButton>
-          <ShopHoverButton variant="wood" size="lg" to="/configurateur">
+          <ShopHoverButton variant="primary" size="lg" to="/configurateur">
             {t('home.ctaConfig')}
           </ShopHoverButton>
         </div>

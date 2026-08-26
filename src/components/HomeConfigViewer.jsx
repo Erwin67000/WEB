@@ -13,10 +13,10 @@ export default function HomeConfigViewer() {
         <h2 className="home-close-title">{t('home.closeTitle')}</h2>
         <p className="home-close-lead">{t('home.closeLead')}</p>
         <div className="home-manifesto-ctas">
-          <ShopHoverButton variant="primary" size="lg" to="/boutique">
+          <ShopHoverButton variant="wood" size="lg" to="/boutique">
             {t('home.ctaShop')}
           </ShopHoverButton>
-          <ShopHoverButton variant="wood" size="lg" to="/configurateur">
+          <ShopHoverButton variant="primary" size="lg" to="/configurateur">
             {t('home.ctaConfig')}
           </ShopHoverButton>
         </div>
