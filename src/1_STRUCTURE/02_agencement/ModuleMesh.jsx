@@ -484,7 +484,7 @@ function RailMesh({ mount }) {
 }
 
 /** Tiroir Würth type B : traverses + rails fixes + panels animés Y+. */
-function TiroirMesh({ dims, layout, mod, woodColor, woodRoughness }) {
+function TiroirMesh({ dims, layout, mod, woodColor, woodRoughness, plateColor }) {
   const setModuleOpen = useActiveConfigStore((s) => s.setModuleOpen)
   const panneauPickMode = useActiveConfigStore((s) => s.panneauPickMode)
   const panelGroupRef = useRef()
@@ -598,23 +598,26 @@ function TiroirMesh({ dims, layout, mod, woodColor, woodRoughness }) {
         <RailMesh key={r.id} mount={r} />
       ))}
       <group ref={panelGroupRef}>
-        {data.box.panels.map((p) => (
-          <SolidWireMesh
-            key={p.id}
-            positions={p.positions}
-            indices={p.indices}
-            wire={p.wire}
-            color={woodColor}
-            edgeColor={ARETE_EDGE_COLOR}
-            wireWidth={ARETE_EDGE_WIDTH}
-            roughness={woodRoughness ?? 0.55}
-            metalness={0.05}
-            onClick={handleToggle}
-            onPointerDown={handlePointerDown}
-            onPointerOver={handleOver}
-            onPointerOut={handleOut}
-          />
-        ))}
+        {data.box.panels.map((p) => {
+          const isFacade = p.id === 'facade'
+          return (
+            <SolidWireMesh
+              key={p.id}
+              positions={p.positions}
+              indices={p.indices}
+              wire={p.wire}
+              color={isFacade ? plateColor : woodColor}
+              edgeColor={isFacade ? PANNEAU_EDGE_COLOR : ARETE_EDGE_COLOR}
+              wireWidth={isFacade ? PANNEAU_EDGE_WIDTH : ARETE_EDGE_WIDTH}
+              roughness={woodRoughness ?? 0.55}
+              metalness={0.05}
+              onClick={handleToggle}
+              onPointerDown={handlePointerDown}
+              onPointerOver={handleOver}
+              onPointerOut={handleOut}
+            />
+          )
+        })}
       </group>
     </group>
   )
@@ -661,6 +664,7 @@ export function ModulesMesh({
               mod={mod}
               woodColor={woodColor}
               woodRoughness={surf.roughness ?? 0.55}
+              plateColor={shelfColor}
             />
           )
         }

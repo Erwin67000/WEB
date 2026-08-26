@@ -385,7 +385,20 @@ export function computeQuatreRectangles(def, byId, params = {}) {
   ]
   const arrUnites = def.arriere_unite
 
-  const base = makeRectangleBase(byId, def.rectangle_base)
+  let base = makeRectangleBase(byId, def.rectangle_base)
+  const zMin = Number(params.zMin)
+  const zMax = Number(params.zMax)
+  if (Number.isFinite(zMin) && Number.isFinite(zMax)) {
+    const zs = base.map((p) => p[2])
+    const zLo = Math.min(...zs)
+    const zHi = Math.max(...zs)
+    const span = zHi - zLo
+    base = base.map((p) => [
+      p[0],
+      p[1],
+      span === 0 ? zMin : zMin + ((p[2] - zLo) / span) * (zMax - zMin),
+    ])
+  }
   const decale = makeRectangleDecale(base, dec, axe)
   const tolerance = makeRectangleTolerance(decale, tol, tolUnites)
   const arriere = makeRectangleArriere(tolerance, ep, arrUnites)

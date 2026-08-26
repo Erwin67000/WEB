@@ -20,18 +20,9 @@
  */
 import {
   EPAISSEUR_PANNEAU,
-  TOLERANCE,
-  DECALAGE_PANNEAU,
   areteExtrusionMm,
 } from '../../00_matrice/matrice_constante.js'
-import { buildGeometrie } from '../../00_matrice/matrice_geometrie.js'
-import {
-  PANNEAU_DEFS,
-  Panneau,
-  makeRectangleDecale,
-  makeRectangleTolerance,
-  makeRectangleArriere,
-} from '../../00_matrice/matrice_panneau_grok.js'
+import { buildPorte } from '../Y.porte/porte.js'
 import {
   buildTraversePair,
   resolveDrawerOrigin,
@@ -131,62 +122,6 @@ export function buildDrawerOpenBox(
     panels,
     /** Bas du panneau de fond (zTraverseTop − 19,05) */
     zFond,
-  }
-}
-
-/** Y du plan façade = même plan que la porte (face avant, Y max ossature). */
-function resolveFacadeFrontY(dims) {
-  const { byId } = buildGeometrie(dims)
-  const ref = PANNEAU_DEFS.porte.rectangle_base[0]
-  return byId[ref.arete].points[ref.point][1]
-}
-
-/**
- * Façade tiroir : panneau plan Y, épaisseur panneau, biseau 45° comme une porte.
- * Rectangle de base = Longueur meuble × hauteur_tiroir.
- *
- * @param {{ L: number, H: number, z0: number, yFront: number, epaisseur?: number }} opts
- */
-export function buildDrawerFacade({
-  L,
-  H,
-  z0,
-  yFront,
-  epaisseur = EPAISSEUR_PANNEAU,
-}) {
-  const def = PANNEAU_DEFS.porte
-  const base = [
-    [0, yFront, z0],
-    [L, yFront, z0],
-    [L, yFront, z0 + H],
-    [0, yFront, z0 + H],
-  ]
-  const decale = makeRectangleDecale(
-    base,
-    DECALAGE_PANNEAU,
-    def.axe_decalage,
-  )
-  const tolerance = makeRectangleTolerance(
-    decale,
-    TOLERANCE,
-    def.tolerance_unite,
-  )
-  const arriere = makeRectangleArriere(
-    tolerance,
-    epaisseur,
-    def.arriere_unite,
-  )
-  const panneau = new Panneau('facade', [...tolerance, ...arriere], {
-    normal: 'Y',
-    direction: -1,
-    epaisseur,
-  })
-  return {
-    id: 'facade',
-    positions: panneau.positions,
-    indices: panneau.indices,
-    wire: panneau.wire,
-    points: panneau.points,
   }
 }
 
@@ -388,11 +323,10 @@ export function buildTiroir(dims, layout, mod = {}, opts = {}) {
     zTraverseTop,
   )
 
-  const facade = buildDrawerFacade({
-    L: dims.L,
-    H: wurth.hMm,
-    z0: originZ,
-    yFront: resolveFacadeFrontY(dims),
+  const facade = buildPorte(dims, {
+    id: 'facade',
+    zMin: originZ,
+    zMax: originZ + wurth.hMm,
     epaisseur: EPAISSEUR_PANNEAU,
   })
   box.panels.push(facade)

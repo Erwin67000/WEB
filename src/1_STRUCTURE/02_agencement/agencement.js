@@ -18,7 +18,7 @@ import {
   face_panneau,
   ligne_panneau,
   computeQuatreRectangles,
-} from '../00_matrice/matrice_panneau_grok.js'
+} from '../00_matrice/matrice_panneau.js'
 import { buildTraversePair } from './traverse.js'
 import {
   WURTH_HAUTEUR_DEFAUT_MM,
@@ -84,7 +84,7 @@ export function buildPorte(dims, params = {}) {
 
 /**
  * Solide seul (compat).
- * @returns {import('../00_matrice/matrice_panneau_grok.js').Panneau}
+ * @returns {import('../00_matrice/matrice_panneau.js').Panneau}
  */
 export function buildPanneau(nom, dims, params = {}) {
   return buildPanneauComplet(nom, dims, params).panneau
