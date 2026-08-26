@@ -299,6 +299,8 @@ export {
   RAIL_STL_URL,
   RAIL_STL_SCALE,
   RAIL_MOUNT_OFFSET,
+  DRAWER_OPEN_DEPTH_RATIO,
+  DRAWER_OPEN_DURATION_MS,
   WURTH_DRAWER_TYPE,
   WURTH_HAUTEURS_MM,
   WURTH_HAUTEUR_DEFAUT_MM,
@@ -328,20 +330,20 @@ export function createModule(kind, bayIndex = 0, extras = {}) {
 }
 
 /**
- * Plancher Z des tiroirs = 2 × hauteur d’arête
+ * Plancher Z des tiroirs = 2.6 × hauteur d’arête
  * (dessus de traverse du 1er tiroir, au-dessus des arêtes basses).
  */
 export function drawerFloorZMm(dims = {}) {
-  return 2 * areteExtrusionMm(dims)
+  return 2.6 * areteExtrusionMm(dims)
 }
 
 /**
  * Z min du dessus de traverse d’un tiroir (index dans la liste des tiroirs).
- *   index 0 : 2 × hauteur_arete
- *   index n : 2 × hauteur_arete + Σ_{k<n} (H_k + 10)
+ *   index 0 : 2.6 × hauteur_arete
+ *   index n : 2.6 × hauteur_arete + Σ_{k<n} (H_k + 15)
  */
 export function drawerZMinMm(dims = {}, moduleList = [], drawerIndex = 0) {
-  const gap = Number(DRAWER_STACK_GAP_MM) || 10
+  const gap = Number(DRAWER_STACK_GAP_MM) || 15
   const drawers = moduleList.filter((m) => m.kind === 'drawer')
   let z = drawerFloorZMm(dims)
   const n = Math.max(0, Number(drawerIndex) || 0)
@@ -476,15 +478,14 @@ export function moduleLayout(mod, { L, W, H }, moduleList = []) {
         ? Math.min(zMax, Math.max(zMin, Number(mod.zMm)))
         : zMin
     const zCenter = zSideBottom + drawerH / 2
-    const open = (mod.openFactor || 0) * (Math.max(wurth.depthMm, 1) * 0.55)
     return {
       center: [
         L / 2,
-        (traverseBounds.minY + traverseBounds.maxY) / 2 - open,
+        (traverseBounds.minY + traverseBounds.maxY) / 2,
         zCenter,
       ],
       size: [wurth.licMm, Math.max(wurth.depthMm, 1), drawerH],
-      openOffset: [0, -open, 0],
+      openOffset: [0, 0, 0],
       wurth,
       zMm: zSideBottom,
       zBottomMm: zSideBottom,

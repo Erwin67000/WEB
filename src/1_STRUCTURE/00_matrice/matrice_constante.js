@@ -54,7 +54,7 @@ export const DECALAGE_PANNEAU = 0
  * Tiroir 1 : zMin = 2 × hauteur d’arête
  * Tiroir n+1 : zMin = zMin(n) + H_n + ce décalage
  */
-export const DRAWER_STACK_GAP_MM = 10
+export const DRAWER_STACK_GAP_MM = 15
 
 /** Angle géométrique signature (rad) — tan(angle) ≈ 1/√2. */
 export const ANGLE_GEOMETRIE = 0.6155

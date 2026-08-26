@@ -93,6 +93,7 @@ function FrozenUnit({ unit }) {
             dims={dims}
             modules={unit.modules || []}
             woodFinish={unit.woodFinish}
+            ossatureFinish={unit.ossatureFinish}
             panneauCouleur={unit.panneauCouleur}
             panneauCouleurHex={unit.panneauCouleurHex}
           />

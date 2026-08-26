@@ -1,5 +1,5 @@
 import { useMemo, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { useThree, extend } from '@react-three/fiber'
+import { useThree, useFrame, extend } from '@react-three/fiber'
 import * as THREE from 'three'
 import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js'
 import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeometry.js'
@@ -12,9 +12,13 @@ import {
   buildTiroir,
   normalizeRailGeometry,
   railGeometryToThree,
+  DRAWER_OPEN_DEPTH_RATIO,
+  DRAWER_OPEN_DURATION_MS,
 } from './agencement.js'
 import {
   FINITIONS,
+  FINITIONS_OSSATURE,
+  DEFAULT_FINITION_OSSATURE,
   DEFAULT_PANNEAU_COULEUR,
   resolvePanneauColor,
   PANNEAU_EDGE_COLOR,
@@ -29,6 +33,24 @@ import { useActiveConfigStore } from '../../store/ConfigStoreContext.jsx'
 extend({ LineSegments2, LineSegmentsGeometry, LineMaterial })
 
 const SCALE = 0.001
+
+function shadeHex(hex, factor) {
+  const c = new THREE.Color(hex)
+  c.multiplyScalar(factor)
+  return `#${c.getHexString()}`
+}
+
+function easeInOutCubic(t) {
+  return t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2
+}
+
+function ossatureWoodColor(woodFinish, ossatureFinish) {
+  const finish = FINITIONS[woodFinish] || FINITIONS.chene
+  const surf =
+    FINITIONS_OSSATURE[ossatureFinish] ||
+    FINITIONS_OSSATURE[DEFAULT_FINITION_OSSATURE]
+  return shadeHex(finish.color, surf.shade ?? 1)
+}
 
 /** Filaire d’un rectangle (4 côtés) — trait fin panneaux. */
 function RectangleWire({ rectangle }) {
@@ -346,6 +368,10 @@ function SolidWireMesh({
   wireWidth,
   roughness = 0.55,
   metalness = 0.04,
+  onClick,
+  onPointerDown,
+  onPointerOver,
+  onPointerOut,
 }) {
   const { size, gl } = useThree()
   const lineMatRef = useRef(null)
@@ -408,7 +434,16 @@ function SolidWireMesh({
 
   return (
     <group>
-      <mesh geometry={geometry} castShadow receiveShadow renderOrder={0}>
+      <mesh
+        geometry={geometry}
+        castShadow
+        receiveShadow
+        renderOrder={0}
+        onClick={onClick}
+        onPointerDown={onPointerDown}
+        onPointerOver={onPointerOver}
+        onPointerOut={onPointerOut}
+      >
         <meshStandardMaterial
           color={color}
           roughness={roughness}
@@ -419,7 +454,7 @@ function SolidWireMesh({
           polygonOffsetUnits={2}
         />
       </mesh>
-      <lineSegments geometry={edgeBasic} renderOrder={2}>
+      <lineSegments geometry={edgeBasic} renderOrder={2} raycast={() => {}}>
         <lineBasicMaterial
           color={lineColor}
           depthTest
@@ -429,7 +464,7 @@ function SolidWireMesh({
           polygonOffsetUnits={-2}
         />
       </lineSegments>
-      <lineSegments2 geometry={edgeFat} renderOrder={3}>
+      <lineSegments2 geometry={edgeFat} renderOrder={3} raycast={() => {}}>
         <lineMaterial
           ref={lineMatRef}
           color={lineColor}
@@ -569,8 +604,17 @@ function RailMesh({ mount }) {
   )
 }
 
-/** Tiroir Würth type B : traverses + rails + boîte ouverte Z-top. */
-function TiroirMesh({ dims, layout, mod, plateColor, woodColor, woodRoughness }) {
+/** Tiroir Würth type B : traverses + rails fixes + panels animés Y+. */
+function TiroirMesh({ dims, layout, mod, woodColor, woodRoughness }) {
+  const setModuleOpen = useActiveConfigStore((s) => s.setModuleOpen)
+  const panneauPickMode = useActiveConfigStore((s) => s.panneauPickMode)
+  const panelGroupRef = useRef()
+  const visualRef = useRef(Number(mod?.openFactor) || 0)
+  const fromRef = useRef(visualRef.current)
+  const toRef = useRef(visualRef.current)
+  const t0Ref = useRef(0)
+  const [targetOpen, setTargetOpen] = useState(Number(mod?.openFactor) || 0)
+
   const data = useMemo(() => {
     try {
       return buildTiroir(dims, layout, mod)
@@ -578,13 +622,86 @@ function TiroirMesh({ dims, layout, mod, plateColor, woodColor, woodRoughness })
       console.error('[TiroirMesh]', e)
       return null
     }
-  }, [dims.L, dims.W, dims.H, layout, mod?.hMm, mod?.id])
+  }, [
+    dims.L,
+    dims.W,
+    dims.H,
+    layout?.zMm,
+    layout?.zBottomMm,
+    layout?.hMm,
+    layout?.wurth?.hMm,
+    layout?.wurth?.depthMm,
+    mod?.hMm,
+    mod?.id,
+  ])
+
+  useEffect(() => {
+    setTargetOpen(Number(mod?.openFactor) || 0)
+  }, [mod?.openFactor])
+
+  useEffect(() => {
+    fromRef.current = visualRef.current
+    toRef.current = targetOpen
+    t0Ref.current = performance.now()
+  }, [targetOpen])
+
+  useEffect(() => {
+    return () => {
+      document.body.style.cursor = 'auto'
+    }
+  }, [])
+
+  useFrame(() => {
+    const g = panelGroupRef.current
+    if (!g) return
+    const from = fromRef.current
+    const to = toRef.current
+    if (from !== to) {
+      const t = Math.min(
+        1,
+        (performance.now() - t0Ref.current) / DRAWER_OPEN_DURATION_MS,
+      )
+      visualRef.current = from + (to - from) * easeInOutCubic(t)
+      if (t >= 1) {
+        visualRef.current = to
+        fromRef.current = to
+      }
+    }
+    const yMm = visualRef.current * DRAWER_OPEN_DEPTH_RATIO * (Number(dims.W) || 0)
+    g.position.set(0, 0, -yMm * SCALE)
+  })
 
   if (!data) return null
 
+  const handleToggle = (e) => {
+    const first = e.intersections?.[0]
+    if (first && first.object !== e.object) return
+    e.stopPropagation()
+    if (panneauPickMode || data.depthTooSmall) return
+    const next = targetOpen > 0.5 ? 0 : 1
+    setTargetOpen(next)
+    if (mod?.id) setModuleOpen(mod.id, next)
+  }
+
+  const handlePointerDown = (e) => {
+    const first = e.intersections?.[0]
+    if (first && first.object !== e.object) return
+    e.stopPropagation()
+  }
+
+  const handleOver = (e) => {
+    const first = e.intersections?.[0]
+    if (first && first.object !== e.object) return
+    e.stopPropagation()
+    document.body.style.cursor = 'pointer'
+  }
+
+  const handleOut = () => {
+    document.body.style.cursor = 'auto'
+  }
+
   return (
     <group>
-      {/* Traverses d’abord (support bas) */}
       {data.traverses.map((tr) => (
         <SolidWireMesh
           key={tr.id}
@@ -598,22 +715,28 @@ function TiroirMesh({ dims, layout, mod, plateColor, woodColor, woodRoughness })
           metalness={0.05}
         />
       ))}
-      {/* Rails sur le dessus de traverse, dans le coin L sous les joues */}
       {data.rails.map((r) => (
         <RailMesh key={r.id} mount={r} />
       ))}
-      {/* Caisson tiroir par-dessus */}
-      {data.box.panels.map((p) => (
-        <SolidWireMesh
-          key={p.id}
-          positions={p.positions}
-          indices={p.indices}
-          wire={p.wire}
-          color={plateColor}
-          edgeColor={PANNEAU_EDGE_COLOR}
-          wireWidth={PANNEAU_EDGE_WIDTH}
-        />
-      ))}
+      <group ref={panelGroupRef}>
+        {data.box.panels.map((p) => (
+          <SolidWireMesh
+            key={p.id}
+            positions={p.positions}
+            indices={p.indices}
+            wire={p.wire}
+            color={woodColor}
+            edgeColor={ARETE_EDGE_COLOR}
+            wireWidth={ARETE_EDGE_WIDTH}
+            roughness={woodRoughness ?? 0.55}
+            metalness={0.05}
+            onClick={handleToggle}
+            onPointerDown={handlePointerDown}
+            onPointerOver={handleOver}
+            onPointerOut={handleOut}
+          />
+        ))}
+      </group>
     </group>
   )
 }
@@ -622,11 +745,15 @@ export function ModulesMesh({
   dims,
   modules = [],
   woodFinish = 'chene',
+  ossatureFinish = DEFAULT_FINITION_OSSATURE,
   panneauCouleur = DEFAULT_PANNEAU_COULEUR,
   panneauCouleurHex,
 }) {
   const finish = FINITIONS[woodFinish] || FINITIONS.chene
-  const darker = finish.edge
+  const surf =
+    FINITIONS_OSSATURE[ossatureFinish] ||
+    FINITIONS_OSSATURE[DEFAULT_FINITION_OSSATURE]
+  const woodColor = ossatureWoodColor(woodFinish, ossatureFinish)
   const shelfColor =
     resolvePanneauColor(panneauCouleur, panneauCouleurHex).color || finish.color
 
@@ -641,8 +768,8 @@ export function ModulesMesh({
               dims={dims}
               zTopMm={layout.zTopMm ?? layout.zMm ?? layout.center[2]}
               plateColor={shelfColor}
-              woodColor={finish.color}
-              woodRoughness={0.55}
+              woodColor={woodColor}
+              woodRoughness={surf.roughness ?? 0.55}
             />
           )
         }
@@ -653,9 +780,8 @@ export function ModulesMesh({
               dims={dims}
               layout={layout}
               mod={mod}
-              plateColor={shelfColor}
-              woodColor={finish.color}
-              woodRoughness={0.55}
+              woodColor={woodColor}
+              woodRoughness={surf.roughness ?? 0.55}
             />
           )
         }
@@ -684,8 +810,8 @@ export function ModulesMesh({
                   ]}
                 />
                 <meshStandardMaterial
-                  color={finish.color}
-                  roughness={0.55}
+                  color={woodColor}
+                  roughness={surf.roughness ?? 0.55}
                   side={THREE.DoubleSide}
                 />
               </mesh>
@@ -710,6 +836,7 @@ export default function AgencementView({
   modules = [],
   panneaux = ['fond'],
   woodFinish = 'chene',
+  ossatureFinish = DEFAULT_FINITION_OSSATURE,
   panneauCouleur = DEFAULT_PANNEAU_COULEUR,
   panneauCouleurHex,
 }) {
@@ -733,6 +860,7 @@ export default function AgencementView({
           dims={dims}
           modules={modules}
           woodFinish={woodFinish}
+          ossatureFinish={ossatureFinish}
           panneauCouleur={panneauCouleur}
           panneauCouleurHex={panneauCouleurHex}
         />

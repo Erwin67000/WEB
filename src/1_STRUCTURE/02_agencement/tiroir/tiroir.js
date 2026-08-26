@@ -57,6 +57,10 @@ export const RAIL_MOUNT_OFFSET = { x: 0, y: 0, z: 0 }
 export const RAIL_NATIVE_LENGTH_Y_MM = 550
 /** zFond = zTraverseTop − 19,05 (Z négatif depuis le dessus traverse / rail). */
 export const DRAWER_FOND_BELOW_TRAVERSE_TOP_MM = 19.05
+/** Course d’ouverture (Y+) = 75 % de la profondeur du meuble. */
+export const DRAWER_OPEN_DEPTH_RATIO = 0.75
+/** Durée ouverture / fermeture (ms) — ease-in-out aux deux bouts. */
+export const DRAWER_OPEN_DURATION_MS = 600
 
 /**
  * Boîte type B — ouverture Z top, décroché bas pour Dynamoov.
@@ -240,10 +244,10 @@ export function buildDrawerRails(traversePair, opts = {}) {
  *
  * zMm utilisateur = **dessus des traverses Y** (= dessus des rails).
  * Traverses extrudées vers le bas. zFond = ce plan − 19,05 mm.
+ * Ouverture : offset visuel Y+ sur les panels seulement (rails fixes).
  */
 export function buildTiroir(dims, layout, mod = {}, opts = {}) {
   const ep = opts.epaisseurMm ?? EPAISSEUR_PANNEAU
-  const open = layout.openOffset?.[1] || 0
 
   // zMm = dessus traverse Y (= dessus rail)
   const zSideBottom =
@@ -297,7 +301,9 @@ export function buildTiroir(dims, layout, mod = {}, opts = {}) {
   const ox = resolveDrawerOrigin(dims)
   const originX = ox.originX
   const licMm = ox.licMm
-  const originY = ox.originYFront - wurth.depthMm - open
+  // Rails + caisson en position fermée. L’ouverture Y+ est un offset visuel
+  // sur les panels uniquement (les rails restent fixés à la traverse).
+  const originY = ox.originYFront - wurth.depthMm
   const originZ = zFond - (wurth.decrocheMm ?? WURTH_DECROCHE_DYNAMOOV_MM)
 
   const rails = buildDrawerRails(traverses, {

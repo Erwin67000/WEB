@@ -72,6 +72,7 @@ function UnitGroup({ unit, selected, wireframe, pickMode, onPickFace }) {
           modules={unit.modules}
           panneaux={unit.panneaux}
           woodFinish={unit.woodFinish}
+          ossatureFinish={unit.ossatureFinish}
           panneauCouleur={unit.panneauCouleur}
           panneauCouleurHex={unit.panneauCouleurHex}
         />
