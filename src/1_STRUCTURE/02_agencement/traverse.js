@@ -84,6 +84,37 @@ export const face_traverse = (() => {
   return faces
 })()
 
+/**
+ * Origine X du tiroir (plan Würth / Dynamoov) :
+ * point intérieur de traverse `{ Z0, p3, dX: 11.75 }` + 10 mm vers le caisson.
+ * Droite : miroir `{ Z1, p3, dX: -11.75 }` − 10 mm.
+ */
+export const DRAWER_ORIGIN_OFFSET_X_MM = 10
+export const DRAWER_ORIGIN_REF_LEFT = { arete: 'Z0', point: 3, dX: 11.75 }
+export const DRAWER_ORIGIN_REF_RIGHT = { arete: 'Z1', point: 3, dX: -11.75 }
+
+/**
+ * @param {{ L: number, W: number, H: number }} dims
+ * @returns {{ originX: number, originXRight: number, licMm: number, traverseInnerLeft: number, traverseInnerRight: number }}
+ */
+export function resolveDrawerOriginX(dims) {
+  const { byId } = buildGeometrie(dims)
+  const traverseInnerLeft = resolveTraverseRef2D(byId, DRAWER_ORIGIN_REF_LEFT)[0]
+  const traverseInnerRight = resolveTraverseRef2D(
+    byId,
+    DRAWER_ORIGIN_REF_RIGHT,
+  )[0]
+  const originX = traverseInnerLeft + DRAWER_ORIGIN_OFFSET_X_MM
+  const originXRight = traverseInnerRight - DRAWER_ORIGIN_OFFSET_X_MM
+  return {
+    originX,
+    originXRight,
+    licMm: originXRight - originX,
+    traverseInnerLeft,
+    traverseInnerRight,
+  }
+}
+
 export function resolveTraverseRef2D(byId, ref) {
   const edge = byId?.[ref?.arete]
   if (!edge) throw new Error(`Traverse : arête inconnue "${ref?.arete}"`)

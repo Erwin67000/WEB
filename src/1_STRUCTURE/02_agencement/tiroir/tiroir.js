@@ -18,7 +18,7 @@ import {
   EPAISSEUR_PANNEAU,
   areteExtrusionMm,
 } from '../../00_matrice/matrice_constante.js'
-import { buildTraversePair } from '../traverse.js'
+import { buildTraversePair, resolveDrawerOriginX } from '../traverse.js'
 import {
   WURTH_DRAWER_TYPE,
   WURTH_DECROCHE_DYNAMOOV_MM,
@@ -65,7 +65,7 @@ export function buildDrawerOpenBox(
 ) {
   const [ox, oy, oz] = origin
   const { L, W, H } = outer
-  const e = epaisseur
+  const e = 11
   const d = Math.max(0, decrocheMm)
   const panels = []
 
@@ -85,12 +85,12 @@ export function buildDrawerOpenBox(
 
   // Fond surélevé (décroché B) — le rail Dynamoov passe dessous
   const zFond = oz + d
-  panels.push(plate('dessous', ox + e, oy + e, zFond, L - 2 * e, W - 2 * e, e))
+  panels.push(plate('dessous', ox + e, oy, zFond, L - 2 * e, W, 9))
 
   // Flancs pleine hauteur H depuis oz (ouverture Z top)
   // Joues : épaisseur e, s’arrêtent au-dessus du rail en laissant le décroché
-  panels.push(plate('fond', ox, oy, oz + d, L, e, H - d))
-  panels.push(plate('arriere', ox, oy + W - e, oz + d, L, e, H - d))
+  panels.push(plate('avant', ox+e, oy, oz + d + 9, L-2*e, e, H - d - 9))
+  panels.push(plate('arriere', ox+e, oy + W - e, oz + d + 9, L-2*e, e, H - d - 9))
   // Joues latérales : du bas (oz) pour le décroché visible, ou depuis oz+d
   // Type B : joues descendent bas pour guider ; fond à +11
   panels.push(plate('joue_g', ox, oy, oz, e, W, H))
@@ -306,9 +306,10 @@ export function buildTiroir(dims, layout, mod = {}, opts = {}) {
     sideSpaceMm: wurth.railSideSpaceMm,
   })
 
-  // Centrage LWS dans LWK (jeu 21 mm / côté déjà dans LWS = LWK−42)
-  const LWK = traverseBounds.maxX - traverseBounds.minX
-  const originX = traverseBounds.minX + (LWK - wurth.licMm) / 2
+  // Origine X : { Z0, p3, dX: 11.75 } + 10 mm (miroir à droite).
+  const ox = resolveDrawerOriginX(dims)
+  const originX = ox.originX
+  const licMm = ox.licMm
   const originY =
     (traverseBounds.minY + traverseBounds.maxY) / 2 -
     wurth.depthMm / 2 -
@@ -316,7 +317,7 @@ export function buildTiroir(dims, layout, mod = {}, opts = {}) {
   const originZ = zSideBottom
 
   const box = buildDrawerOpenBox(
-    { L: wurth.licMm, W: wurth.depthMm, H: wurth.hMm },
+    { L: licMm, W: wurth.depthMm, H: wurth.hMm },
     [originX, originY, originZ],
     ep,
     wurth.decrocheMm,
@@ -325,7 +326,8 @@ export function buildTiroir(dims, layout, mod = {}, opts = {}) {
   return {
     kind: 'drawer',
     type: WURTH_DRAWER_TYPE,
-    wurth,
+    wurth: { ...wurth, licMm, lwkMm: Math.round(ox.traverseInnerRight - ox.traverseInnerLeft) },
+    originX,
     traverses,
     rails,
     box,

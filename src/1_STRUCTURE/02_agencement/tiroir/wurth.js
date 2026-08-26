@@ -14,6 +14,7 @@ import {
   resolveAreteSection,
   areteExtrusionMm,
 } from '../../00_matrice/matrice_constante.js'
+import { resolveDrawerOriginX } from '../traverse.js'
 
 /** Type construction Würth : B = décroché bas pour rails dynamiques. */
 export const WURTH_DRAWER_TYPE = 'B'
@@ -106,15 +107,16 @@ export function computeWurthDrawerDims(dims, mod, traverseBounds) {
   )
   const hMm = clampWurthHeight(mod?.hMm ?? WURTH_HAUTEUR_DEFAUT_MM, maxH)
 
-  // LWK = largeur intérieure entre traverses (faces int.)
+  // LWK = entre faces int. traverses. LWS / origine X :
+  // { Z0, p3, dX: 11.75 } + 10 mm  (miroir à droite).
+  const ox = resolveDrawerOriginX(dims)
   const LWK = Math.max(
     0,
-    (traverseBounds?.maxX ?? dims.L - sec.largeur) -
-      (traverseBounds?.minX ?? sec.largeur),
+    ox.traverseInnerRight - ox.traverseInnerLeft ||
+      (traverseBounds?.maxX ?? dims.L - sec.largeur) -
+        (traverseBounds?.minX ?? sec.largeur),
   )
-  // LWS = (LWK − 42)  — plan Dynamoov
-  const licRaw = LWK - DYNAMOOV_LWK_MINUS_LWS_MM
-  const licMm = Math.max(DYNAMOOV_LWS_MIN_MM, Math.round(licRaw))
+  const licMm = Math.max(DYNAMOOV_LWS_MIN_MM, Math.round(ox.licMm))
 
   const depthAvail =
     (traverseBounds?.maxY ?? dims.W - sec.largeur) -
