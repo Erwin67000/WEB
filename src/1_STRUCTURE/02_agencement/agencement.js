@@ -450,8 +450,9 @@ export function moduleLayout(mod, { L, W, H }, moduleList = []) {
     const wurth = computeWurthDrawerDims(dims, mod, traverseBounds)
     const drawerH = wurth.hMm
     /**
-     * zMm = bas des joues du tiroir (= dessus des traverses Y / plan rails).
+     * zMm = dessus des traverses Y (= dessus des rails).
      * Traverses extrudées vers le bas sous ce plan.
+     * zFond du tiroir = zMm − 19,05.
      */
     const zMin = z0 + extrusion
     const zMax = Math.max(zMin, H - inset - drawerH)

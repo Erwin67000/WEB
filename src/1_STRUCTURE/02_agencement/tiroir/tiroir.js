@@ -1,18 +1,22 @@
 /**
  * Tiroir Würth type B + coulisses Dynamoov (basse).
  *
- * Empilement Z (bas → haut), avec traverses Y en support des rails :
+ * Empilement Z (repère meuble), zMm utilisateur = dessus des traverses Y :
  *
- *   zTraverseTop  ─────── dessus traverse Y (violet sur le schéma)
- *   zRail         ─────── rail posé SUR la traverse (corps ~10–13 mm)
- *   zSideBottom   ─────── bas des joues du tiroir (= zMm utilisateur)
- *                    ↕ décroché type B 13 mm (rail 10–13 mm sous le fond)
- *   zFond         ─────── panneau de fond du tiroir
- *   zSideTop      ─────── haut des joues (ouverture Z top)
+ *   zTraverseTop  ─────── dessus traverse Y
+ *   zRailTop      ─────── = zTraverseTop  (dessus du rail)
+ *                    ↕ hauteur native STL 45,7 mm
+ *   zRail         ─────── bbox min STL = zTraverseTop − 45,7
+ *
+ *   zTraverseTop  ───────
+ *                    ↕ 19,05 mm vers Z−
+ *   zFond         ─────── bas du panneau de fond
+ *                    ↕ décroché type B (joues plus bas que le fond)
+ *   oz            ─────── bas des joues
  *
  * Largeur (plan Dynamoov) :
  *   LWK = distance faces int. traverses
- *   LWS = LWK − 42  (21 mm / côté pour la coulisse)
+ *   LWS = LWK − 20  (10 mm / côté)
  */
 import {
   EPAISSEUR_PANNEAU,
@@ -21,7 +25,6 @@ import {
 import {
   buildTraversePair,
   resolveDrawerOrigin,
-  DRAWER_ASSEMBLY_Z_OFFSET_MM,
 } from '../traverse.js'
 import {
   WURTH_DRAWER_TYPE,
@@ -52,20 +55,24 @@ export const RAIL_STL_SCALE = 0.001
 export const RAIL_MOUNT_OFFSET = { x: 0, y: 0, z: 0 }
 /** Longueur native rail après µm→mm (axe Y CAD). */
 export const RAIL_NATIVE_LENGTH_Y_MM = 550
+/** zFond = zTraverseTop − 19,05 (Z négatif depuis le dessus traverse / rail). */
+export const DRAWER_FOND_BELOW_TRAVERSE_TOP_MM = 19.05
 
 /**
  * Boîte type B — ouverture Z top, décroché bas pour Dynamoov.
  *
  * @param {{ L: number, W: number, H: number }} outer — LWS × profondeur × H
- * @param {number[]} origin — [x,y,z] bas des joues (z = zSideBottom)
+ * @param {number[]} origin — [x,y,z] bas des joues
  * @param {number} [epaisseur]
- * @param {number} [decrocheMm] — surélévation du fond (11 mm type B)
+ * @param {number} [decrocheMm] — joues plus bas que le fond (type B)
+ * @param {number} [zTraverseTopMm] — dessus traverse / rail ; zFond = ce plan − 19,05
  */
 export function buildDrawerOpenBox(
   outer,
   origin,
   epaisseur = EPAISSEUR_PANNEAU,
   decrocheMm = WURTH_DECROCHE_DYNAMOOV_MM,
+  zTraverseTopMm,
 ) {
   const [ox, oy, oz] = origin
   const { L, W, H } = outer
@@ -87,16 +94,16 @@ export function buildDrawerOpenBox(
     return solidFromBoxPoints(id, pts)
   }
 
-  // Fond surélevé (décroché B) — le rail Dynamoov passe dessous
-  const zFond = oz + d
+  // zFond = dessus traverse − 19,05 (indépendant du décroché des joues)
+  const zFond =
+    zTraverseTopMm != null
+      ? Number(zTraverseTopMm) - DRAWER_FOND_BELOW_TRAVERSE_TOP_MM
+      : oz + d
   panels.push(plate('dessous', ox + e, oy, zFond, L - 2 * e, W, 9))
 
-  // Flancs pleine hauteur H depuis oz (ouverture Z top)
-  // Joues : épaisseur e, s’arrêtent au-dessus du rail en laissant le décroché
-  panels.push(plate('avant', ox+e, oy, oz + d + 9, L-2*e, e, H - d - 9))
-  panels.push(plate('arriere', ox+e, oy + W - e, oz + d + 9, L-2*e, e, H - d - 9))
-  // Joues latérales : du bas (oz) pour le décroché visible, ou depuis oz+d
-  // Type B : joues descendent bas pour guider ; fond à +11
+  // Flancs au-dessus du fond ; joues depuis oz (décroché type B)
+  panels.push(plate('avant', ox + e, oy, zFond + 9, L - 2 * e, e, H - d - 9))
+  panels.push(plate('arriere', ox + e, oy + W - e, zFond + 9, L - 2 * e, e, H - d - 9))
   panels.push(plate('joue_g', ox, oy, oz, e, W, H))
   panels.push(plate('joue_d', ox + L - e, oy, oz, e, W, H))
 
@@ -109,7 +116,7 @@ export function buildDrawerOpenBox(
     outer: { L, W, H },
     epaisseur: e,
     panels,
-    /** Z dessus du fond (appui charge) */
+    /** Bas du panneau de fond (zTraverseTop − 19,05) */
     zFond,
   }
 }
@@ -169,15 +176,9 @@ function solidFromBoxPoints(id, pts8) {
 }
 
 /**
- * Rails Dynamoov entre **traverse Y (dessous)** et **panneau bois du tiroir (dessus)**.
- *
- * Coin en L (croquis rose) :
- *   - bras horizontal = dessus de la traverse (appui mécanique)
- *   - bras vertical   = face ext. de la joue du tiroir
- *   - le rail occupe ce coin, dans le décroché type B (sous le fond)
- *
- * Pas de scale X ni Z : hauteur native STL = 45,7 mm.
- * Scale Y uniquement pour coller à la profondeur du tiroir.
+ * Rails Dynamoov : **dessus du rail = dessus de la traverse**.
+ * STL normalisé bbox min → zRail = zTraverseTop − hauteur native (45,7 mm).
+ * Pas de scale X ni Z. Scale Y uniquement pour coller à la profondeur.
  */
 export const RAIL_NATIVE_WIDTH_X_MM = 54.6
 export const RAIL_NATIVE_HEIGHT_Z_MM = 45.7
@@ -188,11 +189,11 @@ export function buildDrawerRails(traversePair, opts = {}) {
   const sideSpace = opts.sideSpaceMm ?? DYNAMOOV_SIDE_RAIL_SPACE_MM
   const railH = RAIL_NATIVE_HEIGHT_Z_MM
 
-  // Rail sous la traverse : même plan que le caisson, Z − 30.
   const zTraverseBottom = left.zTopMm
   const zTraverseTop = zTraverseBottom + left.extrusionMm
+  // Dessus rail = dessus traverse → origin STL (bbox min) = top − hauteur native
   const zRail =
-    zTraverseTop + DRAWER_ASSEMBLY_Z_OFFSET_MM + (RAIL_MOUNT_OFFSET.z || 0)
+    zTraverseTop - railH + (RAIL_MOUNT_OFFSET.z || 0)
 
   const spanY = Math.max(50, Number(opts.depthMm) || left.bounds2D.maxY - left.bounds2D.minY)
   const scaleY = spanY / RAIL_NATIVE_LENGTH_Y_MM
@@ -237,27 +238,28 @@ export function buildDrawerRails(traversePair, opts = {}) {
 /**
  * Tiroir Würth type B + Dynamoov complet.
  *
- * zMm utilisateur = bas des joues du tiroir (plan de référence Z).
- * Traverses : leur **dessus** est à zMm (support rails), extrusion vers le bas.
+ * zMm utilisateur = **dessus des traverses Y** (= dessus des rails).
+ * Traverses extrudées vers le bas. zFond = ce plan − 19,05 mm.
  */
 export function buildTiroir(dims, layout, mod = {}, opts = {}) {
   const ep = opts.epaisseurMm ?? EPAISSEUR_PANNEAU
   const open = layout.openOffset?.[1] || 0
 
-  // Bas des joues = position Z choisie
+  // zMm = dessus traverse Y (= dessus rail)
   const zSideBottom =
     layout.zBottomMm ??
     layout.zMm ??
     Math.max(20, (layout.center?.[2] ?? 100) - (layout.hMm ?? 110) / 2)
 
   /**
-   * Traverses Y sous les rails :
-   *   dessus traverse = bas des joues (zSideBottom)
-   *   → zTopMm traverse = zSideBottom − extrusion section (30 ou 40)
-   *   faceA à zTopMm, faceB à zTopMm+extrusion = zSideBottom
+   * Traverses Y :
+   *   dessus = zMm (zSideBottom historique) = dessus des rails
+   *   faceA à zTopMm = zTraverseBottom, faceB à zTraverseTop
    */
   const extrusion = areteExtrusionMm(dims)
-  const zTraverseBottom = Math.max(0, zSideBottom - extrusion)
+  const zTraverseTop = zSideBottom
+  const zTraverseBottom = Math.max(0, zTraverseTop - extrusion)
+  const zFond = zTraverseTop - DRAWER_FOND_BELOW_TRAVERSE_TOP_MM
 
   const traverses = buildTraversePair(dims, zTraverseBottom, {
     leftId: 'drawer-traverse-left',
@@ -296,7 +298,7 @@ export function buildTiroir(dims, layout, mod = {}, opts = {}) {
   const originX = ox.originX
   const licMm = ox.licMm
   const originY = ox.originYFront - wurth.depthMm - open
-  const originZ = zSideBottom + DRAWER_ASSEMBLY_Z_OFFSET_MM
+  const originZ = zFond - (wurth.decrocheMm ?? WURTH_DECROCHE_DYNAMOOV_MM)
 
   const rails = buildDrawerRails(traverses, {
     zSideBottom,
@@ -312,6 +314,7 @@ export function buildTiroir(dims, layout, mod = {}, opts = {}) {
     [originX, originY, originZ],
     ep,
     wurth.decrocheMm,
+    zTraverseTop,
   )
 
   return {
@@ -328,11 +331,12 @@ export function buildTiroir(dims, layout, mod = {}, opts = {}) {
     /** Cotes Z de référence */
     z: {
       traverseBottom: zTraverseBottom,
-      traverseTop: zSideBottom,
-      sideBottom: zSideBottom,
-      fond: zSideBottom + wurth.decrocheMm,
-      sideTop: zSideBottom + wurth.hMm,
+      traverseTop: zTraverseTop,
+      sideBottom: originZ,
+      fond: zFond,
+      sideTop: originZ + wurth.hMm,
       rail: rails[0]?.zRail,
+      railTop: zTraverseTop,
     },
   }
 }

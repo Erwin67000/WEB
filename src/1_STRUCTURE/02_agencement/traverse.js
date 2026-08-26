@@ -90,7 +90,6 @@ export const face_traverse = (() => {
  * Avant meuble = Z2 (Y max) — le tiroir est calé façade, pas au fond.
  */
 export const DRAWER_ORIGIN_OFFSET_X_MM = 10
-export const DRAWER_ASSEMBLY_Z_OFFSET_MM = -30
 export const DRAWER_ORIGIN_REF_LEFT = { arete: 'Z0', point: 3, dX: 11.75 }
 export const DRAWER_ORIGIN_REF_RIGHT = { arete: 'Z1', point: 3, dX: -11.75 }
 export const DRAWER_ORIGIN_REF_LEFT_FRONT = { arete: 'Z2', point: 3, dX: 11.75 }
