@@ -176,20 +176,17 @@ function solidFromBoxPoints(id, pts8) {
  *   - bras vertical   = face ext. de la joue du tiroir
  *   - le rail occupe ce coin, dans le décroché type B (sous le fond)
  *
- * Largeur cible ≈ 21 mm (Dynamoov LWK−LWS = 42 → 21 / côté).
- * Hauteur cible ≈ min(13, décroché−1) mm.
- *
- * Dimensions natives STL après normalize : ~54.6 × 550 × 47.2 mm (X×Y×Z).
+ * Pas de scale X ni Z : hauteur native STL = 45,7 mm.
+ * Scale Y uniquement pour coller à la profondeur du tiroir.
  */
 export const RAIL_NATIVE_WIDTH_X_MM = 54.6
-export const RAIL_NATIVE_HEIGHT_Z_MM = 47.2
+export const RAIL_NATIVE_HEIGHT_Z_MM = 45.7
 
 export function buildDrawerRails(traversePair, opts = {}) {
   const [left, right] = traversePair
   const decroche = opts.decrocheMm ?? WURTH_DECROCHE_DYNAMOOV_MM
   const sideSpace = opts.sideSpaceMm ?? DYNAMOOV_SIDE_RAIL_SPACE_MM
-  /** Plan Würth : rail 10–13 mm, posé sur la traverse, fond du tiroir dessus. */
-  const railH = opts.railBodyHMm ?? DYNAMOOV_RAIL_BODY_H_MM
+  const railH = RAIL_NATIVE_HEIGHT_Z_MM
 
   // Rail sous la traverse : même plan que le caisson, Z − 30.
   const zTraverseBottom = left.zTopMm
@@ -203,16 +200,13 @@ export function buildDrawerRails(traversePair, opts = {}) {
     (opts.originY != null ? Number(opts.originY) : left.bounds2D.minY) +
     (RAIL_MOUNT_OFFSET.y || 0)
 
-  const scaleX = sideSpace / RAIL_NATIVE_WIDTH_X_MM
-  const scaleZ = railH / RAIL_NATIVE_HEIGHT_Z_MM
-
   const leftX = left.innerX + (RAIL_MOUNT_OFFSET.x || 0)
   const rightX = right.innerX - (RAIL_MOUNT_OFFSET.x || 0)
 
   const common = {
     stlUrl: RAIL_STL_URL,
     axis: 'Y',
-    scale: { x: scaleX, y: scaleY, z: scaleZ },
+    scale: { x: 1, y: scaleY, z: 1 },
     rotation: [0, 0, 0],
     spanY,
     zTraverseTop,
