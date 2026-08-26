@@ -18,6 +18,10 @@ import {
   moduleLayout,
   WURTH_HAUTEURS_MM,
   WURTH_PROFONDEUR_MIN_MM,
+  DYNAMOOV_LWK_MIN_MM,
+  DYNAMOOV_LWK_MAX_MM,
+  drawerInnerWidthMm,
+  isDrawerWidthAllowed,
 } from '../1_STRUCTURE/02_agencement/agencement.js'
 import { DIM_LIMITS } from '../3_INPUT/matrice_input.js'
 
@@ -140,6 +144,7 @@ export default function ControlPanel() {
   const navigate = useNavigate()
   const [flash, setFlash] = useState('')
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [drawerWidthAlert, setDrawerWidthAlert] = useState(false)
   /** Chip en cours de renommage (id meuble) */
   const [editingUnitId, setEditingUnitId] = useState(null)
   const renameInputRef = useRef(null)
@@ -334,7 +339,20 @@ export default function ControlPanel() {
                     min={DIM_LIMITS.L.min}
                     max={DIM_LIMITS.L.max}
                     step={DIM_LIMITS.L.step}
-                    onChange={(L) => updateDims(unit.id, { L })}
+                    onChange={(L) => {
+                      const next = { ...unit.dims, L }
+                      const hasDrawers = unit.modules.some(
+                        (m) => m.kind === 'drawer',
+                      )
+                      if (
+                        hasDrawers &&
+                        isDrawerWidthAllowed(unit.dims) &&
+                        !isDrawerWidthAllowed(next)
+                      ) {
+                        setDrawerWidthAlert(true)
+                      }
+                      updateDims(unit.id, { L })
+                    }}
                   />
                   <SliderDim
                     label={t('config.depth')}
@@ -438,7 +456,16 @@ export default function ControlPanel() {
                     key={k.id}
                     type="button"
                     className="btn-sm"
-                    onClick={() => addModule(k.id)}
+                    onClick={() => {
+                      if (
+                        k.id === 'drawer' &&
+                        !isDrawerWidthAllowed(unit.dims)
+                      ) {
+                        setDrawerWidthAlert(true)
+                        return
+                      }
+                      addModule(k.id)
+                    }}
                   >
                     + {tId('module', k.id, k.label)}
                   </button>
@@ -474,6 +501,9 @@ export default function ControlPanel() {
                   const depthTooSmall = Boolean(
                     drawerLayout?.depthTooSmall || wurth?.depthTooSmall,
                   )
+                  const lwkOutOfRange = Boolean(
+                    drawerLayout?.lwkOutOfRange || wurth?.lwkOutOfRange,
+                  )
                   return (
                     <li key={m.id} className="mod-item">
                       <div className="mod-head">
@@ -506,7 +536,16 @@ export default function ControlPanel() {
                       )}
                       {m.kind === 'drawer' && (
                         <>
-                          {depthTooSmall ? (
+                          {lwkOutOfRange ? (
+                            <p className="drawer-warn" role="alert">
+                              {t('config.drawerWidthRange', {
+                                min: DYNAMOOV_LWK_MIN_MM,
+                                max: DYNAMOOV_LWK_MAX_MM,
+                                lwk: wurth?.lwkMm ?? drawerInnerWidthMm(unit.dims),
+                              })}
+                            </p>
+                          ) : null}
+                          {depthTooSmall && !lwkOutOfRange ? (
                             <p className="drawer-warn" role="alert">
                               {t('config.drawerTooShallow', {
                                 min: WURTH_PROFONDEUR_MIN_MM,
@@ -857,6 +896,34 @@ export default function ControlPanel() {
         </button>
       </div>
       {flash && <div className="panel-flash">{flash}</div>}
+      {drawerWidthAlert && (
+        <div
+          className="drawer-alert-overlay"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setDrawerWidthAlert(false)}
+        >
+          <div
+            className="drawer-alert"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p>
+              {t('config.drawerWidthRange', {
+                min: DYNAMOOV_LWK_MIN_MM,
+                max: DYNAMOOV_LWK_MAX_MM,
+                lwk: drawerInnerWidthMm(unit.dims),
+              })}
+            </p>
+            <button
+              type="button"
+              className="btn"
+              onClick={() => setDrawerWidthAlert(false)}
+            >
+              {t('config.ok')}
+            </button>
+          </div>
+        </div>
+      )}
     </aside>
   )
 }

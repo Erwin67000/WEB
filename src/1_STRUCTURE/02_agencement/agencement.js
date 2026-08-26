@@ -156,8 +156,13 @@ export {
   WURTH_PROFONDEURS_MM,
   WURTH_PROFONDEUR_MIN_MM,
   DRAWER_DEPTH_TOO_SMALL_MSG,
+  DRAWER_WIDTH_OUT_OF_RANGE_MSG,
+  DYNAMOOV_LWK_MIN_MM,
+  DYNAMOOV_LWK_MAX_MM,
   computeWurthDrawerDims,
   clampWurthHeight,
+  drawerInnerWidthMm,
+  isDrawerWidthAllowed,
 } from './tiroir/tiroir.js'
 
 export function createModule(kind, bayIndex = 0, extras = {}) {
@@ -351,6 +356,7 @@ export function moduleLayout(mod, { L, W, H }, moduleList = []) {
       lwkMm: wurth.lwkMm,
       depthMm: wurth.depthMm,
       depthTooSmall: Boolean(wurth.depthTooSmall),
+      lwkOutOfRange: Boolean(wurth.lwkOutOfRange),
       areteExtrusionMm: extrusion,
     }
   }

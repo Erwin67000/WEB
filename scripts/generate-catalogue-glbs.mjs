@@ -359,6 +359,12 @@ function buildRowGroup(row) {
       try {
         const layout = moduleLayout(mod, dims, modules)
         const data = buildTiroir(dims, layout, mod)
+        if (data.lwkOutOfRange) {
+          console.warn(
+            `  [skip tiroir ${row.id}/${mod.id}] LWK hors 200–1200 mm`,
+          )
+          continue
+        }
         if (data.depthTooSmall) {
           console.warn(`  [skip tiroir ${row.id}/${mod.id}] profondeur < 250 mm`)
           continue
@@ -381,11 +387,12 @@ function buildRowGroup(row) {
           if (tw) root.add(tw)
         }
         for (const p of data.box?.panels || []) {
+          const isFacade = p.id === 'facade'
           root.add(
             meshFromBuffers(
               p.positions,
               p.indices,
-              new THREE.Color(panneauColor),
+              new THREE.Color(isFacade ? panneauColor : woodColor),
               `drawer-box-${p.id}-${mod.id || mod.bayIndex}`,
             ),
           )

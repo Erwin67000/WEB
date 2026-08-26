@@ -40,6 +40,9 @@ export const WURTH_DECROCHE_DYNAMOOV_MM = 13
  */
 export const DYNAMOOV_LWK_MINUS_LWS_MM = 42
 export const DYNAMOOV_SIDE_RAIL_SPACE_MM = 21 // 42 / 2
+/** Largeur intérieure entre faces int. traverses (LWK, y compris ±11,75). */
+export const DYNAMOOV_LWK_MIN_MM = 200
+export const DYNAMOOV_LWK_MAX_MM = 1200
 /** Hauteur corps de coulisse (mm) — plan : min 10, max 13. */
 export const DYNAMOOV_RAIL_BODY_H_MM = 13
 export const DYNAMOOV_LWS_MIN_MM = 138
@@ -56,6 +59,22 @@ export const WURTH_PROFONDEUR_MIN_MM = 250
 
 export const DRAWER_DEPTH_TOO_SMALL_MSG =
   'Profondeur inférieure à la limite pour ajout de tiroir : 250 mm'
+
+export const DRAWER_WIDTH_OUT_OF_RANGE_MSG =
+  'Largeur intérieure entre traverses hors plage tiroir : 200–1200 mm'
+
+/** Distance intérieure entre faces int. des traverses (inclut dX ±11,75). */
+export function drawerInnerWidthMm(dims) {
+  const ox = resolveDrawerOriginX(dims)
+  return Math.round(
+    Math.max(0, ox.traverseInnerRight - ox.traverseInnerLeft),
+  )
+}
+
+export function isDrawerWidthAllowed(dims) {
+  const lwk = drawerInnerWidthMm(dims)
+  return lwk >= DYNAMOOV_LWK_MIN_MM && lwk <= DYNAMOOV_LWK_MAX_MM
+}
 
 /** Jeu Y (façade / fond) en plus de la grille profondeur. */
 export const DRAWER_CLEARANCE_Y_MM = 4
@@ -116,6 +135,9 @@ export function computeWurthDrawerDims(dims, mod, traverseBounds) {
         (traverseBounds?.minX ?? sec.largeur),
   )
   const licMm = Math.max(DYNAMOOV_LWS_MIN_MM, Math.round(ox.licMm))
+  const lwkMm = Math.round(LWK)
+  const lwkOutOfRange =
+    lwkMm < DYNAMOOV_LWK_MIN_MM || lwkMm > DYNAMOOV_LWK_MAX_MM
 
   const depthAvail =
     (traverseBounds?.maxY ?? dims.W - sec.largeur) -
@@ -123,19 +145,24 @@ export function computeWurthDrawerDims(dims, mod, traverseBounds) {
     2 * DRAWER_CLEARANCE_Y_MM
   const depthAvailableMm = Math.round(Math.max(0, depthAvail))
   const depthTooSmall = depthAvailableMm < WURTH_PROFONDEUR_MIN_MM
-  const depthMm = depthTooSmall ? 0 : snapDownToGrid(depthAvail)
+  const depthMm = depthTooSmall || lwkOutOfRange ? 0 : snapDownToGrid(depthAvail)
 
   return {
     type: WURTH_DRAWER_TYPE,
     hMm,
-    /** LWK caisson (entre traverses) */
-    lwkMm: Math.round(LWK),
-    /** LWS / LIC tiroir = LWK − 42 */
+    /** LWK caisson (entre traverses, y compris ±11,75) */
+    lwkMm,
+    /** LWS / LIC tiroir = LWK − 20 */
     licMm,
     depthMm,
     depthAvailableMm,
     depthTooSmall,
-    depthWarn: depthTooSmall ? DRAWER_DEPTH_TOO_SMALL_MSG : null,
+    lwkOutOfRange,
+    depthWarn: depthTooSmall
+      ? DRAWER_DEPTH_TOO_SMALL_MSG
+      : lwkOutOfRange
+        ? DRAWER_WIDTH_OUT_OF_RANGE_MSG
+        : null,
     /** Décroché bas type B (fond surélevé) */
     decrocheMm: WURTH_DECROCHE_DYNAMOOV_MM,
     /** Emprise latérale rail par côté (mm) */
@@ -143,8 +170,10 @@ export function computeWurthDrawerDims(dims, mod, traverseBounds) {
     /** Hauteur corps rail (mm) — sur le dessus de traverse */
     railBodyHMm: DYNAMOOV_RAIL_BODY_H_MM,
     overallHeightMm: hMm, // H Würth = hors-tout flancs (décroché inclus dans H)
-    label: depthTooSmall
-      ? DRAWER_DEPTH_TOO_SMALL_MSG
-      : `Würth B · H ${hMm} · P ${depthMm} · LWS ${licMm} (LWK ${Math.round(LWK)})`,
+    label: lwkOutOfRange
+      ? DRAWER_WIDTH_OUT_OF_RANGE_MSG
+      : depthTooSmall
+        ? DRAWER_DEPTH_TOO_SMALL_MSG
+        : `Würth B · H ${hMm} · P ${depthMm} · LWS ${licMm} (LWK ${lwkMm})`,
   }
 }

@@ -436,6 +436,9 @@ export const translations = {
       hintPick: 'Click a face of the piece to add / remove a panel',
       drawerTooShallow:
         'Depth below the limit for a drawer: {min} mm',
+      drawerWidthRange:
+        'The inner distance between the drawer rails (including the ±11.75 mm offset) must be between {min} and {max} mm to fit a drawer. Current value: {lwk} mm. Drawers are hidden.',
+      ok: 'OK',
       orbitZoom: 'Orbit · zoom',
       dragZoom: 'Drag to orbit · scroll to zoom',
     },
@@ -1051,6 +1054,9 @@ export const translations = {
       hintPick: 'Cliquez une face du meuble pour ajouter / retirer un panneau',
       drawerTooShallow:
         'Profondeur inférieure à la limite pour ajout de tiroir : {min} mm',
+      drawerWidthRange:
+        'La distance intérieure entre les traverses (y compris le décalage de ±11,75 mm) doit être comprise entre {min} et {max} mm pour un tiroir. Valeur actuelle : {lwk} mm. Les tiroirs ne sont pas affichés.',
+      ok: 'OK',
       orbitZoom: 'Orbit · zoom',
       dragZoom: 'Glisser pour tourner · molette zoom',
     },

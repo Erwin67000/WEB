@@ -552,13 +552,13 @@ function TiroirMesh({ dims, layout, mod, woodColor, woodRoughness, plateColor })
     g.position.set(0, 0, -yMm * SCALE)
   })
 
-  if (!data) return null
+  if (!data || data.lwkOutOfRange || data.depthTooSmall) return null
 
   const handleToggle = (e) => {
     const first = e.intersections?.[0]
     if (first && first.object !== e.object) return
     e.stopPropagation()
-    if (panneauPickMode || data.depthTooSmall) return
+    if (panneauPickMode || data.depthTooSmall || data.lwkOutOfRange) return
     const next = targetOpen > 0.5 ? 0 : 1
     setTargetOpen(next)
     if (mod?.id) setModuleOpen(mod.id, next)

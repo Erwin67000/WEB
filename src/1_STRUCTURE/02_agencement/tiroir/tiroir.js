@@ -46,11 +46,16 @@ export {
   WURTH_PROFONDEURS_MM,
   WURTH_PROFONDEUR_MIN_MM,
   DRAWER_DEPTH_TOO_SMALL_MSG,
+  DRAWER_WIDTH_OUT_OF_RANGE_MSG,
   DYNAMOOV_LWK_MINUS_LWS_MM,
+  DYNAMOOV_LWK_MIN_MM,
+  DYNAMOOV_LWK_MAX_MM,
   DYNAMOOV_SIDE_RAIL_SPACE_MM,
   DYNAMOOV_RAIL_BODY_H_MM,
   computeWurthDrawerDims,
   clampWurthHeight,
+  drawerInnerWidthMm,
+  isDrawerWidthAllowed,
 } from './wurth.js'
 
 export const RAIL_STL_URL = '/structure/agencement/rail-gauche.stl'
@@ -286,7 +291,11 @@ export function buildTiroir(dims, layout, mod = {}, opts = {}) {
   const wurth =
     layout.wurth || computeWurthDrawerDims(dims, mod, traverseBounds)
 
-  if (wurth.depthTooSmall || wurth.depthMm < 250) {
+  if (
+    wurth.lwkOutOfRange ||
+    wurth.depthTooSmall ||
+    wurth.depthMm < 250
+  ) {
     return {
       kind: 'drawer',
       type: WURTH_DRAWER_TYPE,
@@ -294,7 +303,8 @@ export function buildTiroir(dims, layout, mod = {}, opts = {}) {
       traverses: [],
       rails: [],
       box: { panels: [], openFace: 'Z_top' },
-      depthTooSmall: true,
+      depthTooSmall: Boolean(wurth.depthTooSmall),
+      lwkOutOfRange: Boolean(wurth.lwkOutOfRange),
       openOffset: layout.openOffset || [0, 0, 0],
       layout,
       zSideBottom,
