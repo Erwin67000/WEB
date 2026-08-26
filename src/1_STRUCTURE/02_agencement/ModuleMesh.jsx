@@ -52,99 +52,6 @@ function ossatureWoodColor(woodFinish, ossatureFinish) {
   return shadeHex(finish.color, surf.shade ?? 1)
 }
 
-/** Filaire d’un rectangle (4 côtés) — trait fin panneaux. */
-function RectangleWire({ rectangle }) {
-  const { size, gl } = useThree()
-  const lineMatRef = useRef(null)
-
-  const edgeBasic = useMemo(() => {
-    const geo = new THREE.BufferGeometry()
-    geo.setAttribute(
-      'position',
-      new THREE.BufferAttribute(rectangle.wire, 3),
-    )
-    return geo
-  }, [rectangle])
-
-  const edgeFat = useMemo(() => {
-    const geo = new LineSegmentsGeometry()
-    geo.setPositions(Array.from(rectangle.wire))
-    return geo
-  }, [rectangle])
-
-  const dpr = gl.getPixelRatio?.() || 1
-  const resW = Math.max(1, size.width * dpr)
-  const resH = Math.max(1, size.height * dpr)
-
-  useLayoutEffect(() => {
-    const mat = lineMatRef.current
-    if (mat?.resolution) mat.resolution.set(resW, resH)
-  }, [resW, resH])
-
-  useEffect(() => {
-    return () => {
-      edgeBasic.dispose()
-      edgeFat.dispose()
-    }
-  }, [edgeBasic, edgeFat])
-
-  const color = rectangle.color || PANNEAU_EDGE_COLOR
-
-  return (
-    <group>
-      <lineSegments geometry={edgeBasic} renderOrder={2}>
-        <lineBasicMaterial
-          color={color}
-          depthTest
-          depthWrite={false}
-          polygonOffset
-          polygonOffsetFactor={-2}
-          polygonOffsetUnits={-2}
-        />
-      </lineSegments>
-      <lineSegments2 geometry={edgeFat} renderOrder={3}>
-        <lineMaterial
-          ref={lineMatRef}
-          color={color}
-          linewidth={PANNEAU_EDGE_WIDTH}
-          depthTest
-          depthWrite={false}
-          polygonOffset
-          polygonOffsetFactor={-2}
-          polygonOffsetUnits={-2}
-          resolution={[resW, resH]}
-        />
-      </lineSegments2>
-    </group>
-  )
-}
-
-/** Face semi-transparente d’un rectangle (optionnel, lecture). */
-function RectangleFace({ rectangle, opacity = 0.12 }) {
-  const geometry = useMemo(() => {
-    const geo = new THREE.BufferGeometry()
-    geo.setAttribute(
-      'position',
-      new THREE.BufferAttribute(rectangle.positions, 3),
-    )
-    geo.setIndex(new THREE.BufferAttribute(rectangle.indices, 1))
-    geo.computeVertexNormals()
-    return geo
-  }, [rectangle])
-
-  return (
-    <mesh geometry={geometry}>
-      <meshStandardMaterial
-        color={rectangle.color}
-        transparent
-        opacity={opacity}
-        side={THREE.DoubleSide}
-        depthWrite={false}
-      />
-    </mesh>
-  )
-}
-
 /**
  * Solide panneau 8 points.
  * Indices / winding : ceux de face_panneau (matrice) — pas de correction auto.
@@ -235,19 +142,14 @@ function PanneauSolidMesh({ panneau, color, edgeColor }) {
 }
 
 /**
- * Un panneau (fond | porte | …) : 4 rectangles debug + solide on/off.
+ * Un panneau (fond | porte | …) — solide 8 points.
  */
 export function PanneauView({
   nom,
   dims,
-  woodFinish = 'chene',
   panneauCouleur = DEFAULT_PANNEAU_COULEUR,
   panneauCouleurHex,
 }) {
-  const finish = FINITIONS[woodFinish] || FINITIONS.chene
-  const showRectangles = useActiveConfigStore((s) => s.showPanneauRectangles)
-  const showSolid = useActiveConfigStore((s) => s.showPanneauSolid)
-  const showRectFaces = useActiveConfigStore((s) => s.showPanneauRectFaces)
   const epaisseurPanneau = useActiveConfigStore((s) => s.epaisseurPanneau)
   const epaisseurPorte = useActiveConfigStore((s) => s.epaisseurPorte)
 
@@ -259,39 +161,16 @@ export function PanneauView({
     [nom, dims.L, dims.W, dims.H, epaisseurPanneau, epaisseurPorte],
   )
 
-  const { base, decale, tolerance, arriere } = data.rectangles
   const palette = resolvePanneauColor(panneauCouleur, panneauCouleurHex)
   const solidColor = palette.color
-  // Contours panneaux toujours noirs (pas la teinte olive / edge palette)
   const edgeColor = PANNEAU_EDGE_COLOR
 
   return (
-    <group>
-      {showRectangles && (
-        <group>
-          <RectangleWire rectangle={{ ...base, color: edgeColor }} />
-          <RectangleWire rectangle={{ ...decale, color: edgeColor }} />
-          <RectangleWire rectangle={{ ...tolerance, color: edgeColor }} />
-          <RectangleWire rectangle={{ ...arriere, color: edgeColor }} />
-          {showRectFaces && (
-            <>
-              <RectangleFace rectangle={base} opacity={0.08} />
-              <RectangleFace rectangle={decale} opacity={0.1} />
-              <RectangleFace rectangle={tolerance} opacity={0.14} />
-              <RectangleFace rectangle={arriere} opacity={0.14} />
-            </>
-          )}
-        </group>
-      )}
-
-      {showSolid && (
-        <PanneauSolidMesh
-          panneau={data.panneau}
-          color={solidColor}
-          edgeColor={edgeColor}
-        />
-      )}
-    </group>
+    <PanneauSolidMesh
+      panneau={data.panneau}
+      color={solidColor}
+      edgeColor={edgeColor}
+    />
   )
 }
 

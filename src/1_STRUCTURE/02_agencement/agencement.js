@@ -6,8 +6,6 @@
 import {
   EPAISSEUR_PANNEAU,
   EPAISSEUR_PORTE,
-  TOLERANCE,
-  DECALAGE_PANNEAU,
   DRAWER_STACK_GAP_MM,
   PRIX,
   areteExtrusionMm,
@@ -19,7 +17,6 @@ import {
   Panneau,
   face_panneau,
   ligne_panneau,
-  ligne_rectangle,
   computeQuatreRectangles,
 } from '../00_matrice/matrice_panneau_grok.js'
 import { buildTraversePair } from './traverse.js'
@@ -29,123 +26,6 @@ import {
   computeWurthDrawerDims,
   clampWurthHeight,
 } from './tiroir/tiroir.js'
-
-/**
- * Rectangle3D : 4 coins 3D pour debug (base / décalé / tolérance / arrière).
- * Propriétés lues par ModuleMesh : color, wire, positions, indices.
- */
-export class Rectangle3D {
-  /**
-   * @param {string} nom
-   * @param {number[][]} points — 4 × [x,y,z] mm
-   * @param {string} color — hex (#RRGGBB)
-   */
-  constructor(nom, points, color = '#ffffff') {
-    if (!points || points.length !== 4) {
-      throw new Error(
-        `Rectangle3D "${nom}" : 4 points requis, reçu ${points?.length}`,
-      )
-    }
-    this.nom = nom
-    this.id = nom
-    this.points = points.map((p) => [p[0], p[1], p[2]])
-    this.color = color
-    this.couleur = color
-  }
-
-  get positions() {
-    const out = new Float32Array(12)
-    for (let i = 0; i < 4; i++) {
-      out[i * 3] = this.points[i][0]
-      out[i * 3 + 1] = this.points[i][1]
-      out[i * 3 + 2] = this.points[i][2]
-    }
-    return out
-  }
-
-  get indices() {
-    return new Uint16Array([0, 1, 2, 0, 2, 3])
-  }
-
-  /** Filaire 4 côtés uniquement (pas ligne_panneau 12 segments). */
-  get wire() {
-    const out = new Float32Array(ligne_rectangle.length * 6)
-    ligne_rectangle.forEach(([a, b], i) => {
-      const o = i * 6
-      out[o] = this.points[a][0]
-      out[o + 1] = this.points[a][1]
-      out[o + 2] = this.points[a][2]
-      out[o + 3] = this.points[b][0]
-      out[o + 4] = this.points[b][1]
-      out[o + 5] = this.points[b][2]
-    })
-    return out
-  }
-
-  toBuffers() {
-    return {
-      nom: this.nom,
-      positions: this.positions,
-      indices: this.indices,
-      wire: this.wire,
-      color: this.color,
-      couleur: this.couleur,
-    }
-  }
-}
-
-/** Couleurs debug des 4 couches + teinte solide par panneau. */
-const RECT_COLORS = {
-  fond: {
-    base: '#4cc9f0',
-    decale: '#f72585',
-    tolerance: '#ffd60a',
-    arriere: '#80ed99',
-    solid: '#8d6e4c',
-  },
-  porte: {
-    base: '#90e0ef',
-    decale: '#ff85a1',
-    tolerance: '#ffe566',
-    arriere: '#95d5b2',
-    solid: '#c4a574',
-  },
-  dessous: {
-    base: '#48cae4',
-    decale: '#e85d75',
-    tolerance: '#f4d35e',
-    arriere: '#6bcb77',
-    solid: '#6b5344',
-  },
-  dessus_interieur: {
-    base: '#00b4d8',
-    decale: '#d62828',
-    tolerance: '#fcbf49',
-    arriere: '#2a9d8f',
-    solid: '#c4a574',
-  },
-  dessus_exterieur: {
-    base: '#48cae4',
-    decale: '#e63946',
-    tolerance: '#f77f00',
-    arriere: '#2a9d8f',
-    solid: '#a67c52',
-  },
-  joue1: {
-    base: '#0077b6',
-    decale: '#9b2226',
-    tolerance: '#e9c46a',
-    arriere: '#52b788',
-    solid: '#d4b896',
-  },
-  joue2: {
-    base: '#023e8a',
-    decale: '#ae2012',
-    tolerance: '#e76f51',
-    arriere: '#40916c',
-    solid: '#9a7b4f',
-  },
-}
 
 export const AGENCEMENT_TYPES = {
   shelf: 'shelf',
@@ -160,7 +40,7 @@ export const AGENCEMENT_TYPES = {
 }
 
 /**
- * Construit un panneau nommé (fond | porte | …) via les 4 fonctions matrice.
+ * Construit un panneau nommé (fond | porte | …) — solide 8 points.
  *
  * @param {string} nom — clé dans PANNEAU_DEFS
  * @param {{ L: number, W: number, H: number }} dims
@@ -171,22 +51,11 @@ export function buildPanneauComplet(nom, dims, params = {}) {
   if (!def) throw new Error(`buildPanneauComplet : PANNEAU_DEFS.${nom} absent`)
 
   const { byId } = buildGeometrie(dims)
-  const {
-    base,
-    decale,
-    tolerance,
-    arriere,
-    params: resolved,
-  } = computeQuatreRectangles(def, byId, params)
-
-  const colors = RECT_COLORS[nom] || RECT_COLORS.fond
-
-  const rectangles = {
-    base: new Rectangle3D(`${nom}-base`, base, colors.base),
-    decale: new Rectangle3D(`${nom}-decale`, decale, colors.decale),
-    tolerance: new Rectangle3D(`${nom}-tolerance`, tolerance, colors.tolerance),
-    arriere: new Rectangle3D(`${nom}-arriere`, arriere, colors.arriere),
-  }
+  const { tolerance, arriere, params: resolved } = computeQuatreRectangles(
+    def,
+    byId,
+    params,
+  )
 
   const panneau = new Panneau(nom, [...tolerance, ...arriere], {
     normal: def.normal,
@@ -195,32 +64,11 @@ export function buildPanneauComplet(nom, dims, params = {}) {
     epaisseur: resolved.epaisseur,
   })
 
-  const solidColor = def.couleur || colors.solid || '#c4a574'
-
   return {
     nom,
-    rectangles,
     panneau,
-    solidColor,
+    solidColor: def.couleur || '#c4a574',
     params: resolved,
-    points: {
-      point1: base[0],
-      point2: base[1],
-      point3: base[2],
-      point4: base[3],
-      point_face1: decale[0],
-      point_face2: decale[1],
-      point_face3: decale[2],
-      point_face4: decale[3],
-      point_rectangle1: tolerance[0],
-      point_rectangle2: tolerance[1],
-      point_rectangle3: tolerance[2],
-      point_rectangle4: tolerance[3],
-      point_arriere1: arriere[0],
-      point_arriere2: arriere[1],
-      point_arriere3: arriere[2],
-      point_arriere4: arriere[3],
-    },
   }
 }
 
