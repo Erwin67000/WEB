@@ -5,7 +5,6 @@ import {
   FINITIONS_OSSATURE_CLIENT,
   PANNEAU_COULEURS,
   EPAISSEUR_PANNEAU,
-  DEFAULT_PANNEAU_HEX,
   areteExtrusionMm,
 } from '../1_STRUCTURE/00_matrice/matrice_constante.js'
 import {
@@ -30,7 +29,8 @@ import { useNavigate } from 'react-router-dom'
 import { useI18n, useTId } from '@texte/I18nProvider.jsx'
 import PayButton from './PayButton.jsx'
 import { persistDraft } from '../lib/checkoutDraft.js'
-import { STRIPE_ENABLED, isFranceCountry } from '../lib/payments.js'
+import { STRIPE_ENABLED } from '../lib/payments.js'
+import { writeShopPanelColor } from '../lib/shopPanelColor.js'
 import { labelFromUnits } from '../lib/checkout.js'
 
 /** Labels courts pour chips des panneaux actifs */
@@ -124,7 +124,6 @@ export default function ControlPanel() {
   const setWireframe = useActiveConfigStore((s) => s.setWireframe)
   const setPanneauPickMode = useActiveConfigStore((s) => s.setPanneauPickMode)
   const requestModele3D = useActiveConfigStore((s) => s.requestModele3D)
-  const setContact = useActiveConfigStore((s) => s.setContact)
   const contact = useActiveConfigStore((s) => s.contact)
 
   const storeApi = useActiveConfigStoreApi()
@@ -159,7 +158,6 @@ export default function ControlPanel() {
     modules: !!dimsLocked,
     panneaux: !!dimsLocked,
     scene: false,
-    contact: false,
     devis: false,
   }))
 
@@ -393,20 +391,17 @@ export default function ControlPanel() {
                 </>
               )}
               {!dimsLocked && (
-                <>
-                  <p className="muted config-dims-help">{t('config.dimsHelp')}</p>
-                  <NumFieldInline
-                    label={t('config.rotZ')}
-                    value={unit.rotationZ}
-                    min={-180}
-                    max={180}
-                    step={5}
-                    unit="°"
-                    onChange={(rotationZ) =>
-                      updateUnit(unit.id, { rotationZ })
-                    }
-                  />
-                </>
+                <NumFieldInline
+                  label={t('config.rotZ')}
+                  value={unit.rotationZ}
+                  min={-180}
+                  max={180}
+                  step={5}
+                  unit="°"
+                  onChange={(rotationZ) =>
+                    updateUnit(unit.id, { rotationZ })
+                  }
+                />
               )}
 
               <p className="field-label" style={{ marginTop: '0.35rem' }}>
@@ -692,9 +687,10 @@ export default function ControlPanel() {
                         type="button"
                         className={`color-swatch-btn${active ? ' active' : ''}`}
                         title={tId('panelColor', c.id, c.label)}
-                        onClick={() =>
+                        onClick={() => {
                           updateUnit(unit.id, { panneauCouleur: c.id })
-                        }
+                          writeShopPanelColor(c.id)
+                        }}
                       >
                         <span
                           className="color-swatch"
@@ -706,43 +702,6 @@ export default function ControlPanel() {
                       </button>
                     )
                   })}
-                <label
-                  className={`color-swatch-btn surmesure-btn${
-                    unit.panneauCouleur === 'surmesure' ? ' active' : ''
-                  }`}
-                  title={t('config.customColor')}
-                >
-                  <span
-                    className="color-swatch"
-                    style={{
-                      background:
-                        unit.panneauCouleurHex || DEFAULT_PANNEAU_HEX,
-                      backgroundImage:
-                        unit.panneauCouleur === 'surmesure'
-                          ? 'none'
-                          : 'conic-gradient(red, yellow, lime, aqua, blue, magenta, red)',
-                    }}
-                  />
-                  <span className="color-swatch-label">{t('config.custom')}</span>
-                  <input
-                    type="color"
-                    className="color-input-hidden"
-                    value={unit.panneauCouleurHex || DEFAULT_PANNEAU_HEX}
-                    onChange={(e) =>
-                      updateUnit(unit.id, {
-                        panneauCouleur: 'surmesure',
-                        panneauCouleurHex: e.target.value,
-                      })
-                    }
-                    onClick={() =>
-                      updateUnit(unit.id, {
-                        panneauCouleur: 'surmesure',
-                        panneauCouleurHex:
-                          unit.panneauCouleurHex || DEFAULT_PANNEAU_HEX,
-                      })
-                    }
-                  />
-                </label>
               </div>
             </div>
           )}
@@ -792,55 +751,6 @@ export default function ControlPanel() {
                   />
                 </label>
               )}
-            </div>
-          )}
-        </section>
-
-        <section className="panel-section">
-          <button
-            type="button"
-            className="section-head"
-            onClick={() => toggle('contact')}
-          >
-            <span>{t('checkout.contactTitle')}</span>
-            <span className="chev">{openSections.contact ? '▾' : '▸'}</span>
-          </button>
-          {openSections.contact && (
-            <div className="section-body">
-              {[
-                ['firstName', 'text'],
-                ['lastName', 'text'],
-                ['email', 'email'],
-                ['phone', 'tel'],
-                ['addressLine1', 'text'],
-                ['postalCode', 'text'],
-                ['city', 'text'],
-              ].map(([key, type]) => (
-                <label key={key} className="field">
-                  <span className="field-label">{t(`client.${key}`)}</span>
-                  <input
-                    type={type}
-                    value={contact[key] || ''}
-                    onChange={(e) => setContact({ [key]: e.target.value })}
-                  />
-                </label>
-              ))}
-              <label className="field">
-                <span className="field-label">{t('client.country')}</span>
-                <select
-                  value={contact.country || 'FR'}
-                  onChange={(e) => setContact({ country: e.target.value })}
-                >
-                  <option value="FR">{t('checkout.countryFR')}</option>
-                  <option value="EU">{t('checkout.countryEU')}</option>
-                  <option value="WORLD">{t('checkout.countryWorld')}</option>
-                </select>
-              </label>
-              <p className="muted">
-                {isFranceCountry(contact.country)
-                  ? t('checkout.ecoYes')
-                  : t('checkout.ecoNo')}
-              </p>
             </div>
           )}
         </section>

@@ -32,6 +32,7 @@ import {
   downloadBlob,
   openMailtoDevis,
 } from './devisExport.js'
+import { readShopPanelColor } from '../lib/shopPanelColor.js'
 import { downloadFilledDevis } from '../2_BUILD/document/fillDevisTemplate.js'
 import {
   downloadMasterInputCsv,
@@ -573,8 +574,12 @@ export function createConfigStore(opts = {}) {
         ossatureFinish: resolveOssatureFinish(
           row.ossature_finish || row.texture || row.wood_finish,
         ),
-        // Couleur panneau depuis modele_boutique (vert → olive, etc.)
-        panneauCouleur: row.panneau_couleur || row.panneauCouleur || 'olive',
+        // Couleur boutique choisie par le client, sinon couleur catalogue
+        panneauCouleur:
+          readShopPanelColor() ||
+          row.panneau_couleur ||
+          row.panneauCouleur ||
+          'olive',
         modules,
         panneaux,
         positionMm: { x: 0, y: 0, z: 0 },

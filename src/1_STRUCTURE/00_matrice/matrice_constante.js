@@ -246,7 +246,7 @@ export const FINITIONS_OSSATURE = {
 export const FINITIONS_OSSATURE_CLIENT = ['brut', 'vernis_clair']
 
 /**
- * 5 couleurs panneau — tons site (or / ivoire / bois), contrastent légèrement.
+ * 6 couleurs panneau — tons site + noir mat.
  * Appliquées à tous les panneaux d’une configuration.
  */
 /** Contours filaires panneaux : toujours noir (indépendant de la teinte de face). */
@@ -283,11 +283,10 @@ export const PANNEAU_COULEURS = {
     color: '#e8b86d',
     edge: PANNEAU_EDGE_HEX,
   },
-  /** Couleur libre (spectre) — le hex est dans unit.panneauCouleurHex */
-  surmesure: {
-    id: 'surmesure',
-    label: 'Sur mesure',
-    color: '#c9a227',
+  noir_mat: {
+    id: 'noir_mat',
+    label: 'Noir mat',
+    color: '#1c1c1c',
     edge: PANNEAU_EDGE_HEX,
   },
 }
@@ -295,18 +294,10 @@ export const PANNEAU_COULEURS = {
 export const DEFAULT_PANNEAU_COULEUR = 'gris_cendre'
 export const DEFAULT_PANNEAU_HEX = '#c9a227'
 
-/** Résout la couleur de panneau (id catalogue ou hex sur mesure). */
+/** Résout la couleur de panneau (id catalogue). */
 export function resolvePanneauColor(panneauCouleur, panneauCouleurHex) {
   if (panneauCouleur === 'surmesure' || String(panneauCouleur || '').startsWith('#')) {
-    const hex =
-      panneauCouleurHex ||
-      (String(panneauCouleur || '').startsWith('#') ? panneauCouleur : DEFAULT_PANNEAU_HEX)
-    return {
-      id: 'surmesure',
-      label: 'Sur mesure',
-      color: hex,
-      edge: PANNEAU_EDGE_HEX,
-    }
+    return PANNEAU_COULEURS.noir_mat
   }
   return (
     PANNEAU_COULEURS[panneauCouleur] ||

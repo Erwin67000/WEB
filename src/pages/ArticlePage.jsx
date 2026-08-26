@@ -22,6 +22,7 @@ import PayButton from '../components/PayButton.jsx'
 import { persistDraft } from '../lib/checkoutDraft.js'
 import { STRIPE_ENABLED, isFranceCountry } from '../lib/payments.js'
 import { trackEvent } from '../lib/plausible.js'
+import { readShopPanelColor } from '../lib/shopPanelColor.js'
 
 /** Prix TTC catalogue → ventilation HT / TVA 20 %. */
 function pricingFromTtc(ttc) {
@@ -318,6 +319,7 @@ export default function ArticlePage() {
 
   const { ttc, pricing } = specs
   const france = isFranceCountry(contact.country)
+  const shopColor = readShopPanelColor()
 
   async function handlePay() {
     trackEvent('Checkout intent', { product: row.id })
@@ -369,6 +371,8 @@ export default function ArticlePage() {
             eager
             freeOrbit
             dpr={[1, 1.5]}
+            forceLive={Boolean(shopColor)}
+            panneauCouleur={shopColor || undefined}
           />
         </div>
 

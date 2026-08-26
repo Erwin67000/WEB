@@ -86,7 +86,7 @@ export const translations = {
       assemble: {
         kicker: 'LEVEL 02 · Vertex',
         title: 'Triple meeting',
-        text: 'Three edges assemble as one geometric signature',
+        text: 'Three edges assemble\nas one geometric signature',
       },
       stretch: {
         kicker: 'LEVEL 03 · Volume',
@@ -106,7 +106,7 @@ export const translations = {
       panels: {
         kicker: 'LEVEL 06 · Skin',
         title: 'Character',
-        text: 'Panels give the soul, functional and optimized.',
+        text: 'Panels give the soul,\nfunctional and optimized.',
       },
       hudLabel: 'Assembly',
       chaptersAria: 'Story steps',
@@ -499,7 +499,7 @@ export const translations = {
       bleu_poudre: 'Powder light blue',
       gris_cendre: 'Ash-white grey',
       jaune_orange: 'Light orange-yellow',
-      surmesure: 'Custom',
+      noir_mat: 'Matte black',
     },
     env: {
       none: 'No scene',
@@ -703,7 +703,7 @@ export const translations = {
       assemble: {
         kicker: 'NIVEAU 02 · Sommet',
         title: 'Triple rencontre',
-        text: 'Trois arêtes se rencontrent pour former le sommet signature',
+        text: 'Trois arêtes se rencontrent\npour former le sommet signature',
       },
       stretch: {
         kicker: 'NIVEAU 03 · Volume',
@@ -723,7 +723,7 @@ export const translations = {
       panels: {
         kicker: 'NIVEAU 06 · Habillage',
         title: 'Caractère',
-        text: 'Les panneaux donnent l\'\âme, fonctionnels et optimisés.',
+        text: 'Les panneaux donnent l’âme,\nfonctionnels et optimisés.',
       },
       hudLabel: 'Assemblage',
       chaptersAria: 'Étapes du récit',
@@ -1117,7 +1117,7 @@ export const translations = {
       bleu_poudre: 'Bleu clair poudré',
       gris_cendre: 'Gris cendre blanc',
       jaune_orange: 'Jaune orangé clair',
-      surmesure: 'Sur mesure',
+      noir_mat: 'Noir mat',
     },
     env: {
       none: 'Aucune scène',

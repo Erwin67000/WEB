@@ -6,6 +6,10 @@ import FurniturePreview3D from '../components/FurniturePreview3D.jsx'
 import { preloadCatalogGlbs } from '../components/CatalogGlbPreview.jsx'
 import ShopHoverButton from '../components/ShopHoverButton.jsx'
 import { useI18n, useTId, useCatalogText } from '@texte/I18nProvider.jsx'
+import {
+  readShopPanelColor,
+  writeShopPanelColor,
+} from '../lib/shopPanelColor.js'
 
 function cardSpecsLine(row, t) {
   const extras = [`${row.L_mm}×${row.W_mm}×${row.H_mm} mm`]
@@ -19,18 +23,7 @@ function cardSpecsLine(row, t) {
   return extras.join(' · ')
 }
 
-const SHOP_COLOR_KEY = 'philae-shop-panel-color'
 const PALETTE = Object.values(PANNEAU_COULEURS).filter((c) => c.id !== 'surmesure')
-
-function readShopColor() {
-  try {
-    const v = localStorage.getItem(SHOP_COLOR_KEY)
-    if (v && PANNEAU_COULEURS[v] && v !== 'surmesure') return v
-  } catch {
-    /* ignore */
-  }
-  return null
-}
 
 export default function BoutiquePage() {
   const navigate = useNavigate()
@@ -42,16 +35,11 @@ export default function BoutiquePage() {
   const [loading, setLoading] = useState(true)
   const [activeRooms, setActiveRooms] = useState([])
   const [activeNames, setActiveNames] = useState([])
-  const [panelColor, setPanelColor] = useState(readShopColor)
+  const [panelColor, setPanelColor] = useState(readShopPanelColor)
 
   const setColor = (id) => {
     setPanelColor(id)
-    try {
-      if (id) localStorage.setItem(SHOP_COLOR_KEY, id)
-      else localStorage.removeItem(SHOP_COLOR_KEY)
-    } catch {
-      /* ignore */
-    }
+    writeShopPanelColor(id)
   }
 
   useEffect(() => {

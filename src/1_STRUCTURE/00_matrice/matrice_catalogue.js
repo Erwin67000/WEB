@@ -70,6 +70,9 @@ const COULEUR_PANNEAU_MAP = {
   gris_cendre: 'gris_cendre',
   jaune: 'jaune_orange',
   jaune_orange: 'jaune_orange',
+  noir: 'noir_mat',
+  noir_mat: 'noir_mat',
+  black: 'noir_mat',
 }
 
 /** socle/dessus O-N → noms PANNEAU_DEFS */

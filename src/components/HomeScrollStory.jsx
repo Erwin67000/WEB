@@ -1178,7 +1178,7 @@ export default function HomeScrollStory({
             </span>
           </div>
           <div className="home-story-hud-bar">
-            <i style={{ width: `${Math.round(hudP * 100)}%` }} />
+            <i style={{ '--hud-p': `${Math.round(hudP * 100)}%` }} />
           </div>
           <div
             className="home-story-hud-pips"
