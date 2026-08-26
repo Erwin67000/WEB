@@ -469,7 +469,7 @@ export default function ControlPanel() {
                   const wurth = drawerLayout?.wurth
                   const drawerZ = drawerLayout?.zBottomMm ?? drawerLayout?.zMm
                   const drawerZMin =
-                    drawerLayout?.zMin ?? 22 + shelfExtrusion
+                    drawerLayout?.zMin ?? 2 * shelfExtrusion
                   const drawerZMax = drawerLayout?.zMax ?? unit.dims.H - 100
                   const depthTooSmall = Boolean(
                     drawerLayout?.depthTooSmall || wurth?.depthTooSmall,

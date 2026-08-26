@@ -328,28 +328,43 @@ export function createModule(kind, bayIndex = 0, extras = {}) {
 }
 
 /**
+ * Plancher Z des tiroirs = 2 × hauteur d’arête
+ * (dessus de traverse du 1er tiroir, au-dessus des arêtes basses).
+ */
+export function drawerFloorZMm(dims = {}) {
+  return 2 * areteExtrusionMm(dims)
+}
+
+/**
+ * Z min du dessus de traverse d’un tiroir (index dans la liste des tiroirs).
+ *   index 0 : 2 × hauteur_arete
+ *   index n : 2 × hauteur_arete + Σ_{k<n} (H_k + 10)
+ */
+export function drawerZMinMm(dims = {}, moduleList = [], drawerIndex = 0) {
+  const gap = Number(DRAWER_STACK_GAP_MM) || 10
+  const drawers = moduleList.filter((m) => m.kind === 'drawer')
+  let z = drawerFloorZMm(dims)
+  const n = Math.max(0, Number(drawerIndex) || 0)
+  for (let k = 0; k < n && k < drawers.length; k++) {
+    z += drawerHeightMm(drawers[k]) + gap
+  }
+  return z
+}
+
+/**
  * Z haut des tiroirs (mm) : sommet du caisson le plus haut.
  * 0 s’il n’y a pas de tiroir.
  */
 export function drawersTopZMm(dims = {}, moduleList = []) {
   const drawers = moduleList.filter((m) => m.kind === 'drawer')
   if (!drawers.length) return 0
-  const inset = 22
-  const extrusion = areteExtrusionMm(dims)
-  const zMin = inset + extrusion
-  const gap = Number(DRAWER_STACK_GAP_MM) || 40
   let top = 0
   drawers.forEach((d, i) => {
     const h = drawerHeightMm(d)
-    let zBottom
-    if (d.zMm != null && Number.isFinite(Number(d.zMm))) {
-      zBottom = Number(d.zMm)
-    } else {
-      zBottom = zMin
-      for (let k = 0; k < i; k++) {
-        zBottom += drawerHeightMm(drawers[k]) + gap
-      }
-    }
+    const zBottom =
+      d.zMm != null && Number.isFinite(Number(d.zMm))
+        ? Number(d.zMm)
+        : drawerZMinMm(dims, moduleList, i)
     top = Math.max(top, zBottom + h)
   })
   return top
@@ -454,20 +469,12 @@ export function moduleLayout(mod, { L, W, H }, moduleList = []) {
      * Traverses extrudées vers le bas sous ce plan.
      * zFond du tiroir = zMm − 19,05.
      */
-    const zMin = z0 + extrusion
+    const zMin = drawerZMinMm(dims, moduleList, i)
     const zMax = Math.max(zMin, H - inset - drawerH)
-    let zSideBottom
-    if (mod.zMm != null && Number.isFinite(Number(mod.zMm))) {
-      zSideBottom = Math.min(zMax, Math.max(zMin, Number(mod.zMm)))
-    } else {
-      // Tiroir 1 toujours en bas ; suivants = haut du précédent + jeu Z.
-      const gap = Number(DRAWER_STACK_GAP_MM) || 40
-      let z = zMin
-      for (let k = 0; k < i; k++) {
-        z += drawerHeightMm(sameKind[k]) + gap
-      }
-      zSideBottom = Math.min(zMax, Math.max(zMin, z))
-    }
+    const zSideBottom =
+      mod.zMm != null && Number.isFinite(Number(mod.zMm))
+        ? Math.min(zMax, Math.max(zMin, Number(mod.zMm)))
+        : zMin
     const zCenter = zSideBottom + drawerH / 2
     const open = (mod.openFactor || 0) * (Math.max(wurth.depthMm, 1) * 0.55)
     return {
