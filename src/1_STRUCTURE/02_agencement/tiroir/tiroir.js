@@ -18,7 +18,11 @@ import {
   EPAISSEUR_PANNEAU,
   areteExtrusionMm,
 } from '../../00_matrice/matrice_constante.js'
-import { buildTraversePair, resolveDrawerOrigin } from '../traverse.js'
+import {
+  buildTraversePair,
+  resolveDrawerOrigin,
+  DRAWER_ASSEMBLY_Z_OFFSET_MM,
+} from '../traverse.js'
 import {
   WURTH_DRAWER_TYPE,
   WURTH_DECROCHE_DYNAMOOV_MM,
@@ -187,9 +191,11 @@ export function buildDrawerRails(traversePair, opts = {}) {
   /** Plan Würth : rail 10–13 mm, posé sur la traverse, fond du tiroir dessus. */
   const railH = opts.railBodyHMm ?? DYNAMOOV_RAIL_BODY_H_MM
 
-  // Rond vert : dessus + face intérieure (X) de la traverse
-  const zTraverseTop = left.zTopMm + left.extrusionMm
-  const zRail = zTraverseTop + (RAIL_MOUNT_OFFSET.z || 0)
+  // Rail sous la traverse : même plan que le caisson, Z − 30.
+  const zTraverseBottom = left.zTopMm
+  const zTraverseTop = zTraverseBottom + left.extrusionMm
+  const zRail =
+    zTraverseTop + DRAWER_ASSEMBLY_Z_OFFSET_MM + (RAIL_MOUNT_OFFSET.z || 0)
 
   const spanY = Math.max(50, Number(opts.depthMm) || left.bounds2D.maxY - left.bounds2D.minY)
   const scaleY = spanY / RAIL_NATIVE_LENGTH_Y_MM
@@ -291,12 +297,12 @@ export function buildTiroir(dims, layout, mod = {}, opts = {}) {
     }
   }
 
-  // Rond vert : { Z0, p3, dX: 11.75 }. Tiroir à +21 mm X, calé à l’avant (Y).
+  // Rond vert + 10 mm X. Calé à l’avant (Z2), pas au fond (Z0).
   const ox = resolveDrawerOrigin(dims)
   const originX = ox.originX
   const licMm = ox.licMm
-  const originY = ox.originY - open
-  const originZ = zSideBottom
+  const originY = ox.originYFront - wurth.depthMm - open
+  const originZ = zSideBottom + DRAWER_ASSEMBLY_Z_OFFSET_MM
 
   const rails = buildDrawerRails(traverses, {
     zSideBottom,

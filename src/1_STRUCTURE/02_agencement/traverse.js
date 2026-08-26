@@ -85,13 +85,15 @@ export const face_traverse = (() => {
 })()
 
 /**
- * Rond vert Würth : coin intérieur haut-avant de la traverse
- * `{ Z0, p3, dX: 11.75 }`. Le tiroir démarre à +21 mm en X (plan Dynamoov).
- * En Y : toujours l’avant du meuble (pas de centrage).
+ * Rond vert : `{ Z0, p3, dX: 11.75 }`.
+ * Décalage X = 21 − 11 (épaisseur panneau) = 10 mm / côté → LWS = LWK − 20.
+ * Avant meuble = Z2 (Y max) — le tiroir est calé façade, pas au fond.
  */
-export const DRAWER_ORIGIN_OFFSET_X_MM = 21
+export const DRAWER_ORIGIN_OFFSET_X_MM = 10
+export const DRAWER_ASSEMBLY_Z_OFFSET_MM = -30
 export const DRAWER_ORIGIN_REF_LEFT = { arete: 'Z0', point: 3, dX: 11.75 }
 export const DRAWER_ORIGIN_REF_RIGHT = { arete: 'Z1', point: 3, dX: -11.75 }
+export const DRAWER_ORIGIN_REF_LEFT_FRONT = { arete: 'Z2', point: 3, dX: 11.75 }
 
 /**
  * @param {{ L: number, W: number, H: number }} dims
@@ -100,12 +102,16 @@ export function resolveDrawerOrigin(dims) {
   const { byId } = buildGeometrie(dims)
   const left = resolveTraverseRef2D(byId, DRAWER_ORIGIN_REF_LEFT)
   const right = resolveTraverseRef2D(byId, DRAWER_ORIGIN_REF_RIGHT)
+  const front = resolveTraverseRef2D(byId, DRAWER_ORIGIN_REF_LEFT_FRONT)
   const originX = left[0] + DRAWER_ORIGIN_OFFSET_X_MM
   const originXRight = right[0] - DRAWER_ORIGIN_OFFSET_X_MM
   return {
     originX,
     originXRight,
-    originY: left[1],
+    /** Y du fond (Z0) — ne pas y caler le tiroir */
+    originYBack: left[1],
+    /** Y de l’avant (Z2) */
+    originYFront: front[1],
     licMm: originXRight - originX,
     traverseInnerLeft: left[0],
     traverseInnerRight: right[0],

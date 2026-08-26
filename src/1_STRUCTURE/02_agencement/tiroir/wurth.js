@@ -36,8 +36,7 @@ export const WURTH_DECROCHE_DYNAMOOV_MM = 13
 /**
  * Plan Dynamoov (coupe frontale) :
  *   LWK = largeur intérieure caisson (entre faces int. des traverses Y)
- *   LWS = largeur tiroir = LWK − 42
- *   21 mm / côté = emprise coulisse entre paroi et flanc du tiroir
+ *   LWS = LWK − 20  (10 mm / côté = 21 − 11 épaisseur panneau)
  */
 export const DYNAMOOV_LWK_MINUS_LWS_MM = 42
 export const DYNAMOOV_SIDE_RAIL_SPACE_MM = 21 // 42 / 2
