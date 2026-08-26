@@ -22,7 +22,11 @@ import {
   EPAISSEUR_PANNEAU,
   areteExtrusionMm,
 } from '../../00_matrice/matrice_constante.js'
-import { buildPorte } from '../Y.porte/porte.js'
+import {
+  resolvePorteArriereY,
+  buildFacadeTiroirBas,
+  buildFacadeTiroir,
+} from '../Y.porte/porte.js'
 import {
   buildTraversePair,
   resolveDrawerOrigin,
@@ -301,9 +305,13 @@ export function buildTiroir(dims, layout, mod = {}, opts = {}) {
   const ox = resolveDrawerOrigin(dims)
   const originX = ox.originX
   const licMm = ox.licMm
-  // Rails + caisson en position fermée. L’ouverture Y+ est un offset visuel
-  // sur les panels uniquement (les rails restent fixés à la traverse).
-  const originY = ox.originYFront - wurth.depthMm
+  // Rails : calés sur la traverse (Y intérieur avant).
+  const originYRails = ox.originYFront - wurth.depthMm
+  // Panels : le devant du caisson = face arrière de la porte (rectangle arriere).
+  const yArrierePorte = resolvePorteArriereY(dims, {
+    epaisseur: EPAISSEUR_PANNEAU,
+  })
+  const originYPanels = yArrierePorte - wurth.depthMm
   const originZ = zFond - (wurth.decrocheMm ?? WURTH_DECROCHE_DYNAMOOV_MM)
 
   const rails = buildDrawerRails(traverses, {
@@ -311,24 +319,26 @@ export function buildTiroir(dims, layout, mod = {}, opts = {}) {
     decrocheMm: wurth.decrocheMm,
     railBodyHMm: wurth.railBodyHMm,
     sideSpaceMm: wurth.railSideSpaceMm,
-    originY,
+    originY: originYRails,
     depthMm: wurth.depthMm,
   })
 
   const box = buildDrawerOpenBox(
     { L: licMm, W: wurth.depthMm, H: wurth.hMm },
-    [originX, originY, originZ],
+    [originX, originYPanels, originZ],
     ep,
     wurth.decrocheMm,
     zTraverseTop,
   )
 
-  const facade = buildPorte(dims, {
-    id: 'facade',
+  const facadeOpts = {
     zMin: originZ,
     zMax: originZ + wurth.hMm,
     epaisseur: EPAISSEUR_PANNEAU,
-  })
+  }
+  const facade = layout.facadeBas
+    ? buildFacadeTiroirBas(dims, facadeOpts)
+    : buildFacadeTiroir(dims, facadeOpts)
   box.panels.push(facade)
 
   return {

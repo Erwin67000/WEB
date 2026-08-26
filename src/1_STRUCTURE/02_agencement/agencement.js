@@ -326,6 +326,7 @@ export function moduleLayout(mod, { L, W, H }, moduleList = []) {
         ? Math.min(zMax, Math.max(zMin, Number(mod.zMm)))
         : zMin
     const zCenter = zSideBottom + drawerH / 2
+    const atFloor = Math.abs(zSideBottom - zMin) < 1
     return {
       center: [
         L / 2,
@@ -341,6 +342,10 @@ export function moduleLayout(mod, { L, W, H }, moduleList = []) {
       zTraverseMm: zSideBottom - extrusion,
       zMin,
       zMax,
+      drawerIndex: i,
+      atFloor,
+      /** 1er tiroir + curseur au plancher → façade « bas » */
+      facadeBas: i === 0 && atFloor,
       hMm: drawerH,
       licMm: wurth.licMm,
       lwkMm: wurth.lwkMm,

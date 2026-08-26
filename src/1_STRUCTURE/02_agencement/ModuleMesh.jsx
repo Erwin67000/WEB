@@ -510,6 +510,8 @@ function TiroirMesh({ dims, layout, mod, woodColor, woodRoughness, plateColor })
     layout?.hMm,
     layout?.wurth?.hMm,
     layout?.wurth?.depthMm,
+    layout?.facadeBas,
+    layout?.drawerIndex,
     mod?.hMm,
     mod?.id,
   ])

@@ -386,17 +386,19 @@ export function computeQuatreRectangles(def, byId, params = {}) {
   const arrUnites = def.arriere_unite
 
   let base = makeRectangleBase(byId, def.rectangle_base)
-  const zMin = Number(params.zMin)
-  const zMax = Number(params.zMax)
-  if (Number.isFinite(zMin) && Number.isFinite(zMax)) {
+  const hasZMin = Number.isFinite(Number(params.zMin))
+  const hasZMax = Number.isFinite(Number(params.zMax))
+  if (hasZMin || hasZMax) {
     const zs = base.map((p) => p[2])
     const zLo = Math.min(...zs)
     const zHi = Math.max(...zs)
+    const destMin = hasZMin ? Number(params.zMin) : zLo
+    const destMax = hasZMax ? Number(params.zMax) : zHi
     const span = zHi - zLo
     base = base.map((p) => [
       p[0],
       p[1],
-      span === 0 ? zMin : zMin + ((p[2] - zLo) / span) * (zMax - zMin),
+      span === 0 ? destMin : destMin + ((p[2] - zLo) / span) * (destMax - destMin),
     ])
   }
   const decale = makeRectangleDecale(base, dec, axe)
