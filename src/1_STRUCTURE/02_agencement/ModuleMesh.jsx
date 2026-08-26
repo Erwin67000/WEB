@@ -514,7 +514,7 @@ function loadNormalizedRailMm(url) {
  * position = origine meuble mm (début traverse en Y, face intérieure en X).
  */
 /** Aspect coulisse acier brossé (gris métallique, pas noir). */
-const RAIL_METAL_COLOR = '#b4b8bc'
+const RAIL_METAL_COLOR = '#c5d0d4'
 
 function RailMesh({ mount }) {
   const [geo, setGeo] = useState(null)
@@ -559,8 +559,8 @@ function RailMesh({ mount }) {
     >
       <meshStandardMaterial
         color={RAIL_METAL_COLOR}
-        metalness={0.92}
-        roughness={0.28}
+        metalness={0.96}
+        roughness={0.18}
         envMapIntensity={1.15}
       />
     </mesh>

@@ -85,34 +85,37 @@ export const face_traverse = (() => {
 })()
 
 /**
- * Origine X du tiroir (plan Würth / Dynamoov) :
- * point intérieur de traverse `{ Z0, p3, dX: 11.75 }` + 10 mm vers le caisson.
- * Droite : miroir `{ Z1, p3, dX: -11.75 }` − 10 mm.
+ * Rond vert Würth : coin intérieur haut-avant de la traverse
+ * `{ Z0, p3, dX: 11.75 }`. Le tiroir démarre à +21 mm en X (plan Dynamoov).
+ * En Y : toujours l’avant du meuble (pas de centrage).
  */
-export const DRAWER_ORIGIN_OFFSET_X_MM = 10
+export const DRAWER_ORIGIN_OFFSET_X_MM = 21
 export const DRAWER_ORIGIN_REF_LEFT = { arete: 'Z0', point: 3, dX: 11.75 }
 export const DRAWER_ORIGIN_REF_RIGHT = { arete: 'Z1', point: 3, dX: -11.75 }
 
 /**
  * @param {{ L: number, W: number, H: number }} dims
- * @returns {{ originX: number, originXRight: number, licMm: number, traverseInnerLeft: number, traverseInnerRight: number }}
  */
-export function resolveDrawerOriginX(dims) {
+export function resolveDrawerOrigin(dims) {
   const { byId } = buildGeometrie(dims)
-  const traverseInnerLeft = resolveTraverseRef2D(byId, DRAWER_ORIGIN_REF_LEFT)[0]
-  const traverseInnerRight = resolveTraverseRef2D(
-    byId,
-    DRAWER_ORIGIN_REF_RIGHT,
-  )[0]
-  const originX = traverseInnerLeft + DRAWER_ORIGIN_OFFSET_X_MM
-  const originXRight = traverseInnerRight - DRAWER_ORIGIN_OFFSET_X_MM
+  const left = resolveTraverseRef2D(byId, DRAWER_ORIGIN_REF_LEFT)
+  const right = resolveTraverseRef2D(byId, DRAWER_ORIGIN_REF_RIGHT)
+  const originX = left[0] + DRAWER_ORIGIN_OFFSET_X_MM
+  const originXRight = right[0] - DRAWER_ORIGIN_OFFSET_X_MM
   return {
     originX,
     originXRight,
+    originY: left[1],
     licMm: originXRight - originX,
-    traverseInnerLeft,
-    traverseInnerRight,
+    traverseInnerLeft: left[0],
+    traverseInnerRight: right[0],
+    greenCircle: { x: left[0], y: left[1] },
   }
+}
+
+/** @deprecated → resolveDrawerOrigin */
+export function resolveDrawerOriginX(dims) {
+  return resolveDrawerOrigin(dims)
 }
 
 export function resolveTraverseRef2D(byId, ref) {

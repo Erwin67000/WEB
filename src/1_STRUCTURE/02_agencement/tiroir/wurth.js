@@ -30,7 +30,8 @@ export const WURTH_HAUTEUR_DEFAUT_MM = 110
  * Décroché bas type B (mm) — fond surélevé pour loger la coulisse sous le tiroir.
  * (valeur atelier Philae / type B ASTUCIO)
  */
-export const WURTH_DECROCHE_DYNAMOOV_MM = 11
+/** Fond du tiroir posé sur le rail (plan : rail min 10, max 13). */
+export const WURTH_DECROCHE_DYNAMOOV_MM = 13
 
 /**
  * Plan Dynamoov (coupe frontale) :
@@ -107,8 +108,7 @@ export function computeWurthDrawerDims(dims, mod, traverseBounds) {
   )
   const hMm = clampWurthHeight(mod?.hMm ?? WURTH_HAUTEUR_DEFAUT_MM, maxH)
 
-  // LWK = entre faces int. traverses. LWS / origine X :
-  // { Z0, p3, dX: 11.75 } + 10 mm  (miroir à droite).
+  // LWS depuis le rond vert (traverse) : +21 mm / côté.
   const ox = resolveDrawerOriginX(dims)
   const LWK = Math.max(
     0,
