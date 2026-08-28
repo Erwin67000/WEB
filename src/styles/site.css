@@ -4535,13 +4535,46 @@ body.config-lock {
 .config-buy-float {
   pointer-events: auto;
   position: absolute;
-  left: max(0.75rem, env(safe-area-inset-left, 0px));
+  right: max(0.75rem, env(safe-area-inset-right, 0px));
+  left: auto;
   bottom: max(0.85rem, env(safe-area-inset-bottom, 0px));
   z-index: 8;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.4rem;
+  width: auto;
+  max-width: calc(100% - 1.5rem);
 }
 
-.config-buy-float .shop-hover-btn {
-  width: max-content;
+.config-buy-float .shop-hover-btn,
+.config-price-btn {
+  flex: 0 0 auto;
+  width: max-content !important;
+  max-width: 100%;
+  white-space: nowrap;
+}
+
+.config-price-btn {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.45rem;
+  padding: 0.55rem 1.1rem;
+  border-radius: 4px;
+  border: 1px solid #c4a574;
+  background: #fffef8;
+  color: #1a1610;
+  font-family: var(--philae-font);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  pointer-events: none;
+  cursor: default;
 }
 
 .configurator-app .viewport-hint {
@@ -4550,26 +4583,88 @@ body.config-lock {
 }
 
 @media (max-width: 1024px) {
+  .configurator-app.config-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+
+  .configurator-app .viewport-3d {
+    grid-row: 1;
+    grid-column: 1;
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+    order: 0;
+  }
+
+  .configurator-app .control-panel {
+    display: contents;
+    position: static;
+    inset: auto;
+    height: auto;
+    max-height: none;
+    pointer-events: auto;
+    order: unset;
+  }
+
   .config-fab-bar {
+    grid-row: 1;
+    grid-column: 1;
     flex-direction: row;
+    position: relative;
     top: max(0.55rem, env(safe-area-inset-top, 0px));
-    left: 50%;
-    transform: translateX(-50%);
+    left: auto;
+    transform: none;
+    justify-self: center;
+    align-self: start;
     max-width: calc(100% - 1rem);
     overflow-x: auto;
     padding: 0.2rem;
+    z-index: 8;
+  }
+
+  .config-buy-float {
+    grid-row: 1;
+    grid-column: 1;
+    position: relative;
+    left: auto;
+    right: auto;
+    bottom: auto;
+    align-self: end;
+    justify-self: end;
+    margin: 0 max(0.65rem, env(safe-area-inset-right, 0px))
+      max(0.75rem, env(safe-area-inset-bottom, 0px));
+    width: auto;
+    max-width: calc(100% - 1.3rem);
   }
 
   .configurator-app .control-panel .panel-scroll {
-    left: 0.65rem;
-    right: 0.65rem;
+    grid-row: 2;
+    grid-column: 1;
+    position: relative;
+    left: auto;
+    right: auto;
     top: auto;
-    bottom: 4.4rem;
+    bottom: auto;
     width: auto;
     min-width: 0;
     max-width: none;
+    margin: 0 0.65rem max(0.5rem, env(safe-area-inset-bottom, 0px));
     max-height: min(42vh, 360px);
     border-radius: 10px;
+  }
+
+  .configurator-app .panel-flash {
+    grid-row: 1;
+    grid-column: 1;
+    align-self: end;
+    justify-self: center;
+    position: relative;
+    left: auto;
+    right: auto;
+    bottom: auto;
+    z-index: 9;
   }
 
   .configurator-app .viewport-hint {

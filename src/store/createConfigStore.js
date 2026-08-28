@@ -402,7 +402,7 @@ export function createConfigStore(opts = {}) {
       }))
     },
 
-    /** Hauteur tiroir Würth (mm) — une des WURTH_HAUTEURS_MM. */
+    /** Hauteur tiroir (mm) — liste Würth. */
     setModuleH: (modId, hMm) => {
       const id = get().activeUnitId
       const n = Number(hMm)

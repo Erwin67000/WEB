@@ -25,6 +25,8 @@ export const WURTH_HAUTEURS_MM = [
 ]
 
 export const WURTH_HAUTEUR_DEFAUT_MM = 110
+/** Hauteur mini tiroir (mm) — un peu au-dessus du rail natif 45,7 mm. */
+export const DRAWER_H_MIN_MM = 50
 
 /**
  * Décroché bas type B (mm) — fond surélevé pour loger la coulisse sous le tiroir.
@@ -109,6 +111,19 @@ export function clampWurthHeight(hMm, maxAvailable = Infinity) {
   return best
 }
 
+/** Hauteur tiroir libre (mm), bornée — plus de grille Würth côté client. */
+export function clampDrawerHeight(hMm, maxAvailable = Infinity) {
+  const n = Number(hMm)
+  const raw = Number.isFinite(n) ? Math.round(n) : WURTH_HAUTEUR_DEFAUT_MM
+  const cap = Number.isFinite(Number(maxAvailable))
+    ? Number(maxAvailable)
+    : Infinity
+  const max = Number.isFinite(cap)
+    ? Math.max(DRAWER_H_MIN_MM, cap)
+    : Infinity
+  return Math.min(max, Math.max(DRAWER_H_MIN_MM, raw))
+}
+
 /**
  * Dimensions tiroir Würth type B + Dynamoov.
  *
@@ -174,6 +189,6 @@ export function computeWurthDrawerDims(dims, mod, traverseBounds) {
       ? DRAWER_WIDTH_OUT_OF_RANGE_MSG
       : depthTooSmall
         ? DRAWER_DEPTH_TOO_SMALL_MSG
-        : `Würth B · H ${hMm} · P ${depthMm} · LWS ${licMm} (LWK ${lwkMm})`,
+        : `Tiroir · H ${hMm} · P ${depthMm}`,
   }
 }

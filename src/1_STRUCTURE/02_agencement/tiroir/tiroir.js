@@ -42,6 +42,7 @@ export {
   WURTH_DRAWER_TYPE,
   WURTH_HAUTEURS_MM,
   WURTH_HAUTEUR_DEFAUT_MM,
+  DRAWER_H_MIN_MM,
   WURTH_DECROCHE_DYNAMOOV_MM,
   WURTH_PROFONDEURS_MM,
   WURTH_PROFONDEUR_MIN_MM,
@@ -54,6 +55,7 @@ export {
   DYNAMOOV_RAIL_BODY_H_MM,
   computeWurthDrawerDims,
   clampWurthHeight,
+  clampDrawerHeight,
   drawerInnerWidthMm,
   isDrawerWidthAllowed,
 } from './wurth.js'

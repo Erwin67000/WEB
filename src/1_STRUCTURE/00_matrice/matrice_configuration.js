@@ -9,8 +9,8 @@ import { clampDims } from '../../3_INPUT/matrice_input.js'
 
 /** Modules d’agencement interne (la porte façade = panneau "porte"). */
 export const MODULE_KINDS = {
-  shelf: { id: 'shelf', label: 'Tablette', icon: '▭' },
   drawer: { id: 'drawer', label: 'Tiroir', icon: '▤' },
+  shelf: { id: 'shelf', label: 'Tablette', icon: '▭' },
 }
 
 /**

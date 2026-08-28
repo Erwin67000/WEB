@@ -15,14 +15,15 @@ import {
   shelfZMm,
   shelfZBounds,
   moduleLayout,
-  WURTH_HAUTEURS_MM,
   WURTH_PROFONDEUR_MIN_MM,
+  WURTH_HAUTEURS_MM,
+  WURTH_HAUTEUR_DEFAUT_MM,
   DYNAMOOV_LWK_MIN_MM,
   DYNAMOOV_LWK_MAX_MM,
   drawerInnerWidthMm,
   isDrawerWidthAllowed,
 } from '../1_STRUCTURE/02_agencement/agencement.js'
-import { DIM_LIMITS } from '../3_INPUT/matrice_input.js'
+import { DIM_LIMITS, formatMmAsCm, parseCmInputToMm } from '../3_INPUT/matrice_input.js'
 
 import { FACE_PICK_DEFS } from '../1_STRUCTURE/02_agencement/FacePickPlanes.jsx'
 import { useNavigate } from 'react-router-dom'
@@ -38,25 +39,86 @@ const PANNEAU_CHIP_LABELS = Object.fromEntries(
   FACE_PICK_DEFS.map((f) => [f.id, f.label]),
 )
 
+const CM_DRAFT_RE = /^-?[0-9]*[.,]?[0-9]*$/
+
+function selectInputText(el) {
+  if (!el || typeof el.select !== 'function') return
+  requestAnimationFrame(() => {
+    try {
+      el.select()
+    } catch {
+      /* ignore */
+    }
+  })
+}
+
 /**
- * Rangée compacte : Label · [valeur] · unité, puis slider dessous.
- * (Longueur / Profondeur / Hauteur / Pos. X / Pos. Y / Z tablette)
+ * Rangée compacte : Label · [valeur cm] · cm, puis slider (stockage mm).
+ * Clic = sélection du nombre (saisie directe, virgule ou point, 0,1 cm = 1 mm).
  */
-function SliderDim({ label, value, onChange, min, max, step = 5, unit = 'mm' }) {
+function SliderDim({ label, value, onChange, min, max, step = 1 }) {
+  const inputRef = useRef(null)
+  const justFocused = useRef(false)
+  const [draft, setDraft] = useState(null)
+
+  useEffect(() => {
+    if (document.activeElement !== inputRef.current) setDraft(null)
+  }, [value])
+
+  const display = draft != null ? draft : formatMmAsCm(value)
+  const rangeVal = Math.min(max, Math.max(min, Number(value) || min))
+
+  const commit = (raw) => {
+    setDraft(null)
+    const mm = parseCmInputToMm(raw)
+    if (!Number.isFinite(mm)) return
+    onChange(Math.min(max, Math.max(min, mm)))
+  }
+
   return (
     <label className="field slider-dim slider-dim-compact">
       <div className="slider-dim-head">
         <span className="field-label">{label}</span>
         <div className="slider-dim-input">
           <input
-            type="number"
-            value={value}
-            min={min}
-            max={max}
-            step={step}
-            onChange={(e) => onChange(Number(e.target.value))}
+            ref={inputRef}
+            type="text"
+            inputMode="decimal"
+            autoComplete="off"
+            spellCheck={false}
+            value={display}
+            onFocus={(e) => {
+              justFocused.current = true
+              setDraft(formatMmAsCm(value))
+              selectInputText(e.target)
+            }}
+            onMouseDown={(e) => {
+              if (document.activeElement !== e.target) justFocused.current = true
+            }}
+            onMouseUp={(e) => {
+              if (justFocused.current) {
+                e.preventDefault()
+                justFocused.current = false
+                e.target.select()
+              }
+            }}
+            onChange={(e) => {
+              const v = e.target.value
+              if (v !== '' && !CM_DRAFT_RE.test(v)) return
+              setDraft(v)
+            }}
+            onBlur={(e) => commit(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                commit(e.target.value)
+                e.currentTarget.blur()
+              } else if (e.key === 'Escape') {
+                setDraft(null)
+                e.currentTarget.blur()
+              }
+            }}
           />
-          <span className="field-unit">{unit}</span>
+          <span className="field-unit">cm</span>
         </div>
       </div>
       <input
@@ -64,27 +126,74 @@ function SliderDim({ label, value, onChange, min, max, step = 5, unit = 'mm' }) 
         min={min}
         max={max}
         step={step}
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
+        value={rangeVal}
+        onChange={(e) => {
+          setDraft(null)
+          onChange(Number(e.target.value))
+        }}
       />
     </label>
   )
 }
 
 /** Rotation seule (sans slider long) — compacte. */
-function NumFieldInline({ label, value, onChange, min, max, step = 1, unit = '°' }) {
+function NumFieldInline({ label, value, onChange, min, max, unit = '°' }) {
+  const inputRef = useRef(null)
+  const justFocused = useRef(false)
+  const [draft, setDraft] = useState(null)
+
+  useEffect(() => {
+    if (document.activeElement !== inputRef.current) setDraft(null)
+  }, [value])
+
+  const display = draft != null ? draft : String(value ?? '')
+
+  const commit = (raw) => {
+    setDraft(null)
+    const n = Number(String(raw).trim().replace(',', '.'))
+    if (!Number.isFinite(n)) return
+    onChange(Math.min(max, Math.max(min, n)))
+  }
+
   return (
     <label className="field slider-dim-compact">
       <div className="slider-dim-head">
         <span className="field-label">{label}</span>
         <div className="slider-dim-input">
           <input
-            type="number"
-            value={value}
-            min={min}
-            max={max}
-            step={step}
-            onChange={(e) => onChange(Number(e.target.value))}
+            ref={inputRef}
+            type="text"
+            inputMode="decimal"
+            autoComplete="off"
+            spellCheck={false}
+            value={display}
+            onFocus={(e) => {
+              justFocused.current = true
+              setDraft(String(value ?? ''))
+              selectInputText(e.target)
+            }}
+            onMouseUp={(e) => {
+              if (justFocused.current) {
+                e.preventDefault()
+                justFocused.current = false
+                e.target.select()
+              }
+            }}
+            onChange={(e) => {
+              const v = e.target.value
+              if (v !== '' && !CM_DRAFT_RE.test(v)) return
+              setDraft(v)
+            }}
+            onBlur={(e) => commit(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                commit(e.target.value)
+                e.currentTarget.blur()
+              } else if (e.key === 'Escape') {
+                setDraft(null)
+                e.currentTarget.blur()
+              }
+            }}
           />
           <span className="field-unit">{unit}</span>
         </div>
@@ -283,7 +392,38 @@ export default function ControlPanel() {
           </button>
           {openSections.meuble && (
             <div className="section-body">
-                <div className="unit-list">
+                {!dimsLocked && (
+                  <div className="row-actions">
+                    <button
+                      type="button"
+                      className="btn-sm"
+                      onClick={() => {
+                        const result = addUnit()
+                        if (result && result.ok === false) {
+                          notify(
+                            result.reason === 'max-units' ||
+                              /envergure|larger-scale/i.test(result.reason || '')
+                              ? t('config.reasonLarge')
+                              : result.reason
+                                ? t('config.reasonBoutique')
+                                : t('config.reasonLarge'),
+                          )
+                        }
+                      }}
+                    >
+                      {t('config.addPiece')}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-sm danger"
+                      onClick={() => removeUnit(activeUnitId)}
+                      disabled={units.length <= 1}
+                    >
+                      {t('config.remove')}
+                    </button>
+                  </div>
+                )}
+                <div className="unit-list unit-list-stack">
                   {units.map((u, idx) =>
                     editingUnitId === u.id ? (
                       <input
@@ -322,44 +462,48 @@ export default function ControlPanel() {
                           }
                         }}
                       >
-                        {/^Meuble\s+\d+$/i.test(u.label || '')
-                          ? t('config.unitN', { n: idx + 1 })
-                          : u.label || t('config.unitN', { n: idx + 1 })}
+                        <span className="unit-chip-name">
+                          {/^Meuble\s+\d+$/i.test(u.label || '')
+                            ? t('config.unitN', { n: idx + 1 })
+                            : u.label || t('config.unitN', { n: idx + 1 })}
+                        </span>
+                        <span className="unit-chip-dims">
+                          {formatMmAsCm(u.dims.L)} × {formatMmAsCm(u.dims.W)} ×{' '}
+                          {formatMmAsCm(u.dims.H)} {t('config.unitCm')}
+                        </span>
                       </button>
                     ),
                   )}
                 </div>
-                {!dimsLocked && (
-                  <div className="row-actions">
-                    <button
-                      type="button"
-                      className="btn-sm"
-                      onClick={() => {
-                        const result = addUnit()
-                        if (result && result.ok === false) {
-                          notify(
-                            result.reason === 'max-units' ||
-                              /envergure|larger-scale/i.test(result.reason || '')
-                              ? t('config.reasonLarge')
-                              : result.reason
-                                ? t('config.reasonBoutique')
-                                : t('config.reasonLarge'),
-                          )
+                <p className="field-label" style={{ marginTop: '0.35rem' }}>
+                  {t('config.frameFinish')}
+                </p>
+                <div className="finish-choice-list">
+                  {FINITIONS_OSSATURE_CLIENT.map((id) => {
+                    const f = FINITIONS_OSSATURE[id]
+                    if (!f) return null
+                    const active = (unit.ossatureFinish || 'brut') === id
+                    return (
+                      <button
+                        key={id}
+                        type="button"
+                        className={`finish-choice-btn${active ? ' active' : ''}`}
+                        onClick={() =>
+                          updateUnit(unit.id, { ossatureFinish: id })
                         }
-                      }}
-                    >
-                      {t('config.addPiece')}
-                    </button>
-                    <button
-                      type="button"
-                      className="btn-sm danger"
-                      onClick={() => removeUnit(activeUnitId)}
-                      disabled={units.length <= 1}
-                    >
-                      {t('config.remove')}
-                    </button>
-                  </div>
-                )}
+                      >
+                        <span className="finish-choice-label">
+                          {tId('finish', id, f.label)}
+                        </span>
+                        <span
+                          className="finish-choice-swatch"
+                          style={{ background: f.previewColor }}
+                          title={tId('finish', id, f.label)}
+                        />
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
             )}
           </section>
@@ -381,9 +525,10 @@ export default function ControlPanel() {
                   </p>
                   <p className="dims-locked-values">
                     <strong>
-                      {unit.dims.L} × {unit.dims.W} × {unit.dims.H}
+                      {formatMmAsCm(unit.dims.L)} × {formatMmAsCm(unit.dims.W)} ×{' '}
+                      {formatMmAsCm(unit.dims.H)}
                     </strong>{' '}
-                    mm
+                    {t('config.unitCm')}
                     <span className="muted"> {t('config.lwh')}</span>
                   </p>
                   <p className="muted" style={{ fontSize: '0.8125rem', margin: 0 }}>
@@ -438,7 +583,7 @@ export default function ControlPanel() {
                     value={unit.positionMm.x}
                     min={-5000}
                     max={5000}
-                    step={10}
+                    step={1}
                     onChange={(x) => updatePosition(unit.id, { x })}
                   />
                   <SliderDim
@@ -446,7 +591,7 @@ export default function ControlPanel() {
                     value={unit.positionMm.y}
                     min={-5000}
                     max={5000}
-                    step={10}
+                    step={1}
                     onChange={(y) => updatePosition(unit.id, { y })}
                   />
                 </>
@@ -464,36 +609,6 @@ export default function ControlPanel() {
                   }
                 />
               )}
-
-              <p className="field-label" style={{ marginTop: '0.35rem' }}>
-                {t('config.frameFinish')}
-              </p>
-              <div className="finish-choice-list">
-                {FINITIONS_OSSATURE_CLIENT.map((id) => {
-                  const f = FINITIONS_OSSATURE[id]
-                  if (!f) return null
-                  const active = (unit.ossatureFinish || 'brut') === id
-                  return (
-                    <button
-                      key={id}
-                      type="button"
-                      className={`finish-choice-btn${active ? ' active' : ''}`}
-                      onClick={() =>
-                        updateUnit(unit.id, { ossatureFinish: id })
-                      }
-                    >
-                      <span className="finish-choice-label">
-                        {tId('finish', id, f.label)}
-                      </span>
-                      <span
-                        className="finish-choice-swatch"
-                        style={{ background: f.previewColor }}
-                        title={tId('finish', id, f.label)}
-                      />
-                    </button>
-                  )
-                })}
-              </div>
             </div>
           )}
         </section>
@@ -550,16 +665,15 @@ export default function ControlPanel() {
                       ? moduleLayout(m, unit.dims, unit.modules)
                       : null
                   const wurth = drawerLayout?.wurth
-                  const drawerZ = drawerLayout?.zBottomMm ?? drawerLayout?.zMm
-                  const drawerZMin =
-                    drawerLayout?.zMin ?? 2 * shelfExtrusion
-                  const drawerZMax = drawerLayout?.zMax ?? unit.dims.H - 100
                   const depthTooSmall = Boolean(
                     drawerLayout?.depthTooSmall || wurth?.depthTooSmall,
                   )
                   const lwkOutOfRange = Boolean(
                     drawerLayout?.lwkOutOfRange || wurth?.lwkOutOfRange,
                   )
+                  const depthMm = depthTooSmall
+                    ? wurth?.depthAvailableMm ?? 0
+                    : wurth?.depthMm
                   return (
                     <li key={m.id} className="mod-item">
                       <div className="mod-head">
@@ -569,7 +683,6 @@ export default function ControlPanel() {
                             m.kind,
                             MODULE_KINDS[m.kind]?.label || m.kind,
                           )}
-                          {m.kind === 'drawer' ? ' · Würth B' : ''}
                         </span>
                         <button
                           type="button"
@@ -586,7 +699,7 @@ export default function ControlPanel() {
                           value={Math.round(shelfZ)}
                           min={Math.round(shelfZMin)}
                           max={Math.round(shelfZMax)}
-                          step={5}
+                          step={1}
                           onChange={(z) => setModuleZ(m.id, z)}
                         />
                       )}
@@ -604,32 +717,24 @@ export default function ControlPanel() {
                           {depthTooSmall && !lwkOutOfRange ? (
                             <p className="drawer-warn" role="alert">
                               {t('config.drawerTooShallow', {
-                                min: WURTH_PROFONDEUR_MIN_MM,
+                                min: formatMmAsCm(WURTH_PROFONDEUR_MIN_MM),
                               })}
                             </p>
                           ) : null}
-                          <SliderDim
-                            label={t('config.posZ')}
-                            value={Math.round(
-                              m.zMm != null ? m.zMm : drawerZ ?? drawerZMin,
-                            )}
-                            min={Math.round(drawerZMin)}
-                            max={Math.round(drawerZMax)}
-                            step={5}
-                            onChange={(z) => setModuleZ(m.id, z)}
-                          />
                           <label className="field compact">
-                            <span className="field-label">{t('config.height')}</span>
+                            <span className="field-label">
+                              {t('config.drawerHeight')}
+                            </span>
                             <select
                               className="field-input"
-                              value={m.hMm ?? wurth?.hMm ?? 110}
+                              value={m.hMm ?? wurth?.hMm ?? WURTH_HAUTEUR_DEFAUT_MM}
                               onChange={(e) =>
                                 setModuleH(m.id, Number(e.target.value))
                               }
                             >
                               {WURTH_HAUTEURS_MM.map((h) => (
                                 <option key={h} value={h}>
-                                  {h} mm
+                                  {formatMmAsCm(h)} {t('config.unitCm')}
                                 </option>
                               ))}
                             </select>
@@ -637,21 +742,10 @@ export default function ControlPanel() {
                           <p className="muted drawer-dims-hint">
                             {t('config.depthAuto')}{' '}
                             <strong>
-                              {depthTooSmall
-                                ? `${wurth?.depthAvailableMm ?? 0} mm`
-                                : `${wurth?.depthMm ?? '—'} mm`}
+                              {depthMm != null
+                                ? `${formatMmAsCm(depthMm)} ${t('config.unitCm')}`
+                                : '—'}
                             </strong>
-                            {' · '}
-                            LWS{' '}
-                            <strong>{wurth?.licMm ?? '—'} mm</strong>
-                            {wurth?.lwkMm != null && (
-                              <>
-                                {' '}
-                                <span className="hint">
-                                  (LWK {wurth.lwkMm} − 42)
-                                </span>
-                              </>
-                            )}
                           </p>
                         </>
                       )}
@@ -805,6 +899,14 @@ export default function ControlPanel() {
 
       </div>
       <div className="config-buy-float">
+        <button
+          type="button"
+          className="config-price-btn"
+          tabIndex={-1}
+          aria-label={`${pricing.ttc.toFixed(0)} € ${t('config.ttc')}`}
+        >
+          {pricing.ttc.toFixed(0)} € {t('config.ttc')}
+        </button>
         <PayButton
           disabled={!STRIPE_ENABLED || pricing.ttc < 0.5}
           onClick={async () => {
@@ -836,7 +938,7 @@ export default function ControlPanel() {
             navigate('/commande')
           }}
         >
-          {t('config.buyPrice', { price: pricing.ttc.toFixed(0) })}
+          {t('config.buy')}
         </PayButton>
       </div>
       {flash && <div className="panel-flash">{flash}</div>}

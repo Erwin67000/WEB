@@ -200,6 +200,14 @@ textarea {
   background: rgba(201, 162, 39, 0.15);
 }
 
+.control-panel .unit-chip-dims {
+  color: #6a655c;
+}
+
+.control-panel .unit-chip.active .unit-chip-dims {
+  color: #3a352c;
+}
+
 .control-panel .panel-mobile-toggle {
   background: #ebe4d4;
   color: #1a1610;
@@ -358,6 +366,13 @@ textarea {
   gap: 0.35rem;
 }
 
+.unit-list-stack {
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 0.4rem;
+}
+
 .unit-chip {
   background: var(--bg-elevated);
   border: 1px solid var(--border);
@@ -366,6 +381,33 @@ textarea {
   font-size: 0.8rem;
   cursor: pointer;
   color: var(--text-muted);
+}
+
+.unit-list-stack .unit-chip,
+.unit-list-stack .unit-chip-input {
+  width: 100%;
+  max-width: none;
+  border-radius: 8px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+  text-align: left;
+  padding: 0.45rem 0.7rem;
+  box-sizing: border-box;
+}
+
+.unit-chip-name {
+  font-weight: 600;
+  min-width: 0;
+}
+
+.unit-chip-dims {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  margin-left: auto;
 }
 
 .unit-chip.active {
@@ -1035,6 +1077,7 @@ a.btn.primary:hover {
   }
 
   .control-panel .slider-dim-input input[type='number'],
+  .control-panel .slider-dim-input input[type='text'],
   .control-panel .field input[type='number'],
   .control-panel .field input[type='text'],
   .control-panel .field input[type='email'],
@@ -1046,7 +1089,8 @@ a.btn.primary:hover {
     border-radius: 4px;
   }
 
-  .control-panel .slider-dim-input input[type='number'] {
+  .control-panel .slider-dim-input input[type='number'],
+  .control-panel .slider-dim-input input[type='text'] {
     width: 3.4rem;
   }
 
@@ -1071,6 +1115,15 @@ a.btn.primary:hover {
   .control-panel .unit-chip-input {
     padding: 0.2rem 0.45rem;
     font-size: 0.65rem;
+  }
+
+  .control-panel .unit-list-stack .unit-chip,
+  .control-panel .unit-list-stack .unit-chip-input {
+    padding: 0.4rem 0.55rem;
+  }
+
+  .control-panel .unit-chip-dims {
+    font-size: 0.6rem;
   }
 
   .control-panel .finish-choice-btn {

@@ -22,7 +22,6 @@ import {
 import { buildTraversePair } from './traverse.js'
 import {
   WURTH_HAUTEUR_DEFAUT_MM,
-  WURTH_DECROCHE_DYNAMOOV_MM,
   computeWurthDrawerDims,
   clampWurthHeight,
 } from './tiroir/tiroir.js'
@@ -152,6 +151,7 @@ export {
   WURTH_DRAWER_TYPE,
   WURTH_HAUTEURS_MM,
   WURTH_HAUTEUR_DEFAUT_MM,
+  DRAWER_H_MIN_MM,
   WURTH_DECROCHE_DYNAMOOV_MM,
   WURTH_PROFONDEURS_MM,
   WURTH_PROFONDEUR_MIN_MM,
@@ -161,6 +161,7 @@ export {
   DYNAMOOV_LWK_MAX_MM,
   computeWurthDrawerDims,
   clampWurthHeight,
+  clampDrawerHeight,
   drawerInnerWidthMm,
   isDrawerWidthAllowed,
 } from './tiroir/tiroir.js'
@@ -175,7 +176,7 @@ export function createModule(kind, bayIndex = 0, extras = {}) {
     zMm: null,
     ...extras,
   }
-  // Tiroir Würth : hauteur discrète à l’ajout
+  // Tiroir : hauteur libre à l’ajout (défaut 110 mm)
   if (kind === 'drawer' && base.hMm == null) {
     base.hMm = WURTH_HAUTEUR_DEFAUT_MM
   }
@@ -216,10 +217,7 @@ export function drawersTopZMm(dims = {}, moduleList = []) {
   let top = 0
   drawers.forEach((d, i) => {
     const h = drawerHeightMm(d)
-    const zBottom =
-      d.zMm != null && Number.isFinite(Number(d.zMm))
-        ? Number(d.zMm)
-        : drawerZMinMm(dims, moduleList, i)
+    const zBottom = drawerZMinMm(dims, moduleList, i)
     top = Math.max(top, zBottom + h)
   })
   return top
@@ -362,10 +360,8 @@ export function moduleLayout(mod, { L, W, H }, moduleList = []) {
      */
     const zMin = drawerZMinMm(dims, moduleList, i)
     const zMax = Math.max(zMin, H - inset - drawerH)
-    const zSideBottom =
-      mod.zMm != null && Number.isFinite(Number(mod.zMm))
-        ? Math.min(zMax, Math.max(zMin, Number(mod.zMm)))
-        : zMin
+    /** Empilement strict : pas de décalage Z manuel. */
+    const zSideBottom = zMin
     const zCenter = zSideBottom + drawerH / 2
     const atFloor = Math.abs(zSideBottom - zMin) < 1
     return {
@@ -427,7 +423,7 @@ export function modulePriceHT(mod, dims) {
   return modulePriceBreakdown(mod, dims).total
 }
 
-/** Hauteur tiroir Würth (mm) — liste discrète. */
+/** Hauteur tiroir (mm) — liste Würth prédéfinie. */
 export function drawerHeightMm(mod) {
   return clampWurthHeight(
     mod?.hMm ?? mod?.heightMm ?? WURTH_HAUTEUR_DEFAUT_MM,
