@@ -24,6 +24,7 @@ import {
   WURTH_HAUTEUR_DEFAUT_MM,
   computeWurthDrawerDims,
   clampWurthHeight,
+  clampDrawerHeight,
 } from './tiroir/tiroir.js'
 
 export const AGENCEMENT_TYPES = {
