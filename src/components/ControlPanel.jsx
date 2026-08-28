@@ -182,8 +182,30 @@ export default function ControlPanel() {
 
   if (!unit) return null
 
+  const CORE_SECTIONS = ['meuble', 'dims', 'modules', 'panneaux', 'scene']
   const toggle = (k) =>
     setOpenSections((s) => ({ ...s, [k]: !s[k] }))
+  const toggleExclusive = (k) =>
+    setOpenSections((s) => {
+      const closing = Boolean(s[k])
+      return {
+        ...s,
+        meuble: false,
+        dims: false,
+        modules: false,
+        panneaux: false,
+        scene: false,
+        [k]: !closing,
+      }
+    })
+  const sheetOpen = CORE_SECTIONS.some((k) => openSections[k] && !(k === 'meuble' && dimsLocked))
+  const fabItems = [
+    !dimsLocked && { id: 'meuble', label: t('config.furniture') },
+    { id: 'dims', label: t('config.dims') },
+    { id: 'modules', label: t('config.layout') },
+    { id: 'panneaux', label: t('config.panels') },
+    { id: 'scene', label: t('config.scene') },
+  ].filter(Boolean)
 
   const notify = (msg) => {
     setFlash(msg)
@@ -196,19 +218,24 @@ export default function ControlPanel() {
   const canShowPosition = activeUnitIndex >= 1
 
   return (
-    <aside className={`control-panel${mobileOpen ? ' mobile-open' : ''}`}>
-      <button
-        type="button"
-        className="panel-mobile-toggle"
-        onClick={() => setMobileOpen((o) => !o)}
-        aria-expanded={mobileOpen}
-      >
-        <span className="panel-mobile-handle" />
-        <span>
-          {mobileOpen ? t('config.hideOptions') : t('config.options')}
-        </span>
-        <span className="chev">{mobileOpen ? '▾' : '▴'}</span>
-      </button>
+    <aside
+      className={`control-panel${mobileOpen ? ' mobile-open' : ''}${
+        sheetOpen ? ' is-sheet-open' : ''
+      }`}
+    >
+      <div className="config-fab-bar" role="toolbar" aria-label={t('config.options')}>
+        {fabItems.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            className={`config-fab${openSections[item.id] ? ' is-active' : ''}`}
+            onClick={() => toggleExclusive(item.id)}
+            aria-pressed={Boolean(openSections[item.id])}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
       <div className="panel-scroll">
         {/* Meubles — masqué en session boutique (un seul modèle figé) */}
         {!dimsLocked && (

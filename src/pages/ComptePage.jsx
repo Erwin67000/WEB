@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useI18n } from '@texte/I18nProvider.jsx'
 import { fetchSession, logout, postAuth } from '../lib/authClient.js'
 import { fetchDraft, writeCheckoutDraft } from '../lib/checkoutDraft.js'
+import { fetchConfigList } from '../lib/savedConfig.js'
 
 function formatEuro(cents, currency = 'eur') {
   return new Intl.NumberFormat('fr-FR', {
@@ -19,6 +20,7 @@ export default function ComptePage() {
   const [loading, setLoading] = useState(true)
   const [newsletter, setNewsletter] = useState(false)
   const [draft, setDraft] = useState(null)
+  const [configs, setConfigs] = useState([])
 
   useEffect(() => {
     let cancelled = false
@@ -35,7 +37,11 @@ export default function ComptePage() {
       const data = await res.json().catch(() => ({}))
       if (!cancelled) setOrders(data.orders || [])
       const d = await fetchDraft()
-      if (!cancelled) setDraft(d)
+      const list = await fetchConfigList()
+      if (!cancelled) {
+        setDraft(d)
+        setConfigs(list)
+      }
       setLoading(false)
     })()
     return () => {
@@ -57,6 +63,21 @@ export default function ComptePage() {
       <h1 className="hero-title">{user.name || user.email}</h1>
       <p className="hint">{user.email}</p>
       {user.isGuest && <p className="hint">{t('account.guestHint')}</p>}
+
+      {configs.length > 0 && (
+        <section className="compte-configs">
+          <h2 className="article-spec-title">{t('account.savedConfigs')}</h2>
+          <ul className="compte-orders">
+            {configs.map((c) => (
+              <li key={c.id}>
+                <strong>{c.title}</strong>
+                <span>{c.quoteRef}</span>
+                <Link to="/configurateur">{t('account.resumeConfig')}</Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {draft?.productLabel && (
         <p className="hint">

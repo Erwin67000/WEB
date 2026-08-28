@@ -10,6 +10,7 @@ import {
   createModule,
   modulePriceBreakdown,
   liftShelvesAboveDrawers,
+  pinFirstShelfOnDrawers,
 } from '../1_STRUCTURE/02_agencement/agencement.js'
 import { Meuble } from '../1_STRUCTURE/01_meuble3D/ossature.js'
 import {
@@ -215,6 +216,8 @@ export function createConfigStore(opts = {}) {
      */
     dimsLocked: false,
     dirty: false,
+    /** true après restore cloud / snapshot — évite d’écraser un travail en cours */
+    configHydrated: false,
 
     getActiveUnit: () => {
       const { units, activeUnitId } = get()
@@ -535,6 +538,7 @@ export function createConfigStore(opts = {}) {
           : structuredClone(snap.contact || defaultContact()),
         catalogProductId: null,
         dirty: false,
+        configHydrated: true,
       })
     },
 
@@ -566,9 +570,12 @@ export function createConfigStore(opts = {}) {
         panneaux = [...panneaux]
       }
 
+      const dims = clampDims({ L: row.L_mm, W: row.W_mm, H: row.H_mm })
+      modules = pinFirstShelfOnDrawers(modules, dims)
+
       const unit = defaultUnit({
         label: row.name,
-        dims: clampDims({ L: row.L_mm, W: row.W_mm, H: row.H_mm }),
+        dims,
         // Bois local atelier (non choisi client) + finition surface catalogue
         woodFinish: BOIS_ATELIER_ID,
         ossatureFinish: resolveOssatureFinish(

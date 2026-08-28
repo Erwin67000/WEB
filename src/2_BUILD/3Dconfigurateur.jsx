@@ -196,10 +196,12 @@ function SceneContent({ orbitOnly = false, ivory = false }) {
   const panneauPickModeStore = useActiveConfigStore((s) => s.panneauPickMode)
   const togglePanneau = useActiveConfigStore((s) => s.togglePanneau)
   const panneauPickMode = orbitOnly ? false : panneauPickModeStore
-  const envBase = ENVIRONMENTS[environmentId] || ENVIRONMENTS.none
-  const ivoryLook = ivory && envBase.id === 'none'
+  const envBase = orbitOnly
+    ? ENVIRONMENTS.none
+    : ENVIRONMENTS[environmentId] || ENVIRONMENTS.none
+  const ivoryLook = Boolean(ivory)
   const env = ivoryLook
-    ? { ...envBase, bg: '#f5f0e6', grid: false }
+    ? { ...ENVIRONMENTS.none, bg: '#f5f0e6', grid: false }
     : envBase
   const showGrid = orbitOnly ? false : showGridStore
 

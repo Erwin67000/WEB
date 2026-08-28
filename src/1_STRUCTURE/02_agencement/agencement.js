@@ -244,9 +244,19 @@ export function shelfZBounds(dims = {}, moduleList = []) {
 }
 
 export function liftShelvesAboveDrawers(modules = [], dims = {}) {
+  const hasDrawers = modules.some((m) => m.kind === 'drawer')
   const { zMin } = shelfZBounds(dims, modules)
+  let firstShelf = true
   return modules.map((m) => {
     if (m.kind !== 'shelf') return m
+    const isFirst = firstShelf
+    firstShelf = false
+    if (hasDrawers && isFirst) {
+      if (m.zMm == null || !Number.isFinite(Number(m.zMm)) || Number(m.zMm) < zMin) {
+        return { ...m, zMm: zMin }
+      }
+      return m
+    }
     if (m.zMm == null || !Number.isFinite(Number(m.zMm))) return m
     if (Number(m.zMm) < zMin) return { ...m, zMm: zMin }
     return m
@@ -254,22 +264,48 @@ export function liftShelvesAboveDrawers(modules = [], dims = {}) {
 }
 
 /**
+ * Première tablette d’un modèle avec tiroirs : posée sur Zmin (ferme le tiroir).
+ */
+export function pinFirstShelfOnDrawers(modules = [], dims = {}) {
+  const hasDrawers = modules.some((m) => m.kind === 'drawer')
+  if (!hasDrawers) return modules
+  const { zMin } = shelfZBounds(dims, modules)
+  let first = true
+  return modules.map((m) => {
+    if (m.kind !== 'shelf') return m
+    if (first) {
+      first = false
+      return { ...m, zMm: zMin }
+    }
+    first = false
+    return m
+  })
+}
+
+/**
  * Z tablette (mm) = **haut** de l’octogone (face supérieure).
- * Clamp pour laisser la place à l’épaisseur (vers le bas) + traverses (vers le haut).
- * Avec tiroirs : bas du plateau ≥ Z haut des tiroirs.
+ * Sans tiroir : répartition intérieure (1/2, 1/3, 1/4…) — jamais au sol ni au plafond.
+ * Avec tiroirs : 1re tablette = Zmin (dessus des tiroirs) ; suivantes dans l’espace restant.
  */
 export function shelfZMm(mod, dims, moduleList = []) {
   const { zMin, zMax } = shelfZBounds(dims, moduleList)
-  if (mod.zMm != null && Number.isFinite(Number(mod.zMm))) {
-    return Math.min(zMax, Math.max(zMin, Number(mod.zMm)))
-  }
   const sameKind = moduleList.filter((m) => m.kind === 'shelf')
   const count = Math.max(sameKind.length, 1)
   const index = sameKind.findIndex((m) => m.id === mod.id)
   const i = Math.max(0, index >= 0 ? index : mod.bayIndex ?? 0)
-  if (count === 1) return (zMin + zMax) / 2
-  const span = zMax - zMin
-  return zMin + (span * i) / (count - 1)
+  const hasDrawers = moduleList.some((m) => m.kind === 'drawer')
+  const span = Math.max(0, zMax - zMin)
+
+  if (mod.zMm != null && Number.isFinite(Number(mod.zMm))) {
+    if (hasDrawers && i === 0 && Number(mod.zMm) < zMin + 0.5) return zMin
+    return Math.min(zMax, Math.max(zMin, Number(mod.zMm)))
+  }
+
+  if (hasDrawers) {
+    if (i === 0) return zMin
+    return zMin + (span * i) / count
+  }
+  return zMin + (span * (i + 1)) / (count + 1)
 }
 
 export function moduleLayout(mod, { L, W, H }, moduleList = []) {

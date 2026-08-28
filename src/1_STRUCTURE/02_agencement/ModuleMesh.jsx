@@ -14,6 +14,7 @@ import {
   railGeometryToThree,
   DRAWER_OPEN_DEPTH_RATIO,
   DRAWER_OPEN_DURATION_MS,
+  drawersTopZMm,
 } from './agencement.js'
 import {
   FINITIONS,
@@ -149,6 +150,7 @@ export function PanneauView({
   dims,
   panneauCouleur = DEFAULT_PANNEAU_COULEUR,
   panneauCouleurHex,
+  porteZMin,
 }) {
   const epaisseurPanneau = useActiveConfigStore((s) => s.epaisseurPanneau)
   const epaisseurPorte = useActiveConfigStore((s) => s.epaisseurPorte)
@@ -157,8 +159,9 @@ export function PanneauView({
     () =>
       buildPanneauComplet(nom, dims, {
         epaisseur: nom === 'porte' ? epaisseurPorte : epaisseurPanneau,
+        ...(nom === 'porte' && porteZMin > 0 ? { zMin: porteZMin } : {}),
       }),
-    [nom, dims.L, dims.W, dims.H, epaisseurPanneau, epaisseurPorte],
+    [nom, dims.L, dims.W, dims.H, epaisseurPanneau, epaisseurPorte, porteZMin],
   )
 
   const palette = resolvePanneauColor(panneauCouleur, panneauCouleurHex)
@@ -191,6 +194,7 @@ export function PanneauxMesh({
   woodFinish = 'chene',
   panneauCouleur = DEFAULT_PANNEAU_COULEUR,
   panneauCouleurHex,
+  porteZMin = 0,
 }) {
   if (!panneaux.length) return null
   return (
@@ -203,6 +207,7 @@ export function PanneauxMesh({
           woodFinish={woodFinish}
           panneauCouleur={panneauCouleur}
           panneauCouleurHex={panneauCouleurHex}
+          porteZMin={porteZMin}
         />
       ))}
     </group>
@@ -725,6 +730,7 @@ export default function AgencementView({
   panneauCouleur = DEFAULT_PANNEAU_COULEUR,
   panneauCouleurHex,
 }) {
+  const porteZMin = drawersTopZMm(dims, modules)
   return (
     <>
       <group scale={[SCALE, SCALE, SCALE]}>
@@ -736,6 +742,7 @@ export default function AgencementView({
             woodFinish={woodFinish}
             panneauCouleur={panneauCouleur}
             panneauCouleurHex={panneauCouleurHex}
+            porteZMin={porteZMin}
           />
         </group>
       </group>

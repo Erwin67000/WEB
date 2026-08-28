@@ -344,6 +344,7 @@ export const translations = {
       linkBad: 'This link is not valid.',
       resumeConfig: 'Resume this piece',
       savedPiece: 'Piece in progress',
+      savedConfigs: 'Saved configurations',
       googleHint:
         'Google is not wired yet. Live: wrangler secret put GOOGLE_CLIENT_ID then GOOGLE_CLIENT_SECRET. Local: .dev.vars.',
       dbWarm: 'Account database is starting up — wait a few seconds and try again.',
@@ -962,6 +963,7 @@ export const translations = {
       linkBad: 'Ce lien n’est pas valable.',
       resumeConfig: 'Reprendre ce meuble',
       savedPiece: 'Meuble en cours',
+      savedConfigs: 'Configurations enregistrées',
       googleHint:
         'Google n’est pas encore branché. En live : wrangler secret put GOOGLE_CLIENT_ID puis GOOGLE_CLIENT_SECRET. En local : .dev.vars (docs/TEST-PREMIER-CLIENT.md).',
       dbWarm: 'La base comptes démarre — patientez quelques secondes et réessayez.',

@@ -59,6 +59,16 @@ const CREATE = [
     updated_at TEXT NOT NULL
   )`,
   `CREATE INDEX IF NOT EXISTS idx_drafts_user ON checkout_drafts(user_id)`,
+  `CREATE TABLE IF NOT EXISTS saved_configs (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    title TEXT,
+    quote_ref TEXT,
+    json TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  )`,
+  `CREATE INDEX IF NOT EXISTS idx_saved_configs_user ON saved_configs(user_id, updated_at)`,
 ]
 
 const ALTER = [

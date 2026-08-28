@@ -27,6 +27,7 @@ import {
 import { presentOrder, isoCountry } from './orderPresentation.js'
 import { handleAuth, getSessionUser } from './auth.js'
 import { handleDrafts } from './drafts.js'
+import { handleConfigs } from './configs.js'
 import { sendMail, orderConfirmationCopy } from './mail.js'
 import { ensureSchema } from './ensureSchema.js'
 
@@ -55,7 +56,7 @@ function corsHeaders(origin, env) {
     /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)
   return {
     'Access-Control-Allow-Origin': ok ? origin || '*' : allowed[0] || '*',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Stripe-Signature',
     'Access-Control-Allow-Credentials': 'true',
   }
@@ -460,6 +461,11 @@ async function handleApi(request, env, _ctx) {
     if (path.startsWith('/api/checkout/draft')) {
       const draftRes = await handleDrafts(request, env, cors)
       if (draftRes) return draftRes
+    }
+
+    if (path.startsWith('/api/configs')) {
+      const cfgRes = await handleConfigs(request, env, cors)
+      if (cfgRes) return cfgRes
     }
 
     if (path === '/api/health' && request.method === 'GET') {

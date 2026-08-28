@@ -66,6 +66,8 @@ const {
   buildTiroir,
   normalizeRailGeometry,
   railGeometryToThree,
+  drawersTopZMm,
+  pinFirstShelfOnDrawers,
 } = await import(
   pathToFileURL(path.join(root, 'src/1_STRUCTURE/02_agencement/agencement.js')).href
 )
@@ -271,11 +273,15 @@ function buildRowGroup(row) {
     if (lines) root.add(lines)
   }
 
+  const modules = pinFirstShelfOnDrawers(row.modules || [], dims)
+  const porteZMin = drawersTopZMm(dims, modules)
+
   // Panneaux solides + contours exacts (trait plus fin que les arêtes)
   for (const nom of row.panneaux || []) {
     try {
       const data = buildPanneauComplet(nom, dims, {
         epaisseur: EPAISSEUR_PANNEAU,
+        ...(nom === 'porte' && porteZMin > 0 ? { zMin: porteZMin } : {}),
       })
       const buf = data.panneau.toBuffers()
       root.add(
@@ -299,7 +305,6 @@ function buildRowGroup(row) {
   }
 
   // Modules : tablettes paramétriques (octogone + traverses) ou boîtes legacy
-  const modules = row.modules || []
   const woodMat = new THREE.MeshStandardMaterial({
     color: woodColor,
     roughness: surf.roughness ?? 0.55,
