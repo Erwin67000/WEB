@@ -4393,118 +4393,141 @@ body.config-lock {
   }
 }
 
+/* Configurateur : 3D plein écran + 5 icônes, une rubrique à la fois */
+.site-main.is-config .config-layout,
+.configurator-app.config-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+  position: relative;
+}
+
+.configurator-app .viewport-3d {
+  min-height: 0;
+  height: 100%;
+}
+
+.configurator-app .control-panel {
+  position: absolute;
+  inset: 0;
+  background: transparent;
+  border: none;
+  pointer-events: none;
+  height: 100% !important;
+  max-height: none !important;
+  padding: 0 !important;
+  overflow: visible;
+  z-index: 6;
+}
+
 .config-fab-bar {
+  display: flex;
+  flex-direction: column;
+  pointer-events: auto;
+  position: absolute;
+  top: 50%;
+  left: 0.7rem;
+  transform: translateY(-50%);
+  z-index: 8;
+  gap: 0.4rem;
+}
+
+.config-fab {
+  appearance: none;
+  width: 2.75rem;
+  height: 2.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #c4a574;
+  background: rgba(245, 240, 230, 0.94);
+  color: #1a1610;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(20, 16, 10, 0.08);
+}
+
+.config-fab.is-active {
+  background: #8a6a42;
+  border-color: #8a6a42;
+  color: #fffef8;
+}
+
+.config-fab svg {
+  display: block;
+}
+
+.configurator-app .panel-mobile-toggle {
+  display: none !important;
+}
+
+.configurator-app .control-panel .panel-scroll {
+  display: none;
+  pointer-events: auto;
+  position: absolute;
+  left: 4.15rem;
+  top: 1rem;
+  bottom: 6.1rem;
+  width: min(22rem, calc(100vw - 5.2rem));
+  overflow: auto;
+  background: #f5f0e6;
+  border: 1px solid #d4cbb8;
+  border-radius: 10px;
+  box-shadow: 8px 8px 28px rgba(20, 16, 10, 0.12);
+}
+
+.configurator-app .control-panel.is-sheet-open .panel-scroll {
+  display: block;
+}
+
+.configurator-app .control-panel .panel-section {
   display: none;
 }
 
+.configurator-app .control-panel .panel-section:has(.section-body) {
+  display: block;
+}
+
+.configurator-app .control-panel .panel-section:has(.section-body) .section-head {
+  display: none;
+}
+
+.configurator-app .panel-buy-bar {
+  pointer-events: auto;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 8;
+  padding-bottom: max(0.65rem, env(safe-area-inset-bottom, 0px));
+}
+
+.configurator-app .viewport-hint {
+  right: 14px;
+  bottom: 6.2rem;
+}
+
 @media (max-width: 1024px) {
-  .site-main.is-config .config-layout,
-  .configurator-app.config-layout {
-    display: grid;
-    grid-template-columns: 1fr !important;
-    grid-template-rows: 1fr;
-    position: relative;
-  }
-
-  .configurator-app .viewport-3d {
-    order: 1;
-    min-height: 0;
-    height: 100%;
-  }
-
-  .configurator-app .control-panel {
-    position: absolute;
-    inset: 0;
-    order: 2;
-    background: transparent;
-    border: none;
-    pointer-events: none;
-    height: 100% !important;
-    max-height: none !important;
-    padding: 0 !important;
-    overflow: visible;
-    z-index: 6;
-  }
-
   .config-fab-bar {
-    display: flex;
-    pointer-events: auto;
-    position: absolute;
+    flex-direction: row;
     top: max(0.55rem, env(safe-area-inset-top, 0px));
     left: 50%;
     transform: translateX(-50%);
-    z-index: 8;
-    gap: 0.35rem;
     max-width: calc(100% - 1rem);
     overflow-x: auto;
     padding: 0.2rem;
   }
 
-  .config-fab {
-    flex: 0 0 auto;
-    appearance: none;
-    border: 1px solid #c4a574;
-    background: rgba(245, 240, 230, 0.92);
-    color: #1a1610;
-    font-family: var(--philae-font);
-    font-size: 0.62rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    padding: 0.45rem 0.65rem;
-    border-radius: 8px;
-    cursor: pointer;
-    white-space: nowrap;
-  }
-
-  .config-fab.is-active {
-    background: #8a6a42;
-    border-color: #8a6a42;
-    color: #fffef8;
-  }
-
-  .configurator-app .panel-mobile-toggle {
-    display: none !important;
-  }
-
   .configurator-app .control-panel .panel-scroll {
-    display: none;
-    pointer-events: auto;
-    position: absolute;
     left: 0;
     right: 0;
+    top: auto;
     bottom: 5.6rem;
-    max-height: min(42vh, 360px) !important;
-    overflow: auto;
-    background: #f5f0e6;
-    border-top: 1px solid #d4cbb8;
-    box-shadow: 0 -8px 28px rgba(20, 16, 10, 0.12);
-  }
-
-  .configurator-app .control-panel.is-sheet-open .panel-scroll {
-    display: block;
-  }
-
-  .configurator-app .control-panel .panel-section {
-    display: none;
-  }
-
-  .configurator-app .control-panel .panel-section:has(.section-body) {
-    display: block;
-  }
-
-  .configurator-app .control-panel .panel-section:has(.section-body) .section-head {
-    display: none;
-  }
-
-  .configurator-app .panel-buy-bar {
-    pointer-events: auto;
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 8;
-    padding-bottom: max(0.65rem, env(safe-area-inset-bottom, 0px));
+    width: auto;
+    max-height: min(42vh, 360px);
+    border-radius: 10px 10px 0 0;
+    border-left: none;
+    border-right: none;
   }
 
   .configurator-app .panel-buy-secondary {

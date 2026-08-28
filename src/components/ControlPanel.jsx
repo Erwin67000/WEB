@@ -93,6 +93,59 @@ function NumFieldInline({ label, value, onChange, min, max, step = 1, unit = '°
   )
 }
 
+function FabIcon({ name }) {
+  const common = {
+    viewBox: '0 0 24 24',
+    width: '22',
+    height: '22',
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: '1.8',
+    strokeLinecap: 'round',
+    strokeLinejoin: 'round',
+    'aria-hidden': true,
+  }
+  if (name === 'meuble') {
+    return (
+      <svg {...common}>
+        <rect x="3.5" y="9" width="17" height="11.5" rx="1.4" />
+        <path d="M6.5 9V5.8A1.8 1.8 0 0 1 8.3 4h7.4A1.8 1.8 0 0 1 17.5 5.8V9" />
+      </svg>
+    )
+  }
+  if (name === 'dims') {
+    return (
+      <svg {...common}>
+        <path d="M4 20V7.5M4 20h12.5" />
+        <path d="M4 7.5h4.5M16.5 20v-4.5" />
+        <rect x="9.5" y="4" width="10.5" height="10.5" rx="1.2" />
+      </svg>
+    )
+  }
+  if (name === 'modules') {
+    return (
+      <svg {...common}>
+        <rect x="3.5" y="3.5" width="17" height="17" rx="1.4" />
+        <path d="M3.5 10h17M3.5 16.5h17M10 3.5v17" />
+      </svg>
+    )
+  }
+  if (name === 'panneaux') {
+    return (
+      <svg {...common}>
+        <rect x="4" y="5.5" width="13" height="13" rx="1.2" />
+        <path d="M8.5 3.5h11v13" />
+      </svg>
+    )
+  }
+  return (
+    <svg {...common}>
+      <circle cx="12" cy="12" r="3.2" />
+      <path d="M12 5.2V3.4M12 20.6v-1.8M5.2 12H3.4M20.6 12h-1.8M7.1 7.1 5.8 5.8M18.2 18.2l-1.3-1.3M7.1 16.9 5.8 18.2M18.2 5.8l-1.3 1.3" />
+    </svg>
+  )
+}
+
 export default function ControlPanel() {
   // Select only stable store slices (never call helpers that return new objects
   // inside useConfigStore selectors — that causes infinite re-render loops).
@@ -147,31 +200,14 @@ export default function ControlPanel() {
   /** Chip en cours de renommage (id meuble) */
   const [editingUnitId, setEditingUnitId] = useState(null)
   const renameInputRef = useRef(null)
-  /**
-   * Configurateur libre : Dimensions ouverte.
-   * Session boutique (dimsLocked) : Dimensions + Agencements + Panneaux ouverts ;
-   * section Meubles masquée (un seul modèle).
-   */
   const [openSections, setOpenSections] = useState(() => ({
     meuble: false,
-    dims: true,
-    modules: !!dimsLocked,
-    panneaux: !!dimsLocked,
+    dims: false,
+    modules: false,
+    panneaux: false,
     scene: false,
     devis: false,
   }))
-
-  // Si on entre en session boutique après le montage, ouvrir les bonnes sections
-  useEffect(() => {
-    if (!dimsLocked) return
-    setOpenSections((s) => ({
-      ...s,
-      meuble: false,
-      dims: true,
-      modules: true,
-      panneaux: true,
-    }))
-  }, [dimsLocked])
 
   useEffect(() => {
     if (editingUnitId && renameInputRef.current) {
@@ -183,8 +219,6 @@ export default function ControlPanel() {
   if (!unit) return null
 
   const CORE_SECTIONS = ['meuble', 'dims', 'modules', 'panneaux', 'scene']
-  const toggle = (k) =>
-    setOpenSections((s) => ({ ...s, [k]: !s[k] }))
   const toggleExclusive = (k) =>
     setOpenSections((s) => {
       const closing = Boolean(s[k])
@@ -198,14 +232,14 @@ export default function ControlPanel() {
         [k]: !closing,
       }
     })
-  const sheetOpen = CORE_SECTIONS.some((k) => openSections[k] && !(k === 'meuble' && dimsLocked))
+  const sheetOpen = CORE_SECTIONS.some((k) => openSections[k])
   const fabItems = [
-    !dimsLocked && { id: 'meuble', label: t('config.furniture') },
-    { id: 'dims', label: t('config.dims') },
-    { id: 'modules', label: t('config.layout') },
-    { id: 'panneaux', label: t('config.panels') },
-    { id: 'scene', label: t('config.scene') },
-  ].filter(Boolean)
+    { id: 'meuble', label: t('config.furniture'), icon: 'meuble' },
+    { id: 'dims', label: t('config.dims'), icon: 'dims' },
+    { id: 'modules', label: t('config.layout'), icon: 'modules' },
+    { id: 'panneaux', label: t('config.panels'), icon: 'panneaux' },
+    { id: 'scene', label: t('config.scene'), icon: 'scene' },
+  ]
 
   const notify = (msg) => {
     setFlash(msg)
@@ -231,25 +265,25 @@ export default function ControlPanel() {
             className={`config-fab${openSections[item.id] ? ' is-active' : ''}`}
             onClick={() => toggleExclusive(item.id)}
             aria-pressed={Boolean(openSections[item.id])}
+            title={item.label}
+            aria-label={item.label}
           >
-            {item.label}
+            <FabIcon name={item.icon} />
           </button>
         ))}
       </div>
       <div className="panel-scroll">
-        {/* Meubles — masqué en session boutique (un seul modèle figé) */}
-        {!dimsLocked && (
-          <section className="panel-section">
-            <button
-              type="button"
-              className="section-head"
-              onClick={() => toggle('meuble')}
-            >
-              <span>{t('config.furniture')}</span>
-              <span className="chev">{openSections.meuble ? '▾' : '▸'}</span>
-            </button>
-            {openSections.meuble && (
-              <div className="section-body">
+        <section className="panel-section">
+          <button
+            type="button"
+            className="section-head"
+            onClick={() => toggleExclusive('meuble')}
+          >
+            <span>{t('config.furniture')}</span>
+            <span className="chev">{openSections.meuble ? '▾' : '▸'}</span>
+          </button>
+          {openSections.meuble && (
+            <div className="section-body">
                 <div className="unit-list">
                   {units.map((u, idx) =>
                     editingUnitId === u.id ? (
@@ -296,43 +330,44 @@ export default function ControlPanel() {
                     ),
                   )}
                 </div>
-                <div className="row-actions">
-                  <button
-                    type="button"
-                    className="btn-sm"
-                    onClick={() => {
-                      const result = addUnit()
-                      if (result && result.ok === false) {
-                        notify(
-                          result.reason === 'max-units' ||
-                            /envergure|larger-scale/i.test(result.reason || '')
-                            ? t('config.reasonLarge')
-                            : result.reason
-                              ? t('config.reasonBoutique')
-                              : t('config.reasonLarge'),
-                        )
-                      }
-                    }}
-                  >
-                    {t('config.addPiece')}
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-sm danger"
-                    onClick={() => removeUnit(activeUnitId)}
-                    disabled={units.length <= 1}
-                  >
-                    {t('config.remove')}
-                  </button>
-                </div>
+                {!dimsLocked && (
+                  <div className="row-actions">
+                    <button
+                      type="button"
+                      className="btn-sm"
+                      onClick={() => {
+                        const result = addUnit()
+                        if (result && result.ok === false) {
+                          notify(
+                            result.reason === 'max-units' ||
+                              /envergure|larger-scale/i.test(result.reason || '')
+                              ? t('config.reasonLarge')
+                              : result.reason
+                                ? t('config.reasonBoutique')
+                                : t('config.reasonLarge'),
+                          )
+                        }
+                      }}
+                    >
+                      {t('config.addPiece')}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-sm danger"
+                      onClick={() => removeUnit(activeUnitId)}
+                      disabled={units.length <= 1}
+                    >
+                      {t('config.remove')}
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </section>
-        )}
 
         {/* Dimensions — en boutique : L×P×H du modèle (figées) */}
         <section className="panel-section">
-          <button type="button" className="section-head" onClick={() => toggle('dims')}>
+          <button type="button" className="section-head" onClick={() => toggleExclusive('dims')}>
             <span>
               {dimsLocked ? t('config.dimsModel') : t('config.dims')}
             </span>
@@ -466,7 +501,7 @@ export default function ControlPanel() {
 
         {/* Modules */}
         <section className="panel-section">
-          <button type="button" className="section-head" onClick={() => toggle('modules')}>
+          <button type="button" className="section-head" onClick={() => toggleExclusive('modules')}>
             <span>{t('config.layout')}</span>
             <span className="chev">{openSections.modules ? '▾' : '▸'}</span>
           </button>
@@ -619,19 +654,6 @@ export default function ControlPanel() {
                               </>
                             )}
                           </p>
-                          <label className="field compact">
-                            <span className="field-label">{t('config.opening')}</span>
-                            <input
-                              type="range"
-                              min={0}
-                              max={1}
-                              step={0.05}
-                              value={m.openFactor || 0}
-                              onChange={(e) =>
-                                setModuleOpen(m.id, Number(e.target.value))
-                              }
-                            />
-                          </label>
                         </>
                       )}
                       {m.kind === 'door' && (
@@ -659,7 +681,7 @@ export default function ControlPanel() {
 
         {/* Panneaux */}
         <section className="panel-section">
-          <button type="button" className="section-head" onClick={() => toggle('panneaux')}>
+          <button type="button" className="section-head" onClick={() => toggleExclusive('panneaux')}>
             <span>{t('config.panels')}</span>
             <span className="chev">{openSections.panneaux ? '▾' : '▸'}</span>
           </button>
@@ -736,7 +758,7 @@ export default function ControlPanel() {
 
         {/* Scène */}
         <section className="panel-section">
-          <button type="button" className="section-head" onClick={() => toggle('scene')}>
+          <button type="button" className="section-head" onClick={() => toggleExclusive('scene')}>
             <span>{t('config.scene')}</span>
             <span className="chev">{openSections.scene ? '▾' : '▸'}</span>
           </button>
