@@ -2008,6 +2008,62 @@ body {
   text-transform: uppercase;
 }
 
+.account-menu {
+  position: relative;
+}
+
+.account-menu-btn {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 1px solid rgba(201, 162, 39, 0.35);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--gold, #c9a227);
+  cursor: pointer;
+}
+
+.account-menu-btn:hover,
+.account-menu-btn.is-open {
+  background: rgba(201, 162, 39, 0.12);
+  border-color: var(--gold, #c9a227);
+}
+
+.account-menu-drop {
+  position: absolute;
+  top: calc(100% + 0.45rem);
+  right: 0;
+  min-width: 11.5rem;
+  padding: 0.35rem 0;
+  background: #14110c;
+  border: 1px solid rgba(201, 162, 39, 0.35);
+  border-radius: 8px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+}
+
+.account-menu-drop a {
+  display: block;
+  padding: 0.55rem 0.85rem;
+  color: var(--ivory, #f5f0e6);
+  text-decoration: none;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.account-menu-drop a:hover,
+.account-menu-drop a.active {
+  color: var(--gold, #c9a227);
+  background: rgba(201, 162, 39, 0.08);
+}
+
 .gold-dot {
   width: 6px;
   height: 6px;
@@ -2674,8 +2730,10 @@ body.config-lock {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  width: max-content;
+  max-width: 100%;
   min-height: 2.45rem;
-  padding: 0.55rem 0.9rem;
+  padding: 0.55rem 1.15rem 0.55rem 1.35rem;
   border-radius: 4px;
   border: 1px solid #a67c52;
   font-family: var(--philae-font);
@@ -2690,13 +2748,12 @@ body.config-lock {
 }
 
 .product-actions .shop-hover-btn {
-  flex: 1;
+  flex: 0 1 auto;
 }
 
 .shop-hover-btn-lg {
-  min-width: 12.5rem;
   min-height: 2.85rem;
-  padding: 0.75rem 1.5rem;
+  padding: 0.75rem 1.35rem 0.75rem 1.55rem;
   font-size: 0.72rem;
 }
 
@@ -2710,22 +2767,7 @@ body.config-lock {
   border-color: #c4a574;
 }
 
-.shop-hover-btn-pay {
-  background: #0f0f0f;
-  border-color: #0f0f0f;
-  color: #ffffff;
-  border-radius: 8px;
-}
-
-.shop-hover-btn-pay .shop-hover-btn-dot {
-  background: #ffffff;
-}
-
-.shop-hover-btn-pay .shop-hover-btn-active {
-  color: #0f0f0f;
-}
-
-.shop-hover-btn-pay:disabled {
+.shop-hover-btn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
 }
@@ -3226,8 +3268,8 @@ body.config-lock {
 /* —— Boutons site (bois / or, plus de vert) —— */
 .page .btn,
 .hero-actions .btn {
-  width: auto;
-  min-width: 11rem;
+  width: max-content;
+  min-width: 0;
   margin-top: 0;
   padding: 0.7rem 1.4rem;
   border-radius: 4px;
@@ -3992,14 +4034,9 @@ body.config-lock {
   display: none;
 }
 
-.article-actions .shop-hover-btn-pay,
-.hero-actions .shop-hover-btn-pay {
-  width: auto;
-  min-width: 11rem;
-}
-
-.control-panel .shop-hover-btn-pay {
-  width: 100%;
+.article-actions .shop-hover-btn,
+.hero-actions .shop-hover-btn {
+  width: max-content;
 }
 
 .mini-3d-skeleton {
@@ -4467,8 +4504,11 @@ body.config-lock {
   position: absolute;
   left: 4.15rem;
   top: 1rem;
-  bottom: 6.1rem;
-  width: min(22rem, calc(100vw - 5.2rem));
+  width: max-content;
+  min-width: 15.5rem;
+  max-width: min(22rem, calc(100vw - 5.2rem));
+  height: max-content;
+  max-height: calc(100% - 6.5rem);
   overflow: auto;
   background: #f5f0e6;
   border: 1px solid #d4cbb8;
@@ -4492,14 +4532,16 @@ body.config-lock {
   display: none;
 }
 
-.configurator-app .panel-buy-bar {
+.config-buy-float {
   pointer-events: auto;
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  left: max(0.75rem, env(safe-area-inset-left, 0px));
+  bottom: max(0.85rem, env(safe-area-inset-bottom, 0px));
   z-index: 8;
-  padding-bottom: max(0.65rem, env(safe-area-inset-bottom, 0px));
+}
+
+.config-buy-float .shop-hover-btn {
+  width: max-content;
 }
 
 .configurator-app .viewport-hint {
@@ -4519,19 +4561,15 @@ body.config-lock {
   }
 
   .configurator-app .control-panel .panel-scroll {
-    left: 0;
-    right: 0;
+    left: 0.65rem;
+    right: 0.65rem;
     top: auto;
-    bottom: 5.6rem;
+    bottom: 4.4rem;
     width: auto;
+    min-width: 0;
+    max-width: none;
     max-height: min(42vh, 360px);
-    border-radius: 10px 10px 0 0;
-    border-left: none;
-    border-right: none;
-  }
-
-  .configurator-app .panel-buy-secondary {
-    display: none;
+    border-radius: 10px;
   }
 
   .configurator-app .viewport-hint {

@@ -176,7 +176,6 @@ export default function ControlPanel() {
   const setSunIntensity = useActiveConfigStore((s) => s.setSunIntensity)
   const setWireframe = useActiveConfigStore((s) => s.setWireframe)
   const setPanneauPickMode = useActiveConfigStore((s) => s.setPanneauPickMode)
-  const requestModele3D = useActiveConfigStore((s) => s.requestModele3D)
   const contact = useActiveConfigStore((s) => s.contact)
 
   const storeApi = useActiveConfigStoreApi()
@@ -805,11 +804,7 @@ export default function ControlPanel() {
         </section>
 
       </div>
-      <div className="panel-buy-bar">
-        <div className="panel-buy-price">
-          <span>{t('config.ttc')}</span>
-          <strong>{pricing.ttc.toFixed(2)} €</strong>
-        </div>
+      <div className="config-buy-float">
         <PayButton
           disabled={!STRIPE_ENABLED || pricing.ttc < 0.5}
           onClick={async () => {
@@ -843,16 +838,6 @@ export default function ControlPanel() {
         >
           {t('config.buyPrice', { price: pricing.ttc.toFixed(0) })}
         </PayButton>
-        <button
-          type="button"
-          className="panel-buy-secondary"
-          onClick={async () => {
-            await requestModele3D()
-            notify(t('config.model3dDone'))
-          }}
-        >
-          {t('config.model3d')}
-        </button>
       </div>
       {flash && <div className="panel-flash">{flash}</div>}
       {drawerWidthAlert && (

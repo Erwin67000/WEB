@@ -1,15 +1,14 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { useConfigStore } from '../store/useConfigStore.js'
 import { useI18n } from '@texte/I18nProvider.jsx'
+import { fetchSession } from '../lib/authClient.js'
 
 const NAV = [
   { to: '/', key: 'nav.home', end: true },
   { to: '/boutique', key: 'nav.shop' },
   { to: '/configurateur', key: 'nav.configurator' },
   { to: '/concept', key: 'nav.concept' },
-  { to: '/contact', key: 'nav.contact' },
-  { to: '/compte', key: 'nav.account' },
 ]
 
 const COMPACT_AFTER = 12
@@ -21,6 +20,78 @@ function getScrollY() {
     document.documentElement.scrollTop ||
     document.body.scrollTop ||
     0
+  )
+}
+
+function AccountMenu() {
+  const { t } = useI18n()
+  const location = useLocation()
+  const [open, setOpen] = useState(false)
+  const [user, setUser] = useState(null)
+  const rootRef = useRef(null)
+
+  useEffect(() => {
+    let cancelled = false
+    fetchSession().then((s) => {
+      if (!cancelled) setUser(s.user)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [location.pathname])
+
+  useEffect(() => {
+    if (!open) return
+    const onDoc = (e) => {
+      if (rootRef.current && !rootRef.current.contains(e.target)) setOpen(false)
+    }
+    document.addEventListener('mousedown', onDoc)
+    return () => document.removeEventListener('mousedown', onDoc)
+  }, [open])
+
+  return (
+    <div className="account-menu" ref={rootRef}>
+      <button
+        type="button"
+        className={`account-menu-btn${open ? ' is-open' : ''}`}
+        aria-expanded={open}
+        aria-haspopup="menu"
+        aria-label={t('nav.account')}
+        onClick={() => setOpen((v) => !v)}
+      >
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden>
+          <circle
+            cx="12"
+            cy="8"
+            r="3.2"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.7"
+          />
+          <path
+            d="M5.2 19.2c.8-3.2 3.4-5 6.8-5s6 1.8 6.8 5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.7"
+            strokeLinecap="round"
+          />
+        </svg>
+      </button>
+      {open && (
+        <div className="account-menu-drop" role="menu">
+          <NavLink
+            to={user ? '/compte' : '/commande'}
+            role="menuitem"
+            onClick={() => setOpen(false)}
+          >
+            {user ? t('nav.account') : t('nav.signIn')}
+          </NavLink>
+          <NavLink to="/contact" role="menuitem" onClick={() => setOpen(false)}>
+            {t('nav.contactUs')}
+          </NavLink>
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -149,6 +220,7 @@ export default function SiteHeader() {
 
         <div className="site-header-meta">
           <LangSwitch />
+          <AccountMenu />
           {cartCount > 0 && (
             <span className="cart-pill" title={t('nav.shop')}>
               {cartCount}

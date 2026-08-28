@@ -26,6 +26,8 @@ export const translations = {
       concept: 'Concept',
       contact: 'Contact',
       account: 'Account',
+      signIn: 'Sign in',
+      contactUs: 'Contact us',
       menu: 'Menu',
     },
     lang: {
@@ -644,6 +646,8 @@ export const translations = {
       concept: 'Le concept',
       contact: 'Contact',
       account: 'Compte',
+      signIn: 'Connexion',
+      contactUs: 'Nous contacter',
       menu: 'Menu',
     },
     lang: {

@@ -24,11 +24,11 @@ export default function SiteFooter() {
             <Link to="/boutique">{t('nav.shop')}</Link>
             <Link to="/configurateur">{t('nav.configurator')}</Link>
             <Link to="/concept">{t('nav.concept')}</Link>
-            <Link to="/contact">{t('nav.contact')}</Link>
           </div>
 
           <div className="footer-col">
             <h4>{t('footer.workshop')}</h4>
+            <Link to="/contact">{t('nav.contact')}</Link>
             <a href="mailto:contact@philae.design">contact@philae.design</a>
             <p>{t('footer.madeIn')}</p>
             <a
