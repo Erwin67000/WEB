@@ -21,6 +21,7 @@
 import {
   EPAISSEUR_PANNEAU,
   areteExtrusionMm,
+  DRAWER_FACADE_DOWN_EXTEND_MM,
 } from '../../00_matrice/matrice_constante.js'
 import {
   resolvePorteArriereY,
@@ -344,7 +345,9 @@ export function buildTiroir(dims, layout, mod = {}, opts = {}) {
   )
 
   const facadeOpts = {
-    zMin: originZ,
+    zMin: layout.facadeBas
+      ? originZ
+      : originZ - (Number(DRAWER_FACADE_DOWN_EXTEND_MM) || 20),
     zMax: originZ + wurth.hMm,
     epaisseur: EPAISSEUR_PANNEAU,
   }

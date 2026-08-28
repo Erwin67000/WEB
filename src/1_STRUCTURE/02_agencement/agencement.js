@@ -7,6 +7,7 @@ import {
   EPAISSEUR_PANNEAU,
   EPAISSEUR_PORTE,
   DRAWER_STACK_GAP_MM,
+  PORTE_TO_DRAWER_DROP_MM,
   PRIX,
   areteExtrusionMm,
 } from '../00_matrice/matrice_constante.js'
@@ -222,6 +223,16 @@ export function drawersTopZMm(dims = {}, moduleList = []) {
     top = Math.max(top, zBottom + h)
   })
   return top
+}
+
+/**
+ * Bas de la porte (mm) : descend jusqu’au dessus visuel du dernier tiroir.
+ * 0 s’il n’y a pas de tiroir (porte pleine hauteur).
+ */
+export function porteZMinFromModules(dims = {}, moduleList = []) {
+  const top = drawersTopZMm(dims, moduleList)
+  if (!(top > 0)) return 0
+  return Math.max(0, top - (Number(PORTE_TO_DRAWER_DROP_MM) || 40))
 }
 
 /**

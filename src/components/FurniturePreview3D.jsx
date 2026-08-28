@@ -21,7 +21,7 @@ import {
   BOIS_ATELIER_ID,
   resolveOssatureFinish,
 } from '../1_STRUCTURE/00_matrice/matrice_constante.js'
-import { drawersTopZMm } from '../1_STRUCTURE/02_agencement/agencement.js'
+import { porteZMinFromModules } from '../1_STRUCTURE/02_agencement/agencement.js'
 import { ConfigStoreProvider } from '../store/ConfigStoreContext.jsx'
 import { createConfigStore } from '../store/createConfigStore.js'
 import CatalogGlbPreview, {
@@ -86,7 +86,7 @@ function FrozenUnit({ unit }) {
               woodFinish={unit.woodFinish}
               panneauCouleur={unit.panneauCouleur}
               panneauCouleurHex={unit.panneauCouleurHex}
-              porteZMin={drawersTopZMm(dims, unit.modules || [])}
+              porteZMin={porteZMinFromModules(dims, unit.modules || [])}
             />
           </group>
         </group>

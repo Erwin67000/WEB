@@ -14,7 +14,7 @@ import {
   railGeometryToThree,
   DRAWER_OPEN_DEPTH_RATIO,
   DRAWER_OPEN_DURATION_MS,
-  drawersTopZMm,
+  porteZMinFromModules,
 } from './agencement.js'
 import {
   FINITIONS,
@@ -730,7 +730,7 @@ export default function AgencementView({
   panneauCouleur = DEFAULT_PANNEAU_COULEUR,
   panneauCouleurHex,
 }) {
-  const porteZMin = drawersTopZMm(dims, modules)
+  const porteZMin = porteZMinFromModules(dims, modules)
   return (
     <>
       <group scale={[SCALE, SCALE, SCALE]}>

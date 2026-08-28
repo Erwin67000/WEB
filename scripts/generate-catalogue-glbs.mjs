@@ -66,7 +66,7 @@ const {
   buildTiroir,
   normalizeRailGeometry,
   railGeometryToThree,
-  drawersTopZMm,
+  porteZMinFromModules,
   pinFirstShelfOnDrawers,
 } = await import(
   pathToFileURL(path.join(root, 'src/1_STRUCTURE/02_agencement/agencement.js')).href
@@ -274,7 +274,7 @@ function buildRowGroup(row) {
   }
 
   const modules = pinFirstShelfOnDrawers(row.modules || [], dims)
-  const porteZMin = drawersTopZMm(dims, modules)
+  const porteZMin = porteZMinFromModules(dims, modules)
 
   // Panneaux solides + contours exacts (trait plus fin que les arêtes)
   for (const nom of row.panneaux || []) {
