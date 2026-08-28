@@ -66,7 +66,8 @@ const {
   buildTiroir,
   normalizeRailGeometry,
   railGeometryToThree,
-  porteZMinFromModules,
+  porteGroupsForUnit,
+  porteGroupBuildParams,
   pinFirstShelfOnDrawers,
 } = await import(
   pathToFileURL(path.join(root, 'src/1_STRUCTURE/02_agencement/agencement.js')).href
@@ -274,14 +275,19 @@ function buildRowGroup(row) {
   }
 
   const modules = pinFirstShelfOnDrawers(row.modules || [], dims)
-  const porteZMin = porteZMinFromModules(dims, modules)
+  const porteGroups = porteGroupsForUnit({
+    dims,
+    modules,
+    panneaux: row.panneaux || [],
+    porteBays: row.porteBays,
+  })
 
   // Panneaux solides + contours exacts (trait plus fin que les arêtes)
   for (const nom of row.panneaux || []) {
+    if (nom === 'porte') continue
     try {
       const data = buildPanneauComplet(nom, dims, {
         epaisseur: EPAISSEUR_PANNEAU,
-        ...(nom === 'porte' && porteZMin > 0 ? { zMin: porteZMin } : {}),
       })
       const buf = data.panneau.toBuffers()
       root.add(
@@ -301,6 +307,34 @@ function buildRowGroup(row) {
       if (plines) root.add(plines)
     } catch (e) {
       console.warn(`  [skip panneau ${nom}]`, e.message)
+    }
+  }
+
+  for (const g of porteGroups) {
+    try {
+      const params = porteGroupBuildParams(g, dims, modules)
+      const data = buildPanneauComplet('porte', dims, {
+        epaisseur: EPAISSEUR_PANNEAU,
+        ...params,
+      })
+      const buf = data.panneau.toBuffers()
+      root.add(
+        meshFromBuffers(
+          buf.positions,
+          buf.indices,
+          new THREE.Color(panneauColor),
+          `panneau-porte-${g.key}`,
+        ),
+      )
+      const plines = tubesFromWire(
+        buf.wire,
+        edgeColor,
+        `panneau-wire-porte-${g.key}`,
+        0.85,
+      )
+      if (plines) root.add(plines)
+    } catch (e) {
+      console.warn(`  [skip porte ${g.key}]`, e.message)
     }
   }
 

@@ -59,12 +59,15 @@ export const DRAWER_STACK_GAP_MM = 15
  * Les façades de tiroirs (sauf le 1er, déjà calé au sol) s’allongent vers
  * le bas pour avaler le jeu d’empilement et rester continues.
  */
-export const DRAWER_FACADE_DOWN_EXTEND_MM = 20
+export const DRAWER_FACADE_DOWN_EXTEND_MM = 15
 /**
  * Le bas de la porte descend jusqu’au dessus du dernier tiroir
  * (drawersTopZMm est trop haut : traverse + H, pas le haut de façade).
  */
-export const PORTE_TO_DRAWER_DROP_MM = 40
+export const PORTE_TO_DRAWER_DROP_MM = 34
+/** Ouverture porte : 90° autour de Z, 600 ms, ease-in-out. */
+export const PORTE_OPEN_DURATION_MS = 600
+export const PORTE_OPEN_ANGLE_RAD = Math.PI / 2
 
 /** Angle géométrique signature (rad) — tan(angle) ≈ 1/√2. */
 export const ANGLE_GEOMETRIE = 0.6155

@@ -236,6 +236,136 @@ export function porteZMinFromModules(dims = {}, moduleList = []) {
 }
 
 /**
+ * Cases de façade porte, du bas vers le haut (hors zone tiroirs).
+ * Avec N tablettes + tiroirs : N cases (comme 1–4 sur la vue).
+ * Sans tiroir : N+1 cases (vide sous la 1re tablette inclus).
+ */
+export function doorBaysFromModules(dims = {}, moduleList = []) {
+  const H = Number(dims.H) || 0
+  const ep = Number(EPAISSEUR_PANNEAU) || 15
+  const shelves = (moduleList || [])
+    .filter((m) => m.kind === 'shelf')
+    .map((m) => shelfZMm(m, dims, moduleList))
+    .filter((z) => Number.isFinite(z))
+    .sort((a, b) => a - b)
+  const bottoms = shelves.map((zTop) => zTop - ep)
+  const hasDrawers = (moduleList || []).some((m) => m.kind === 'drawer')
+  const bays = []
+
+  if (!shelves.length) {
+    const zMin = hasDrawers ? porteZMinFromModules(dims, moduleList) : 0
+    bays.push({
+      index: 0,
+      zMin,
+      zMax: H,
+      isTop: true,
+      isBottom: true,
+    })
+    return bays
+  }
+
+  if (!hasDrawers) {
+    bays.push({
+      index: 0,
+      zMin: 0,
+      zMax: bottoms[0],
+      isTop: false,
+      isBottom: true,
+    })
+  }
+
+  for (let i = 0; i < bottoms.length; i++) {
+    const isLast = i === bottoms.length - 1
+    bays.push({
+      index: bays.length,
+      zMin: bottoms[i],
+      zMax: isLast ? H : bottoms[i + 1],
+      isTop: isLast,
+      isBottom: hasDrawers ? i === 0 : false,
+    })
+  }
+
+  return bays.map((b, i) => ({ ...b, index: i }))
+}
+
+/** Indices de cases porte réellement couvertes (legacy : « porte » = toutes). */
+export function resolvePorteBays(unit, bays = []) {
+  const n = bays.length
+  if (!n) return []
+  if (Array.isArray(unit?.porteBays)) {
+    return [
+      ...new Set(
+        unit.porteBays
+          .map((i) => Number(i))
+          .filter((i) => Number.isInteger(i) && i >= 0 && i < n),
+      ),
+    ].sort((a, b) => a - b)
+  }
+  if ((unit?.panneaux || []).includes('porte')) {
+    return bays.map((b) => b.index)
+  }
+  return []
+}
+
+/**
+ * Cases voisines → une porte ; un trou → plusieurs portes.
+ */
+export function groupPorteBays(bays, selectedIndices = []) {
+  const sorted = [...new Set(selectedIndices)]
+    .map(Number)
+    .filter((i) => bays[i])
+    .sort((a, b) => a - b)
+  const groups = []
+  let cur = null
+  for (const i of sorted) {
+    const bay = bays[i]
+    if (cur && i === cur.lastIndex + 1) {
+      cur.lastIndex = i
+      cur.zMax = bay.zMax
+      cur.isTop = bay.isTop
+      continue
+    }
+    cur = {
+      firstIndex: i,
+      lastIndex: i,
+      zMin: bay.zMin,
+      zMax: bay.zMax,
+      isTop: bay.isTop,
+      isBottom: bay.isBottom,
+    }
+    groups.push(cur)
+  }
+  return groups.map((g) => ({
+    ...g,
+    key: `${g.firstIndex}-${g.lastIndex}`,
+  }))
+}
+
+/** Params zMin/zMax pour buildPorte / buildPanneauComplet. */
+export function porteGroupBuildParams(group, dims, modules) {
+  const params = {}
+  if (group.isBottom) {
+    const z = porteZMinFromModules(dims, modules)
+    if (z > 0) params.zMin = z
+    else if (group.zMin > 0.5) params.zMin = group.zMin
+  } else if (group.zMin > 0.5) {
+    params.zMin = group.zMin
+  }
+  if (!group.isTop && Number.isFinite(group.zMax)) {
+    params.zMax = group.zMax
+  }
+  return params
+}
+
+export function porteGroupsForUnit(unit) {
+  const dims = unit?.dims || {}
+  const modules = unit?.modules || []
+  const bays = doorBaysFromModules(dims, modules)
+  const selected = resolvePorteBays(unit, bays)
+  return groupPorteBays(bays, selected)
+}
+
+/**
  * Bornes Z tablette (haut de l’octogone).
  * S’il y a des tiroirs, le bas du plateau ≥ sommet des tiroirs.
  */

@@ -14,6 +14,7 @@ import OssatureView from '../1_STRUCTURE/01_meuble3D/OssatureView.jsx'
 import {
   ModulesMesh,
   PanneauxMesh,
+  DoorLeaves,
 } from '../1_STRUCTURE/02_agencement/ModuleMesh.jsx'
 import {
   EPAISSEUR_PANNEAU,
@@ -21,7 +22,7 @@ import {
   BOIS_ATELIER_ID,
   resolveOssatureFinish,
 } from '../1_STRUCTURE/00_matrice/matrice_constante.js'
-import { porteZMinFromModules } from '../1_STRUCTURE/02_agencement/agencement.js'
+
 import { ConfigStoreProvider } from '../store/ConfigStoreContext.jsx'
 import { createConfigStore } from '../store/createConfigStore.js'
 import CatalogGlbPreview, {
@@ -86,7 +87,15 @@ function FrozenUnit({ unit }) {
               woodFinish={unit.woodFinish}
               panneauCouleur={unit.panneauCouleur}
               panneauCouleurHex={unit.panneauCouleurHex}
-              porteZMin={porteZMinFromModules(dims, unit.modules || [])}
+            />
+            <DoorLeaves
+              dims={dims}
+              modules={unit.modules || []}
+              panneaux={unit.panneaux || []}
+              porteBays={unit.porteBays}
+              porteOpen={unit.porteOpen}
+              panneauCouleur={unit.panneauCouleur}
+              panneauCouleurHex={unit.panneauCouleurHex}
             />
           </group>
         </group>

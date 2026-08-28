@@ -5,6 +5,10 @@
  */
 import { useMemo } from 'react'
 import * as THREE from 'three'
+import {
+  doorBaysFromModules,
+  resolvePorteBays,
+} from './agencement.js'
 
 const SCALE = 0.001
 const PAD = 6 // mm — légèrement à l’extérieur du volume
@@ -61,6 +65,65 @@ export const FACE_PICK_DEFS = [
     size: (L, W, H) => [L * 0.9, W * 0.9, PLANE_THICK],
   },
 ]
+
+function DoorBayPlane({ dims, bay, active, onPick }) {
+  const { L, W } = dims
+  const zMin = Number(bay.zMin) || 0
+  const zMax = Number(bay.zMax) || zMin
+  const h = Math.max(8, zMax - zMin)
+  const center = [L / 2, W + PAD, zMin + h / 2]
+  const size = [L * 0.9, PLANE_THICK, h * 0.92]
+  const pos = [
+    center[0] * SCALE,
+    center[2] * SCALE,
+    -center[1] * SCALE,
+  ]
+  const args = [
+    size[0] * SCALE,
+    size[2] * SCALE,
+    size[1] * SCALE,
+  ]
+  const id = `porte-bay:${bay.index}`
+
+  const handlePointer = (e) => {
+    const first = e.intersections?.[0]
+    if (!first || first.object !== e.object) return
+    e.stopPropagation()
+    onPick(id)
+  }
+
+  return (
+    <mesh
+      position={pos}
+      onClick={handlePointer}
+      onPointerOver={(e) => {
+        const first = e.intersections?.[0]
+        if (!first || first.object !== e.object) return
+        e.stopPropagation()
+        document.body.style.cursor = 'pointer'
+      }}
+      onPointerOut={() => {
+        document.body.style.cursor = 'auto'
+      }}
+      renderOrder={active ? 3 : 2}
+    >
+      <boxGeometry args={args} />
+      <meshStandardMaterial
+        color={active ? '#c9a227' : '#6b8f71'}
+        transparent
+        opacity={active ? 0.5 : 0.26}
+        side={THREE.DoubleSide}
+        depthTest
+        depthWrite
+        emissive={active ? '#c9a227' : '#3d6b4a'}
+        emissiveIntensity={active ? 0.55 : 0.16}
+        polygonOffset
+        polygonOffsetFactor={-2}
+        polygonOffsetUnits={-2}
+      />
+    </mesh>
+  )
+}
 
 function FacePlane({ face, dims, active, onPick }) {
   const { L, W, H } = dims
@@ -123,6 +186,8 @@ function FacePlane({ face, dims, active, onPick }) {
  * @param {{
  *   dims: { L: number, W: number, H: number },
  *   panneaux: string[],
+ *   modules?: object[],
+ *   porteBays?: number[],
  *   onPick: (faceId: string) => void,
  *   rotationZ?: number,
  * }} props
@@ -130,10 +195,23 @@ function FacePlane({ face, dims, active, onPick }) {
 export default function FacePickPlanes({
   dims,
   panneaux = [],
+  modules = [],
+  unit = null,
   onPick,
   rotationZ = 0,
 }) {
-  const faces = useMemo(() => FACE_PICK_DEFS, [])
+  const faces = useMemo(
+    () => FACE_PICK_DEFS.filter((f) => f.id !== 'porte'),
+    [],
+  )
+  const bays = useMemo(
+    () => doorBaysFromModules(dims, modules),
+    [dims.L, dims.W, dims.H, modules],
+  )
+  const selectedBays = useMemo(
+    () => resolvePorteBays(unit || { panneaux, porteBays: undefined }, bays),
+    [unit, panneaux, bays],
+  )
 
   return (
     <group rotation={[0, rotationZ, 0]}>
@@ -143,6 +221,15 @@ export default function FacePickPlanes({
           face={face}
           dims={dims}
           active={panneaux.includes(face.id)}
+          onPick={onPick}
+        />
+      ))}
+      {bays.map((bay) => (
+        <DoorBayPlane
+          key={`porte-bay:${bay.index}`}
+          dims={dims}
+          bay={bay}
+          active={selectedBays.includes(bay.index)}
           onPick={onPick}
         />
       ))}

@@ -11,6 +11,9 @@ import {
   modulePriceBreakdown,
   liftShelvesAboveDrawers,
   pinFirstShelfOnDrawers,
+  doorBaysFromModules,
+  resolvePorteBays,
+  porteGroupsForUnit,
 } from '../1_STRUCTURE/02_agencement/agencement.js'
 import { Meuble } from '../1_STRUCTURE/01_meuble3D/ossature.js'
 import {
@@ -51,8 +54,16 @@ const parseModulesInline = parseModulesSpec
 const parsePanneauxInline = parsePanneauxSpec
 
 /** Surface m² d’un panneau selon son type et les dims (mm). */
-export function panneauSurfaceM2(nom, dims) {
+export function panneauSurfaceM2(nom, dims, unit = null) {
   const { L, W, H } = dims
+  if (nom === 'porte' && unit) {
+    const groups = porteGroupsForUnit(unit)
+    const hMm = groups.reduce(
+      (s, g) => s + Math.max(0, (g.zMax ?? H) - (g.zMin ?? 0)),
+      0,
+    )
+    return (L * Math.max(0, hMm)) / 1e6
+  }
   if (nom === 'fond' || nom === 'porte') return (L * H) / 1e6
   if (nom === 'joue1' || nom === 'joue2') return (W * H) / 1e6
   if (
@@ -86,7 +97,7 @@ export function computeUnitPricing(unit) {
   }
 
   const panneaux = (unit.panneaux || []).map((nom) => {
-    const surfaceM2 = panneauSurfaceM2(nom, unit.dims)
+    const surfaceM2 = panneauSurfaceM2(nom, unit.dims, unit)
     const forfait = PRIX.panneauForfait
     const variable = surfaceM2 * PRIX.panneauParM2
     return {
@@ -442,6 +453,9 @@ export function createConfigStore(opts = {}) {
             return {
               ...u,
               panneaux: u.panneaux.filter((p) => p !== nom),
+              ...(nom === 'porte'
+                ? { porteBays: [], porteOpen: {} }
+                : {}),
             }
           }
           let next = [...u.panneaux, nom]
@@ -450,7 +464,54 @@ export function createConfigStore(opts = {}) {
               next = next.filter((p) => p === nom || !group.includes(p))
             }
           }
+          if (nom === 'porte') {
+            return { ...u, panneaux: next, porteBays: undefined }
+          }
           return { ...u, panneaux: next }
+        }),
+        dirty: true,
+      }))
+    },
+
+    togglePorteBay: (index) => {
+      const id = get().activeUnitId
+      const n = Number(index)
+      if (!Number.isInteger(n)) return
+      set((s) => ({
+        units: s.units.map((u) => {
+          if (u.id !== id) return u
+          const bays = doorBaysFromModules(u.dims, u.modules)
+          if (n < 0 || n >= bays.length) return u
+          const current = resolvePorteBays(u, bays)
+          const has = current.includes(n)
+          const porteBays = has
+            ? current.filter((i) => i !== n)
+            : [...current, n].sort((a, b) => a - b)
+          const panneaux = porteBays.length
+            ? u.panneaux.includes('porte')
+              ? u.panneaux
+              : [...u.panneaux, 'porte']
+            : u.panneaux.filter((p) => p !== 'porte')
+          return {
+            ...u,
+            porteBays,
+            panneaux,
+            porteOpen: porteBays.length ? u.porteOpen || {} : {},
+          }
+        }),
+        dirty: true,
+      }))
+    },
+
+    togglePorteOpen: (key) => {
+      if (!key) return
+      const id = get().activeUnitId
+      set((s) => ({
+        units: s.units.map((u) => {
+          if (u.id !== id) return u
+          const open = { ...(u.porteOpen || {}) }
+          open[key] = open[key] ? 0 : 1
+          return { ...u, porteOpen: open }
         }),
         dirty: true,
       }))

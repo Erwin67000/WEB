@@ -402,6 +402,8 @@ export const translations = {
       doneFaces: '✓ Done (faces)',
       pickHint:
         'Click a face of the piece in the 3D view. Click again to remove.',
+      pickHintDoor:
+        'On the front: click a bay between shelves to add a door. Neighbouring bays merge into one door. Drawers cannot be covered.',
       removePanel: 'Remove',
       noPanels: 'No panels',
       panelColor: 'Panel colour',
@@ -1026,6 +1028,8 @@ export const translations = {
       doneFaces: '✓ Terminer (faces)',
       pickHint:
         'Cliquez une face du meuble dans la vue 3D. Recliquez pour retirer.',
+      pickHintDoor:
+        'Sur la façade : cliquez une case entre tablettes pour poser une porte. Les cases voisines forment une seule porte. Les tiroirs ne se couvrent pas.',
       removePanel: 'Retirer',
       noPanels: 'Aucun panneau',
       panelColor: 'Couleur des panneaux',

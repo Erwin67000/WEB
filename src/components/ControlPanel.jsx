@@ -792,6 +792,8 @@ export default function ControlPanel() {
               {panneauPickMode && (
                 <p className="pick-hint">
                   {t('config.pickHint')}
+                  <br />
+                  {t('config.pickHintDoor')}
                 </p>
               )}
 

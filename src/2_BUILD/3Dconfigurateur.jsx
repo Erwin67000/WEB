@@ -71,6 +71,8 @@ function UnitGroup({ unit, selected, wireframe, pickMode, onPickFace }) {
           dims={unit.dims}
           modules={unit.modules}
           panneaux={unit.panneaux}
+          porteBays={unit.porteBays}
+          porteOpen={unit.porteOpen}
           woodFinish={unit.woodFinish}
           ossatureFinish={unit.ossatureFinish}
           panneauCouleur={unit.panneauCouleur}
@@ -82,6 +84,8 @@ function UnitGroup({ unit, selected, wireframe, pickMode, onPickFace }) {
           <FacePickPlanes
             dims={unit.dims}
             panneaux={unit.panneaux || []}
+            modules={unit.modules || []}
+            unit={unit}
             rotationZ={rotY}
             onPick={onPickFace}
           />
@@ -195,6 +199,7 @@ function SceneContent({ orbitOnly = false, ivory = false }) {
   const wireframe = useActiveConfigStore((s) => s.wireframe)
   const panneauPickModeStore = useActiveConfigStore((s) => s.panneauPickMode)
   const togglePanneau = useActiveConfigStore((s) => s.togglePanneau)
+  const togglePorteBay = useActiveConfigStore((s) => s.togglePorteBay)
   const panneauPickMode = orbitOnly ? false : panneauPickModeStore
   const envBase = orbitOnly
     ? ENVIRONMENTS.none
@@ -216,9 +221,11 @@ function SceneContent({ orbitOnly = false, ivory = false }) {
     : DEFAULT_CAMERA_TARGET
 
   const onPickFace = (faceId) => {
+    if (typeof faceId === 'string' && faceId.startsWith('porte-bay:')) {
+      togglePorteBay(Number(faceId.slice('porte-bay:'.length)))
+      return
+    }
     togglePanneau(faceId)
-    // reste en mode pick pour enchaîner, ou désactive après 1er clic ?
-    // On reste en mode jusqu’à clic « Terminer » dans le panel
   }
 
   return (

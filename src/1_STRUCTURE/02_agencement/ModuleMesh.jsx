@@ -14,7 +14,8 @@ import {
   railGeometryToThree,
   DRAWER_OPEN_DEPTH_RATIO,
   DRAWER_OPEN_DURATION_MS,
-  porteZMinFromModules,
+  porteGroupsForUnit,
+  porteGroupBuildParams,
 } from './agencement.js'
 import {
   FINITIONS,
@@ -27,6 +28,8 @@ import {
   ARETE_EDGE_COLOR,
   ARETE_EDGE_WIDTH,
   EPAISSEUR_PANNEAU,
+  PORTE_OPEN_DURATION_MS,
+  PORTE_OPEN_ANGLE_RAD,
 } from '../00_matrice/matrice_constante.js'
 
 import { useActiveConfigStore } from '../../store/ConfigStoreContext.jsx'
@@ -199,15 +202,156 @@ export function PanneauxMesh({
   if (!panneaux.length) return null
   return (
     <group>
-      {panneaux.map((nom) => (
-        <PanneauView
-          key={nom}
-          nom={nom}
+      {panneaux
+        .filter((nom) => nom !== 'porte')
+        .map((nom) => (
+          <PanneauView
+            key={nom}
+            nom={nom}
+            dims={dims}
+            woodFinish={woodFinish}
+            panneauCouleur={panneauCouleur}
+            panneauCouleurHex={panneauCouleurHex}
+            porteZMin={porteZMin}
+          />
+        ))}
+    </group>
+  )
+}
+
+function DoorLeaf({ dims, modules, group, color, openTarget = 0 }) {
+  const epaisseurPorte = useActiveConfigStore((s) => s.epaisseurPorte)
+  const panneauPickMode = useActiveConfigStore((s) => s.panneauPickMode)
+  const togglePorteOpen = useActiveConfigStore((s) => s.togglePorteOpen)
+  const pivotRef = useRef()
+  const visualRef = useRef(openTarget)
+  const fromRef = useRef(openTarget)
+  const toRef = useRef(openTarget)
+  const t0Ref = useRef(0)
+  const [targetOpen, setTargetOpen] = useState(openTarget)
+
+  const data = useMemo(() => {
+    const params = porteGroupBuildParams(group, dims, modules)
+    return buildPanneauComplet('porte', dims, {
+      epaisseur: epaisseurPorte,
+      ...params,
+    })
+  }, [
+    dims.L,
+    dims.W,
+    dims.H,
+    group.key,
+    group.zMin,
+    group.zMax,
+    group.isTop,
+    group.isBottom,
+    epaisseurPorte,
+    modules,
+  ])
+
+  const hinge = useMemo(() => {
+    const pts = data?.panneau?.points || []
+    if (!pts.length) return { x: 0, y: dims.W || 0 }
+    return {
+      x: Math.min(...pts.map((p) => p[0])),
+      y: Math.max(...pts.map((p) => p[1])),
+    }
+  }, [data, dims.W])
+
+  useEffect(() => {
+    setTargetOpen(openTarget)
+  }, [openTarget])
+
+  useEffect(() => {
+    fromRef.current = visualRef.current
+    toRef.current = targetOpen
+    t0Ref.current = performance.now()
+  }, [targetOpen])
+
+  useFrame(() => {
+    const g = pivotRef.current
+    if (!g) return
+    const from = fromRef.current
+    const to = toRef.current
+    if (from !== to) {
+      const t = Math.min(
+        1,
+        (performance.now() - t0Ref.current) / PORTE_OPEN_DURATION_MS,
+      )
+      visualRef.current = from + (to - from) * easeInOutCubic(t)
+      if (t >= 1) {
+        visualRef.current = to
+        fromRef.current = to
+      }
+    }
+    g.rotation.z = visualRef.current * PORTE_OPEN_ANGLE_RAD
+  })
+
+  if (!data?.panneau) return null
+
+  const handleToggle = (e) => {
+    e.stopPropagation()
+    if (panneauPickMode) return
+    if (group.key) togglePorteOpen(group.key)
+  }
+
+  return (
+    <group
+      ref={pivotRef}
+      position={[hinge.x, hinge.y, 0]}
+      onClick={handleToggle}
+      onPointerOver={(e) => {
+        const first = e.intersections?.[0]
+        if (!first || first.object !== e.object) return
+        e.stopPropagation()
+        document.body.style.cursor = 'pointer'
+      }}
+      onPointerOut={() => {
+        document.body.style.cursor = 'auto'
+      }}
+    >
+      <group position={[-hinge.x, -hinge.y, 0]}>
+        <PanneauSolidMesh
+          panneau={data.panneau}
+          color={color}
+          edgeColor={PANNEAU_EDGE_COLOR}
+        />
+      </group>
+    </group>
+  )
+}
+
+export function DoorLeaves({
+  dims,
+  modules = [],
+  panneaux = [],
+  porteBays,
+  porteOpen = {},
+  panneauCouleur,
+  panneauCouleurHex,
+}) {
+  const groups = useMemo(
+    () =>
+      porteGroupsForUnit({
+        dims,
+        modules,
+        panneaux,
+        porteBays,
+      }),
+    [dims.L, dims.W, dims.H, modules, panneaux, porteBays],
+  )
+  const palette = resolvePanneauColor(panneauCouleur, panneauCouleurHex)
+  if (!groups.length) return null
+  return (
+    <group>
+      {groups.map((g) => (
+        <DoorLeaf
+          key={g.key}
           dims={dims}
-          woodFinish={woodFinish}
-          panneauCouleur={panneauCouleur}
-          panneauCouleurHex={panneauCouleurHex}
-          porteZMin={porteZMin}
+          modules={modules}
+          group={g}
+          color={palette.color}
+          openTarget={Number(porteOpen?.[g.key]) > 0.5 ? 1 : 0}
         />
       ))}
     </group>
@@ -725,12 +869,13 @@ export default function AgencementView({
   dims,
   modules = [],
   panneaux = ['fond'],
+  porteBays,
+  porteOpen,
   woodFinish = 'chene',
   ossatureFinish = DEFAULT_FINITION_OSSATURE,
   panneauCouleur = DEFAULT_PANNEAU_COULEUR,
   panneauCouleurHex,
 }) {
-  const porteZMin = porteZMinFromModules(dims, modules)
   return (
     <>
       <group scale={[SCALE, SCALE, SCALE]}>
@@ -742,7 +887,15 @@ export default function AgencementView({
             woodFinish={woodFinish}
             panneauCouleur={panneauCouleur}
             panneauCouleurHex={panneauCouleurHex}
-            porteZMin={porteZMin}
+          />
+          <DoorLeaves
+            dims={dims}
+            modules={modules}
+            panneaux={panneaux}
+            porteBays={porteBays}
+            porteOpen={porteOpen}
+            panneauCouleur={panneauCouleur}
+            panneauCouleurHex={panneauCouleurHex}
           />
         </group>
       </group>
