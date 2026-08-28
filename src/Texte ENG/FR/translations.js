@@ -404,6 +404,11 @@ export const translations = {
         'Click a face of the piece in the 3D view. Click again to remove.',
       pickHintDoor:
         'On the front: click a bay between shelves to add a door. Neighbouring bays merge into one door. Drawers cannot be covered.',
+      pickHintFace:
+        'Sides and back: click a bay (including beside / behind drawers). A door also adds side panels at the same height.',
+      fondN: 'Back {n}',
+      sideLeftN: 'Left side {n}',
+      sideRightN: 'Right side {n}',
       removePanel: 'Remove',
       noPanels: 'No panels',
       doorN: 'Door {n}',
@@ -1034,6 +1039,11 @@ export const translations = {
         'Cliquez une face du meuble dans la vue 3D. Recliquez pour retirer.',
       pickHintDoor:
         'Sur la façade : cliquez une case entre tablettes pour poser une porte. Les cases voisines forment une seule porte. Les tiroirs ne se couvrent pas.',
+      pickHintFace:
+        'Joues et fond : cliquez une case (y compris sur les côtés et à l’arrière des tiroirs). Une porte ajoute aussi les joues au même niveau.',
+      fondN: 'Fond {n}',
+      sideLeftN: 'Joue gauche {n}',
+      sideRightN: 'Joue droite {n}',
       removePanel: 'Retirer',
       noPanels: 'Aucun panneau',
       doorN: 'Porte {n}',

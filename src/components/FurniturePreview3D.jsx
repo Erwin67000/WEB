@@ -15,6 +15,7 @@ import {
   ModulesMesh,
   PanneauxMesh,
   DoorLeaves,
+  FaceSegments,
 } from '../1_STRUCTURE/02_agencement/ModuleMesh.jsx'
 import {
   EPAISSEUR_PANNEAU,
@@ -88,6 +89,18 @@ function FrozenUnit({ unit }) {
               panneauCouleur={unit.panneauCouleur}
               panneauCouleurHex={unit.panneauCouleurHex}
             />
+            {['fond', 'joue1', 'joue2'].map((nom) => (
+              <FaceSegments
+                key={nom}
+                nom={nom}
+                dims={dims}
+                modules={unit.modules || []}
+                panneaux={unit.panneaux || []}
+                baysField={unit[`${nom}Bays`]}
+                panneauCouleur={unit.panneauCouleur}
+                panneauCouleurHex={unit.panneauCouleurHex}
+              />
+            ))}
             <DoorLeaves
               dims={dims}
               modules={unit.modules || []}

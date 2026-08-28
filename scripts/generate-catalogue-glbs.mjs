@@ -68,6 +68,9 @@ const {
   railGeometryToThree,
   porteGroupsForUnit,
   porteGroupBuildParams,
+  faceGroupsForUnit,
+  faceGroupBuildParams,
+  SEGMENTED_FACES,
   pinFirstShelfOnDrawers,
 } = await import(
   pathToFileURL(path.join(root, 'src/1_STRUCTURE/02_agencement/agencement.js')).href
@@ -284,7 +287,7 @@ function buildRowGroup(row) {
 
   // Panneaux solides + contours exacts (trait plus fin que les arêtes)
   for (const nom of row.panneaux || []) {
-    if (nom === 'porte') continue
+    if (nom === 'porte' || SEGMENTED_FACES.includes(nom)) continue
     try {
       const data = buildPanneauComplet(nom, dims, {
         epaisseur: EPAISSEUR_PANNEAU,
@@ -307,6 +310,46 @@ function buildRowGroup(row) {
       if (plines) root.add(plines)
     } catch (e) {
       console.warn(`  [skip panneau ${nom}]`, e.message)
+    }
+  }
+
+  const unitLike = {
+    dims,
+    modules,
+    panneaux: row.panneaux || [],
+    porteBays: row.porteBays,
+    fondBays: row.fondBays,
+    joue1Bays: row.joue1Bays,
+    joue2Bays: row.joue2Bays,
+  }
+  for (const nom of SEGMENTED_FACES) {
+    if (!(row.panneaux || []).includes(nom)) continue
+    for (const g of faceGroupsForUnit(unitLike, nom)) {
+      try {
+        const params = faceGroupBuildParams(g, dims, modules)
+        const data = buildPanneauComplet(nom, dims, {
+          epaisseur: EPAISSEUR_PANNEAU,
+          ...params,
+        })
+        const buf = data.panneau.toBuffers()
+        root.add(
+          meshFromBuffers(
+            buf.positions,
+            buf.indices,
+            new THREE.Color(panneauColor),
+            `panneau-${nom}-${g.key}`,
+          ),
+        )
+        const plines = tubesFromWire(
+          buf.wire,
+          edgeColor,
+          `panneau-wire-${nom}-${g.key}`,
+          0.85,
+        )
+        if (plines) root.add(plines)
+      } catch (e) {
+        console.warn(`  [skip ${nom} ${g.key}]`, e.message)
+      }
     }
   }
 

@@ -74,6 +74,9 @@ function UnitGroup({ unit, selected, wireframe, pickMode, onPickFace }) {
           porteBays={unit.porteBays}
           porteOpen={unit.porteOpen}
           porteHinge={unit.porteHinge}
+          fondBays={unit.fondBays}
+          joue1Bays={unit.joue1Bays}
+          joue2Bays={unit.joue2Bays}
           woodFinish={unit.woodFinish}
           ossatureFinish={unit.ossatureFinish}
           panneauCouleur={unit.panneauCouleur}
@@ -201,6 +204,7 @@ function SceneContent({ orbitOnly = false, ivory = false }) {
   const panneauPickModeStore = useActiveConfigStore((s) => s.panneauPickMode)
   const togglePanneau = useActiveConfigStore((s) => s.togglePanneau)
   const togglePorteBay = useActiveConfigStore((s) => s.togglePorteBay)
+  const toggleFaceBay = useActiveConfigStore((s) => s.toggleFaceBay)
   const panneauPickMode = orbitOnly ? false : panneauPickModeStore
   const envBase = orbitOnly
     ? ENVIRONMENTS.none
@@ -222,8 +226,14 @@ function SceneContent({ orbitOnly = false, ivory = false }) {
     : DEFAULT_CAMERA_TARGET
 
   const onPickFace = (faceId) => {
-    if (typeof faceId === 'string' && faceId.startsWith('porte-bay:')) {
+    if (typeof faceId !== 'string') return
+    if (faceId.startsWith('porte-bay:')) {
       togglePorteBay(Number(faceId.slice('porte-bay:'.length)))
+      return
+    }
+    const m = /^(fond|joue1|joue2)-bay:(\d+)$/.exec(faceId)
+    if (m) {
+      toggleFaceBay(m[1], Number(m[2]))
       return
     }
     togglePanneau(faceId)

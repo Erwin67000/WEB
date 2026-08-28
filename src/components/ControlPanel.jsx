@@ -23,6 +23,8 @@ import {
   drawerInnerWidthMm,
   isDrawerWidthAllowed,
   porteGroupsForUnit,
+  faceGroupsForUnit,
+  SEGMENTED_FACES,
 } from '../1_STRUCTURE/02_agencement/agencement.js'
 import { DIM_LIMITS, formatMmAsCm, parseCmInputToMm } from '../3_INPUT/matrice_input.js'
 
@@ -282,6 +284,7 @@ export default function ControlPanel() {
   const setModuleH = useActiveConfigStore((s) => s.setModuleH)
   const togglePanneau = useActiveConfigStore((s) => s.togglePanneau)
   const removePorteGroup = useActiveConfigStore((s) => s.removePorteGroup)
+  const removeFaceGroup = useActiveConfigStore((s) => s.removeFaceGroup)
   const setPorteHinge = useActiveConfigStore((s) => s.setPorteHinge)
   const setEnvironment = useActiveConfigStore((s) => s.setEnvironment)
   const setSun = useActiveConfigStore((s) => s.setSun)
@@ -802,12 +805,44 @@ export default function ControlPanel() {
                   {t('config.pickHint')}
                   <br />
                   {t('config.pickHintDoor')}
+                  <br />
+                  {t('config.pickHintFace')}
                 </p>
               )}
 
               {(unit.panneaux || []).length > 0 ? (
                 <div className="panneau-list">
                   {(unit.panneaux || []).flatMap((id) => {
+                    if (SEGMENTED_FACES.includes(id)) {
+                      const groups = faceGroupsForUnit(unit, id)
+                      if (!groups.length) return []
+                      const nameKey =
+                        id === 'fond'
+                          ? 'config.fondN'
+                          : id === 'joue1'
+                            ? 'config.sideLeftN'
+                            : 'config.sideRightN'
+                      return groups.map((g, i) => (
+                        <div key={`${id}-${g.key}`} className="panneau-row">
+                          <div className="panneau-row-head">
+                            <span className="panneau-row-name">
+                              {t(nameKey, { n: i + 1 })}
+                            </span>
+                            <button
+                              type="button"
+                              className="btn-icon"
+                              title={t('config.removePanel')}
+                              aria-label={t('config.removePanel')}
+                              onClick={() =>
+                                removeFaceGroup(id, g.firstIndex, g.lastIndex)
+                              }
+                            >
+                              ×
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    }
                     if (id === 'porte') {
                       if (!porteGroups.length) return []
                       return porteGroups.map((g, i) => {

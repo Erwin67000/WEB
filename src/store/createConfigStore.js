@@ -15,6 +15,12 @@ import {
   resolvePorteBays,
   porteGroupsForUnit,
   inheritPorteHinge,
+  panelBaysFromModules,
+  resolveFaceBays,
+  faceGroupsForUnit,
+  panelBaysOverlappingZ,
+  unionBayIndices,
+  SEGMENTED_FACES,
 } from '../1_STRUCTURE/02_agencement/agencement.js'
 import { Meuble } from '../1_STRUCTURE/01_meuble3D/ossature.js'
 import {
@@ -64,6 +70,15 @@ export function panneauSurfaceM2(nom, dims, unit = null) {
       0,
     )
     return (L * Math.max(0, hMm)) / 1e6
+  }
+  if ((nom === 'fond' || nom === 'joue1' || nom === 'joue2') && unit) {
+    const groups = faceGroupsForUnit(unit, nom)
+    const hMm = groups.reduce(
+      (s, g) => s + Math.max(0, (g.zMax ?? H) - (g.zMin ?? 0)),
+      0,
+    )
+    if (nom === 'fond') return (L * Math.max(0, hMm)) / 1e6
+    return (W * Math.max(0, hMm)) / 1e6
   }
   if (nom === 'fond' || nom === 'porte') return (L * H) / 1e6
   if (nom === 'joue1' || nom === 'joue2') return (W * H) / 1e6
@@ -451,12 +466,15 @@ export function createConfigStore(opts = {}) {
           if (u.id !== id) return u
           const has = u.panneaux.includes(nom)
           if (has) {
+            const clearSeg = SEGMENTED_FACES.includes(nom)
+              ? { [`${nom}Bays`]: [] }
+              : {}
             return {
               ...u,
               panneaux: u.panneaux.filter((p) => p !== nom),
               ...(nom === 'porte'
                 ? { porteBays: [], porteOpen: {}, porteHinge: {} }
-                : {}),
+                : clearSeg),
             }
           }
           let next = [...u.panneaux, nom]
@@ -467,6 +485,9 @@ export function createConfigStore(opts = {}) {
           }
           if (nom === 'porte') {
             return { ...u, panneaux: next, porteBays: undefined }
+          }
+          if (SEGMENTED_FACES.includes(nom)) {
+            return { ...u, panneaux: next, [`${nom}Bays`]: undefined }
           }
           return { ...u, panneaux: next }
         }),
@@ -489,12 +510,40 @@ export function createConfigStore(opts = {}) {
           const porteBays = has
             ? current.filter((i) => i !== n)
             : [...current, n].sort((a, b) => a - b)
-          const panneaux = porteBays.length
+          let panneaux = porteBays.length
             ? u.panneaux.includes('porte')
               ? u.panneaux
               : [...u.panneaux, 'porte']
             : u.panneaux.filter((p) => p !== 'porte')
-          const nextUnit = { ...u, porteBays, panneaux }
+          let joue1Bays = u.joue1Bays
+          let joue2Bays = u.joue2Bays
+          if (!has) {
+            const panelBays = panelBaysFromModules(u.dims, u.modules)
+            const overlap = panelBaysOverlappingZ(
+              panelBays,
+              bays[n].zMin,
+              bays[n].zMax,
+            )
+            if (overlap.length) {
+              joue1Bays = unionBayIndices(
+                resolveFaceBays(u, 'joue1', panelBays),
+                overlap,
+              )
+              joue2Bays = unionBayIndices(
+                resolveFaceBays(u, 'joue2', panelBays),
+                overlap,
+              )
+              if (!panneaux.includes('joue1')) panneaux = [...panneaux, 'joue1']
+              if (!panneaux.includes('joue2')) panneaux = [...panneaux, 'joue2']
+            }
+          }
+          const nextUnit = {
+            ...u,
+            porteBays,
+            panneaux,
+            joue1Bays,
+            joue2Bays,
+          }
           const newGroups = porteGroupsForUnit(nextUnit)
           return {
             ...nextUnit,
@@ -538,6 +587,57 @@ export function createConfigStore(opts = {}) {
             ),
             porteOpen: porteBays.length ? u.porteOpen || {} : {},
           }
+        }),
+        dirty: true,
+      }))
+    },
+
+    toggleFaceBay: (faceId, index) => {
+      if (!SEGMENTED_FACES.includes(faceId)) return
+      const id = get().activeUnitId
+      const n = Number(index)
+      if (!Number.isInteger(n)) return
+      const field = `${faceId}Bays`
+      set((s) => ({
+        units: s.units.map((u) => {
+          if (u.id !== id) return u
+          const bays = panelBaysFromModules(u.dims, u.modules)
+          if (n < 0 || n >= bays.length) return u
+          const current = resolveFaceBays(u, faceId, bays)
+          const has = current.includes(n)
+          const nextBays = has
+            ? current.filter((i) => i !== n)
+            : [...current, n].sort((a, b) => a - b)
+          const panneaux = nextBays.length
+            ? u.panneaux.includes(faceId)
+              ? u.panneaux
+              : [...u.panneaux, faceId]
+            : u.panneaux.filter((p) => p !== faceId)
+          return { ...u, [field]: nextBays, panneaux }
+        }),
+        dirty: true,
+      }))
+    },
+
+    removeFaceGroup: (faceId, firstIndex, lastIndex) => {
+      if (!SEGMENTED_FACES.includes(faceId)) return
+      const id = get().activeUnitId
+      const a = Number(firstIndex)
+      const b = Number(lastIndex)
+      if (!Number.isInteger(a) || !Number.isInteger(b)) return
+      const field = `${faceId}Bays`
+      set((s) => ({
+        units: s.units.map((u) => {
+          if (u.id !== id) return u
+          const bays = panelBaysFromModules(u.dims, u.modules)
+          const current = resolveFaceBays(u, faceId, bays)
+          const nextBays = current.filter((i) => i < a || i > b)
+          const panneaux = nextBays.length
+            ? u.panneaux.includes(faceId)
+              ? u.panneaux
+              : [...u.panneaux, faceId]
+            : u.panneaux.filter((p) => p !== faceId)
+          return { ...u, [field]: nextBays, panneaux }
         }),
         dirty: true,
       }))

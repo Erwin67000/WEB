@@ -332,6 +332,8 @@ export function groupPorteBays(bays, selectedIndices = []) {
       zMax: bay.zMax,
       isTop: bay.isTop,
       isBottom: bay.isBottom,
+      kind: bay.kind,
+      doorAllowed: bay.doorAllowed,
     }
     groups.push(cur)
   }
@@ -398,6 +400,105 @@ export function porteGroupsForUnit(unit) {
   const bays = doorBaysFromModules(dims, modules)
   const selected = resolvePorteBays(unit, bays)
   return groupPorteBays(bays, selected)
+}
+
+/** Faces découpées en cases verticales (comme la porte). */
+export const SEGMENTED_FACES = ['fond', 'joue1', 'joue2']
+
+/**
+ * Cases verticales pour fond / joues : même découpe que la porte
+ * **plus** une case tiroir en bas (côtés et arrière des tiroirs).
+ */
+export function panelBaysFromModules(dims = {}, moduleList = []) {
+  const doorBays = doorBaysFromModules(dims, moduleList)
+  const hasDrawers = (moduleList || []).some((m) => m.kind === 'drawer')
+  const H = Number(dims.H) || 0
+  const bays = []
+  if (hasDrawers) {
+    const zMax = doorBays.length
+      ? doorBays[0].zMin
+      : porteZMinFromModules(dims, moduleList) || H
+    bays.push({
+      index: 0,
+      zMin: 0,
+      zMax: Math.max(1, Number(zMax) || 1),
+      isTop: doorBays.length === 0,
+      isBottom: true,
+      kind: 'drawer',
+      doorAllowed: false,
+    })
+  }
+  for (const db of doorBays) {
+    bays.push({
+      index: bays.length,
+      zMin: db.zMin,
+      zMax: db.zMax,
+      isTop: db.isTop,
+      isBottom: db.isBottom,
+      kind: 'shelf',
+      doorAllowed: true,
+    })
+  }
+  if (!bays.length) {
+    bays.push({
+      index: 0,
+      zMin: 0,
+      zMax: H,
+      isTop: true,
+      isBottom: true,
+      kind: 'open',
+      doorAllowed: true,
+    })
+  }
+  return bays.map((b, i) => ({ ...b, index: i }))
+}
+
+export function resolveFaceBays(unit, faceId, bays = []) {
+  const n = bays.length
+  if (!n) return []
+  const arr = unit?.[`${faceId}Bays`]
+  if (Array.isArray(arr)) {
+    return [
+      ...new Set(
+        arr
+          .map((i) => Number(i))
+          .filter((i) => Number.isInteger(i) && i >= 0 && i < n),
+      ),
+    ].sort((a, b) => a - b)
+  }
+  if ((unit?.panneaux || []).includes(faceId)) {
+    return bays.map((b) => b.index)
+  }
+  return []
+}
+
+export function faceGroupsForUnit(unit, faceId) {
+  const dims = unit?.dims || {}
+  const modules = unit?.modules || []
+  const bays = panelBaysFromModules(dims, modules)
+  const selected = resolveFaceBays(unit, faceId, bays)
+  return groupPorteBays(bays, selected)
+}
+
+export function faceGroupBuildParams(group, dims, modules) {
+  if (group?.kind === 'drawer') {
+    const params = {}
+    if (!group.isTop && Number.isFinite(group.zMax)) params.zMax = group.zMax
+    return params
+  }
+  return porteGroupBuildParams(group, dims, modules)
+}
+
+export function panelBaysOverlappingZ(panelBays, zMin, zMax) {
+  const z0 = Number(zMin) || 0
+  const z1 = Number(zMax) || 0
+  return (panelBays || [])
+    .filter((b) => b.zMin < z1 - 0.5 && b.zMax > z0 + 0.5)
+    .map((b) => b.index)
+}
+
+export function unionBayIndices(current = [], add = []) {
+  return [...new Set([...current, ...add].map(Number))].sort((a, b) => a - b)
 }
 
 /**

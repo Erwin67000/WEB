@@ -17,6 +17,9 @@ import {
   porteGroupsForUnit,
   porteGroupBuildParams,
   porteXSplit,
+  faceGroupsForUnit,
+  faceGroupBuildParams,
+  SEGMENTED_FACES,
 } from './agencement.js'
 import {
   FINITIONS,
@@ -210,7 +213,7 @@ export function PanneauxMesh({
   return (
     <group>
       {panneaux
-        .filter((nom) => nom !== 'porte')
+        .filter((nom) => nom !== 'porte' && !SEGMENTED_FACES.includes(nom))
         .map((nom) => (
           <PanneauView
             key={nom}
@@ -354,6 +357,82 @@ function DoorLeaf({
         />
       </group>
     </group>
+  )
+}
+
+export function FaceSegments({
+  nom,
+  dims,
+  modules = [],
+  panneaux = [],
+  baysField,
+  panneauCouleur,
+  panneauCouleurHex,
+}) {
+  const epaisseurPanneau = useActiveConfigStore((s) => s.epaisseurPanneau)
+  const panneauPickMode = useActiveConfigStore((s) => s.panneauPickMode)
+  const groups = useMemo(
+    () =>
+      faceGroupsForUnit(
+        {
+          dims,
+          modules,
+          panneaux,
+          [`${nom}Bays`]: baysField,
+        },
+        nom,
+      ),
+    [nom, dims.L, dims.W, dims.H, modules, panneaux, baysField],
+  )
+  const palette = resolvePanneauColor(panneauCouleur, panneauCouleurHex)
+
+  return (
+    <group>
+      {groups.map((g) => (
+        <FaceSegmentMesh
+          key={`${nom}-${g.key}`}
+          nom={nom}
+          dims={dims}
+          modules={modules}
+          group={g}
+          color={palette.color}
+          epaisseur={epaisseurPanneau}
+          pickable={!panneauPickMode}
+        />
+      ))}
+    </group>
+  )
+}
+
+function FaceSegmentMesh({ nom, dims, modules, group, color, epaisseur, pickable }) {
+  const data = useMemo(() => {
+    const params = faceGroupBuildParams(group, dims, modules)
+    return buildPanneauComplet(nom, dims, {
+      epaisseur,
+      ...params,
+    })
+  }, [
+    nom,
+    dims.L,
+    dims.W,
+    dims.H,
+    group.key,
+    group.zMin,
+    group.zMax,
+    group.isTop,
+    group.isBottom,
+    group.kind,
+    epaisseur,
+    modules,
+  ])
+  if (!data?.panneau) return null
+  return (
+    <PanneauSolidMesh
+      panneau={data.panneau}
+      color={color}
+      edgeColor={PANNEAU_EDGE_COLOR}
+      pickable={pickable}
+    />
   )
 }
 
@@ -941,6 +1020,9 @@ export default function AgencementView({
   porteBays,
   porteOpen,
   porteHinge,
+  fondBays,
+  joue1Bays,
+  joue2Bays,
   woodFinish = 'chene',
   ossatureFinish = DEFAULT_FINITION_OSSATURE,
   panneauCouleur = DEFAULT_PANNEAU_COULEUR,
@@ -955,6 +1037,33 @@ export default function AgencementView({
             dims={dims}
             panneaux={panneaux}
             woodFinish={woodFinish}
+            panneauCouleur={panneauCouleur}
+            panneauCouleurHex={panneauCouleurHex}
+          />
+          <FaceSegments
+            nom="fond"
+            dims={dims}
+            modules={modules}
+            panneaux={panneaux}
+            baysField={fondBays}
+            panneauCouleur={panneauCouleur}
+            panneauCouleurHex={panneauCouleurHex}
+          />
+          <FaceSegments
+            nom="joue1"
+            dims={dims}
+            modules={modules}
+            panneaux={panneaux}
+            baysField={joue1Bays}
+            panneauCouleur={panneauCouleur}
+            panneauCouleurHex={panneauCouleurHex}
+          />
+          <FaceSegments
+            nom="joue2"
+            dims={dims}
+            modules={modules}
+            panneaux={panneaux}
+            baysField={joue2Bays}
             panneauCouleur={panneauCouleur}
             panneauCouleurHex={panneauCouleurHex}
           />

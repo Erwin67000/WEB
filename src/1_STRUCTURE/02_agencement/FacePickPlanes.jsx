@@ -8,6 +8,9 @@ import * as THREE from 'three'
 import {
   doorBaysFromModules,
   resolvePorteBays,
+  panelBaysFromModules,
+  resolveFaceBays,
+  SEGMENTED_FACES,
 } from './agencement.js'
 
 const SCALE = 0.001
@@ -66,13 +69,38 @@ export const FACE_PICK_DEFS = [
   },
 ]
 
-function DoorBayPlane({ dims, bay, active, onPick }) {
+function bayCenterSize(faceId, dims, bay) {
   const { L, W } = dims
   const zMin = Number(bay.zMin) || 0
   const zMax = Number(bay.zMax) || zMin
   const h = Math.max(8, zMax - zMin)
-  const center = [L / 2, W + PAD, zMin + h / 2]
-  const size = [L * 0.9, PLANE_THICK, h * 0.92]
+  const zMid = zMin + h / 2
+  if (faceId === 'fond') {
+    return {
+      center: [L / 2, -PAD, zMid],
+      size: [L * 0.9, PLANE_THICK, h * 0.92],
+    }
+  }
+  if (faceId === 'joue1') {
+    return {
+      center: [-PAD, W / 2, zMid],
+      size: [PLANE_THICK, W * 0.9, h * 0.92],
+    }
+  }
+  if (faceId === 'joue2') {
+    return {
+      center: [L + PAD, W / 2, zMid],
+      size: [PLANE_THICK, W * 0.9, h * 0.92],
+    }
+  }
+  return {
+    center: [L / 2, W + PAD, zMid],
+    size: [L * 0.9, PLANE_THICK, h * 0.92],
+  }
+}
+
+function DoorBayPlane({ dims, bay, active, onPick, faceId = 'porte' }) {
+  const { center, size } = bayCenterSize(faceId, dims, bay)
   const pos = [
     center[0] * SCALE,
     center[2] * SCALE,
@@ -83,7 +111,7 @@ function DoorBayPlane({ dims, bay, active, onPick }) {
     size[2] * SCALE,
     size[1] * SCALE,
   ]
-  const id = `porte-bay:${bay.index}`
+  const id = `${faceId}-bay:${bay.index}`
 
   const handlePointer = (e) => {
     const first = e.intersections?.[0]
@@ -201,17 +229,25 @@ export default function FacePickPlanes({
   rotationZ = 0,
 }) {
   const faces = useMemo(
-    () => FACE_PICK_DEFS.filter((f) => f.id !== 'porte'),
+    () =>
+      FACE_PICK_DEFS.filter(
+        (f) => f.id !== 'porte' && !SEGMENTED_FACES.includes(f.id),
+      ),
     [],
   )
-  const bays = useMemo(
+  const doorBays = useMemo(
     () => doorBaysFromModules(dims, modules),
     [dims.L, dims.W, dims.H, modules],
   )
-  const selectedBays = useMemo(
-    () => resolvePorteBays(unit || { panneaux, porteBays: undefined }, bays),
-    [unit, panneaux, bays],
+  const panelBays = useMemo(
+    () => panelBaysFromModules(dims, modules),
+    [dims.L, dims.W, dims.H, modules],
   )
+  const selectedDoorBays = useMemo(
+    () => resolvePorteBays(unit || { panneaux, porteBays: undefined }, doorBays),
+    [unit, panneaux, doorBays],
+  )
+  const fakeUnit = unit || { panneaux }
 
   return (
     <group rotation={[0, rotationZ, 0]}>
@@ -224,15 +260,29 @@ export default function FacePickPlanes({
           onPick={onPick}
         />
       ))}
-      {bays.map((bay) => (
+      {doorBays.map((bay) => (
         <DoorBayPlane
           key={`porte-bay:${bay.index}`}
+          faceId="porte"
           dims={dims}
           bay={bay}
-          active={selectedBays.includes(bay.index)}
+          active={selectedDoorBays.includes(bay.index)}
           onPick={onPick}
         />
       ))}
+      {SEGMENTED_FACES.map((faceId) => {
+        const selected = resolveFaceBays(fakeUnit, faceId, panelBays)
+        return panelBays.map((bay) => (
+          <DoorBayPlane
+            key={`${faceId}-bay:${bay.index}`}
+            faceId={faceId}
+            dims={dims}
+            bay={bay}
+            active={selected.includes(bay.index)}
+            onPick={onPick}
+          />
+        ))
+      })}
     </group>
   )
 }
