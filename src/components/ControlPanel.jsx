@@ -24,6 +24,8 @@ import {
   isDrawerWidthAllowed,
   porteGroupsForUnit,
   faceGroupsForUnit,
+  lockedJoueBaySet,
+  groupHasUnlockedBays,
   SEGMENTED_FACES,
 } from '../1_STRUCTURE/02_agencement/agencement.js'
 import { DIM_LIMITS, formatMmAsCm, parseCmInputToMm } from '../3_INPUT/matrice_input.js'
@@ -302,6 +304,10 @@ export default function ControlPanel() {
 
   const porteGroups = useMemo(
     () => (unit ? porteGroupsForUnit(unit) : []),
+    [unit],
+  )
+  const lockedJoues = useMemo(
+    () => (unit ? lockedJoueBaySet(unit) : new Set()),
     [unit],
   )
 
@@ -822,26 +828,49 @@ export default function ControlPanel() {
                           : id === 'joue1'
                             ? 'config.sideLeftN'
                             : 'config.sideRightN'
-                      return groups.map((g, i) => (
+                      return groups.map((g, i) => {
+                        const isJoue = id === 'joue1' || id === 'joue2'
+                        const canRemove =
+                          !isJoue || groupHasUnlockedBays(g, lockedJoues)
+                        return (
                         <div key={`${id}-${g.key}`} className="panneau-row">
                           <div className="panneau-row-head">
                             <span className="panneau-row-name">
                               {t(nameKey, { n: i + 1 })}
+                              {isJoue && !canRemove ? (
+                                <span className="panneau-row-lock">
+                                  {' '}
+                                  {t('config.linkedToDoor')}
+                                </span>
+                              ) : null}
                             </span>
                             <button
                               type="button"
                               className="btn-icon"
-                              title={t('config.removePanel')}
-                              aria-label={t('config.removePanel')}
-                              onClick={() =>
-                                removeFaceGroup(id, g.firstIndex, g.lastIndex)
+                              title={
+                                canRemove
+                                  ? t('config.removePanel')
+                                  : t('config.linkedToDoorHint')
                               }
+                              aria-label={t('config.removePanel')}
+                              disabled={!canRemove}
+                              onClick={(e) => {
+                                e.preventDefault()
+                                e.stopPropagation()
+                                if (!canRemove) return
+                                removeFaceGroup(
+                                  id,
+                                  g.firstIndex,
+                                  g.lastIndex,
+                                )
+                              }}
                             >
                               ×
                             </button>
                           </div>
                         </div>
-                      ))
+                        )
+                      })
                     }
                     if (id === 'porte') {
                       if (!porteGroups.length) return []

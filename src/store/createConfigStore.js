@@ -20,6 +20,7 @@ import {
   faceGroupsForUnit,
   panelBaysOverlappingZ,
   unionBayIndices,
+  lockedJoueBaySet,
   SEGMENTED_FACES,
 } from '../1_STRUCTURE/02_agencement/agencement.js'
 import { Meuble } from '../1_STRUCTURE/01_meuble3D/ossature.js'
@@ -605,6 +606,11 @@ export function createConfigStore(opts = {}) {
           if (n < 0 || n >= bays.length) return u
           const current = resolveFaceBays(u, faceId, bays)
           const has = current.includes(n)
+          const locked =
+            faceId === 'joue1' || faceId === 'joue2'
+              ? lockedJoueBaySet(u)
+              : new Set()
+          if (has && locked.has(n)) return u
           const nextBays = has
             ? current.filter((i) => i !== n)
             : [...current, n].sort((a, b) => a - b)
@@ -631,7 +637,13 @@ export function createConfigStore(opts = {}) {
           if (u.id !== id) return u
           const bays = panelBaysFromModules(u.dims, u.modules)
           const current = resolveFaceBays(u, faceId, bays)
-          const nextBays = current.filter((i) => i < a || i > b)
+          const locked =
+            faceId === 'joue1' || faceId === 'joue2'
+              ? lockedJoueBaySet(u)
+              : new Set()
+          const nextBays = current.filter(
+            (i) => i < a || i > b || locked.has(i),
+          )
           const panneaux = nextBays.length
             ? u.panneaux.includes(faceId)
               ? u.panneaux

@@ -405,7 +405,10 @@ export const translations = {
       pickHintDoor:
         'On the front: click a bay between shelves to add a door. Neighbouring bays merge into one door. Drawers cannot be covered.',
       pickHintFace:
-        'Sides and back: click a bay (including beside / behind drawers). A door also adds side panels at the same height.',
+        'Sides and back: click a bay (including beside / behind drawers). Neighbouring bays merge. A door adds matching sides; those stay until the door is removed.',
+      linkedToDoor: '· door',
+      linkedToDoorHint:
+        'This side panel matches a door. Remove the door first, then the side.',
       fondN: 'Back {n}',
       sideLeftN: 'Left side {n}',
       sideRightN: 'Right side {n}',
@@ -1040,7 +1043,10 @@ export const translations = {
       pickHintDoor:
         'Sur la façade : cliquez une case entre tablettes pour poser une porte. Les cases voisines forment une seule porte. Les tiroirs ne se couvrent pas.',
       pickHintFace:
-        'Joues et fond : cliquez une case (y compris sur les côtés et à l’arrière des tiroirs). Une porte ajoute aussi les joues au même niveau.',
+        'Joues et fond : cliquez une case (tablettes et tiroirs). Les cases voisines fusionnent. Une porte pose les joues au même niveau ; celles-ci restent tant que la porte est là.',
+      linkedToDoor: '· porte',
+      linkedToDoorHint:
+        'Cette joue correspond à une porte. Retirez d’abord la porte, puis la joue.',
       fondN: 'Fond {n}',
       sideLeftN: 'Joue gauche {n}',
       sideRightN: 'Joue droite {n}',

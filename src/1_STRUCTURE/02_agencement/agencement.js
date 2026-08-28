@@ -501,6 +501,30 @@ export function unionBayIndices(current = [], add = []) {
   return [...new Set([...current, ...add].map(Number))].sort((a, b) => a - b)
 }
 
+/** Cases de joue imposées par les portes (même niveau Z) — non retirables. */
+export function lockedJoueBaySet(unit) {
+  const locked = new Set()
+  if (!unit) return locked
+  const panelBays = panelBaysFromModules(unit.dims, unit.modules)
+  const doorBays = doorBaysFromModules(unit.dims, unit.modules)
+  for (const i of resolvePorteBays(unit, doorBays)) {
+    const db = doorBays[i]
+    if (!db) continue
+    for (const j of panelBaysOverlappingZ(panelBays, db.zMin, db.zMax)) {
+      locked.add(j)
+    }
+  }
+  return locked
+}
+
+export function groupHasUnlockedBays(group, lockedSet) {
+  if (!group) return false
+  for (let i = group.firstIndex; i <= group.lastIndex; i++) {
+    if (!lockedSet.has(i)) return true
+  }
+  return false
+}
+
 /**
  * Bornes Z tablette (haut de l’octogone).
  * S’il y a des tiroirs, le bas du plateau ≥ sommet des tiroirs.
