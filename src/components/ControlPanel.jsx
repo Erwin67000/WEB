@@ -22,6 +22,7 @@ import {
   DYNAMOOV_LWK_MAX_MM,
   drawerInnerWidthMm,
   isDrawerWidthAllowed,
+  porteGroupsForUnit,
 } from '../1_STRUCTURE/02_agencement/agencement.js'
 import { DIM_LIMITS, formatMmAsCm, parseCmInputToMm } from '../3_INPUT/matrice_input.js'
 
@@ -280,6 +281,8 @@ export default function ControlPanel() {
   const setModuleZ = useActiveConfigStore((s) => s.setModuleZ)
   const setModuleH = useActiveConfigStore((s) => s.setModuleH)
   const togglePanneau = useActiveConfigStore((s) => s.togglePanneau)
+  const removePorteGroup = useActiveConfigStore((s) => s.removePorteGroup)
+  const setPorteHinge = useActiveConfigStore((s) => s.setPorteHinge)
   const setEnvironment = useActiveConfigStore((s) => s.setEnvironment)
   const setSun = useActiveConfigStore((s) => s.setSun)
   const setSunIntensity = useActiveConfigStore((s) => s.setSunIntensity)
@@ -292,6 +295,11 @@ export default function ControlPanel() {
   const unit = useMemo(
     () => units.find((u) => u.id === activeUnitId) || units[0],
     [units, activeUnitId],
+  )
+
+  const porteGroups = useMemo(
+    () => (unit ? porteGroupsForUnit(unit) : []),
+    [unit],
   )
 
   const pricing = useMemo(
@@ -798,19 +806,71 @@ export default function ControlPanel() {
               )}
 
               {(unit.panneaux || []).length > 0 ? (
-                <div className="panneau-chips">
-                  {(unit.panneaux || []).map((id) => (
-                    <button
-                      key={id}
-                      type="button"
-                      className="panneau-chip"
-                      title={t('config.removePanel')}
-                      onClick={() => togglePanneau(id)}
-                    >
-                      {tId('panel', id, PANNEAU_CHIP_LABELS[id] || id)}
-                      <span aria-hidden>×</span>
-                    </button>
-                  ))}
+                <div className="panneau-list">
+                  {(unit.panneaux || []).flatMap((id) => {
+                    if (id === 'porte') {
+                      if (!porteGroups.length) return []
+                      return porteGroups.map((g, i) => {
+                        const hinge = unit.porteHinge?.[g.key] || 'left'
+                        return (
+                          <div key={g.key} className="panneau-row">
+                            <div className="panneau-row-head">
+                              <span className="panneau-row-name">
+                                {t('config.doorN', { n: i + 1 })}
+                              </span>
+                              <button
+                                type="button"
+                                className="btn-icon"
+                                title={t('config.removePanel')}
+                                aria-label={t('config.removePanel')}
+                                onClick={() =>
+                                  removePorteGroup(g.firstIndex, g.lastIndex)
+                                }
+                              >
+                                ×
+                              </button>
+                            </div>
+                            <div className="porte-hinge-row" role="group">
+                              {[
+                                ['left', t('config.hingeLeft')],
+                                ['right', t('config.hingeRight')],
+                                ['center', t('config.hingeCenter')],
+                              ].map(([mode, label]) => (
+                                <button
+                                  key={mode}
+                                  type="button"
+                                  className={`porte-hinge-btn${
+                                    hinge === mode ? ' active' : ''
+                                  }`}
+                                  onClick={() => setPorteHinge(g.key, mode)}
+                                >
+                                  {label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )
+                      })
+                    }
+                    return [
+                      <div key={id} className="panneau-row">
+                        <div className="panneau-row-head">
+                          <span className="panneau-row-name">
+                            {tId('panel', id, PANNEAU_CHIP_LABELS[id] || id)}
+                          </span>
+                          <button
+                            type="button"
+                            className="btn-icon"
+                            title={t('config.removePanel')}
+                            aria-label={t('config.removePanel')}
+                            onClick={() => togglePanneau(id)}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      </div>,
+                    ]
+                  })}
                 </div>
               ) : (
                 <p className="muted">{t('config.noPanels')}</p>

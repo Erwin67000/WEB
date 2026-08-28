@@ -94,6 +94,7 @@ function FrozenUnit({ unit }) {
               panneaux={unit.panneaux || []}
               porteBays={unit.porteBays}
               porteOpen={unit.porteOpen}
+              porteHinge={unit.porteHinge}
               panneauCouleur={unit.panneauCouleur}
               panneauCouleurHex={unit.panneauCouleurHex}
             />

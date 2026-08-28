@@ -1152,6 +1152,19 @@ a.btn.primary:hover {
     font-size: 0.6rem;
   }
 
+  .control-panel .panneau-row {
+    padding: 0.32rem 0.4rem;
+  }
+
+  .control-panel .panneau-row-name {
+    font-size: 0.68rem;
+  }
+
+  .control-panel .porte-hinge-btn {
+    font-size: 0.58rem;
+    padding: 0.22rem 0.15rem;
+  }
+
   .control-panel .panneau-pick-btn {
     padding: 0.4rem 0.5rem;
     font-size: 0.68rem;

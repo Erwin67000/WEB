@@ -16,6 +16,7 @@ import {
   DRAWER_OPEN_DURATION_MS,
   porteGroupsForUnit,
   porteGroupBuildParams,
+  porteXSplit,
 } from './agencement.js'
 import {
   FINITIONS,
@@ -61,7 +62,7 @@ function ossatureWoodColor(woodFinish, ossatureFinish) {
  * Indices / winding : ceux de face_panneau (matrice) — pas de correction auto.
  * Vous redéfinirez la suite de triangles dans matrice_panneau_grok si besoin.
  */
-function PanneauSolidMesh({ panneau, color, edgeColor }) {
+function PanneauSolidMesh({ panneau, color, edgeColor, pickable = true }) {
   const { size, gl } = useThree()
   const lineMatRef = useRef(null)
 
@@ -106,7 +107,13 @@ function PanneauSolidMesh({ panneau, color, edgeColor }) {
 
   return (
     <group>
-      <mesh geometry={geometry} castShadow receiveShadow renderOrder={0}>
+      <mesh
+        geometry={geometry}
+        castShadow
+        receiveShadow
+        renderOrder={0}
+        {...(!pickable ? { raycast: () => {} } : {})}
+      >
         <meshStandardMaterial
           color={color}
           roughness={0.55}
@@ -118,7 +125,7 @@ function PanneauSolidMesh({ panneau, color, edgeColor }) {
         />
       </mesh>
       {/* Contour panneau : plus fin que les arêtes ossature (ARETE_EDGE_WIDTH) */}
-      <lineSegments geometry={edgeBasic} renderOrder={2}>
+      <lineSegments geometry={edgeBasic} renderOrder={2} raycast={() => {}}>
         <lineBasicMaterial
           color={lineColor}
           depthTest
@@ -128,7 +135,7 @@ function PanneauSolidMesh({ panneau, color, edgeColor }) {
           polygonOffsetUnits={-2}
         />
       </lineSegments>
-      <lineSegments2 geometry={edgeFat} renderOrder={3}>
+      <lineSegments2 geometry={edgeFat} renderOrder={3} raycast={() => {}}>
         <lineMaterial
           ref={lineMatRef}
           color={lineColor}
@@ -219,7 +226,17 @@ export function PanneauxMesh({
   )
 }
 
-function DoorLeaf({ dims, modules, group, color, openTarget = 0 }) {
+function DoorLeaf({
+  dims,
+  modules,
+  group,
+  color,
+  openTarget = 0,
+  hinge = 'left',
+  xMin,
+  xMax,
+  openKey,
+}) {
   const epaisseurPorte = useActiveConfigStore((s) => s.epaisseurPorte)
   const panneauPickMode = useActiveConfigStore((s) => s.panneauPickMode)
   const togglePorteOpen = useActiveConfigStore((s) => s.togglePorteOpen)
@@ -229,9 +246,14 @@ function DoorLeaf({ dims, modules, group, color, openTarget = 0 }) {
   const toRef = useRef(openTarget)
   const t0Ref = useRef(0)
   const [targetOpen, setTargetOpen] = useState(openTarget)
+  const side = hinge === 'right' ? 'right' : 'left'
+  const angleSign = side === 'right' ? -1 : 1
 
   const data = useMemo(() => {
-    const params = porteGroupBuildParams(group, dims, modules)
+    const extra = {}
+    if (Number.isFinite(Number(xMin))) extra.xMin = Number(xMin)
+    if (Number.isFinite(Number(xMax))) extra.xMax = Number(xMax)
+    const params = porteGroupBuildParams(group, dims, modules, extra)
     return buildPanneauComplet('porte', dims, {
       epaisseur: epaisseurPorte,
       ...params,
@@ -247,16 +269,20 @@ function DoorLeaf({ dims, modules, group, color, openTarget = 0 }) {
     group.isBottom,
     epaisseurPorte,
     modules,
+    xMin,
+    xMax,
   ])
 
-  const hinge = useMemo(() => {
+  const hingePt = useMemo(() => {
     const pts = data?.panneau?.points || []
     if (!pts.length) return { x: 0, y: dims.W || 0 }
+    const xs = pts.map((p) => p[0])
+    const ys = pts.map((p) => p[1])
     return {
-      x: Math.min(...pts.map((p) => p[0])),
-      y: Math.max(...pts.map((p) => p[1])),
+      x: side === 'right' ? Math.max(...xs) : Math.min(...xs),
+      y: Math.max(...ys),
     }
-  }, [data, dims.W])
+  }, [data, dims.W, side])
 
   useEffect(() => {
     setTargetOpen(openTarget)
@@ -284,7 +310,7 @@ function DoorLeaf({ dims, modules, group, color, openTarget = 0 }) {
         fromRef.current = to
       }
     }
-    g.rotation.z = visualRef.current * PORTE_OPEN_ANGLE_RAD
+    g.rotation.z = visualRef.current * PORTE_OPEN_ANGLE_RAD * angleSign
   })
 
   if (!data?.panneau) return null
@@ -292,29 +318,39 @@ function DoorLeaf({ dims, modules, group, color, openTarget = 0 }) {
   const handleToggle = (e) => {
     e.stopPropagation()
     if (panneauPickMode) return
-    if (group.key) togglePorteOpen(group.key)
+    const key = openKey || group.key
+    if (key) togglePorteOpen(key)
   }
 
   return (
     <group
       ref={pivotRef}
-      position={[hinge.x, hinge.y, 0]}
-      onClick={handleToggle}
-      onPointerOver={(e) => {
-        const first = e.intersections?.[0]
-        if (!first || first.object !== e.object) return
-        e.stopPropagation()
-        document.body.style.cursor = 'pointer'
-      }}
-      onPointerOut={() => {
-        document.body.style.cursor = 'auto'
-      }}
+      position={[hingePt.x, hingePt.y, 0]}
+      onClick={panneauPickMode ? undefined : handleToggle}
+      onPointerOver={
+        panneauPickMode
+          ? undefined
+          : (e) => {
+              const first = e.intersections?.[0]
+              if (!first || first.object !== e.object) return
+              e.stopPropagation()
+              document.body.style.cursor = 'pointer'
+            }
+      }
+      onPointerOut={
+        panneauPickMode
+          ? undefined
+          : () => {
+              document.body.style.cursor = 'auto'
+            }
+      }
     >
-      <group position={[-hinge.x, -hinge.y, 0]}>
+      <group position={[-hingePt.x, -hingePt.y, 0]}>
         <PanneauSolidMesh
           panneau={data.panneau}
           color={color}
           edgeColor={PANNEAU_EDGE_COLOR}
+          pickable={!panneauPickMode}
         />
       </group>
     </group>
@@ -327,6 +363,7 @@ export function DoorLeaves({
   panneaux = [],
   porteBays,
   porteOpen = {},
+  porteHinge = {},
   panneauCouleur,
   panneauCouleurHex,
 }) {
@@ -340,20 +377,52 @@ export function DoorLeaves({
       }),
     [dims.L, dims.W, dims.H, modules, panneaux, porteBays],
   )
+  const split = useMemo(() => porteXSplit(dims), [dims.L, dims.W, dims.H])
   const palette = resolvePanneauColor(panneauCouleur, panneauCouleurHex)
   if (!groups.length) return null
   return (
     <group>
-      {groups.map((g) => (
-        <DoorLeaf
-          key={g.key}
-          dims={dims}
-          modules={modules}
-          group={g}
-          color={palette.color}
-          openTarget={Number(porteOpen?.[g.key]) > 0.5 ? 1 : 0}
-        />
-      ))}
+      {groups.map((g) => {
+        const hinge = porteHinge?.[g.key] || 'left'
+        if (hinge === 'center') {
+          return (
+            <group key={g.key}>
+              <DoorLeaf
+                dims={dims}
+                modules={modules}
+                group={g}
+                color={palette.color}
+                hinge="left"
+                xMax={split.xMid}
+                openKey={`${g.key}:L`}
+                openTarget={Number(porteOpen?.[`${g.key}:L`]) > 0.5 ? 1 : 0}
+              />
+              <DoorLeaf
+                dims={dims}
+                modules={modules}
+                group={g}
+                color={palette.color}
+                hinge="right"
+                xMin={split.xMid}
+                openKey={`${g.key}:R`}
+                openTarget={Number(porteOpen?.[`${g.key}:R`]) > 0.5 ? 1 : 0}
+              />
+            </group>
+          )
+        }
+        return (
+          <DoorLeaf
+            key={g.key}
+            dims={dims}
+            modules={modules}
+            group={g}
+            color={palette.color}
+            hinge={hinge}
+            openKey={g.key}
+            openTarget={Number(porteOpen?.[g.key]) > 0.5 ? 1 : 0}
+          />
+        )
+      })}
     </group>
   )
 }
@@ -871,6 +940,7 @@ export default function AgencementView({
   panneaux = ['fond'],
   porteBays,
   porteOpen,
+  porteHinge,
   woodFinish = 'chene',
   ossatureFinish = DEFAULT_FINITION_OSSATURE,
   panneauCouleur = DEFAULT_PANNEAU_COULEUR,
@@ -894,6 +964,7 @@ export default function AgencementView({
             panneaux={panneaux}
             porteBays={porteBays}
             porteOpen={porteOpen}
+            porteHinge={porteHinge}
             panneauCouleur={panneauCouleur}
             panneauCouleurHex={panneauCouleurHex}
           />

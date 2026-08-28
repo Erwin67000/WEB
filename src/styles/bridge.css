@@ -584,6 +584,63 @@ a.site-brand {
   gap: 0.35rem;
 }
 
+.panneau-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  width: 100%;
+}
+
+.panneau-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid #d4cbb8;
+  border-radius: 8px;
+  background: #fffef8;
+}
+
+.panneau-row-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.panneau-row-name {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #1a1610;
+}
+
+.porte-hinge-row {
+  display: flex;
+  gap: 0.25rem;
+  width: 100%;
+}
+
+.porte-hinge-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0.28rem 0.2rem;
+  border: 1px solid #d4cbb8;
+  border-radius: 6px;
+  background: #f7f3ea;
+  color: #1a1610;
+  font-size: 0.68rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.porte-hinge-btn.active {
+  border-color: var(--gold, #c9a227);
+  background: rgba(201, 162, 39, 0.18);
+  color: #1a1610;
+}
+
 .panneau-chip {
   display: inline-flex;
   align-items: center;

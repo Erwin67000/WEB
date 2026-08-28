@@ -73,6 +73,7 @@ function UnitGroup({ unit, selected, wireframe, pickMode, onPickFace }) {
           panneaux={unit.panneaux}
           porteBays={unit.porteBays}
           porteOpen={unit.porteOpen}
+          porteHinge={unit.porteHinge}
           woodFinish={unit.woodFinish}
           ossatureFinish={unit.ossatureFinish}
           panneauCouleur={unit.panneauCouleur}

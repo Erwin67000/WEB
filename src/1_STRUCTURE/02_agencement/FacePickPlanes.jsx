@@ -11,7 +11,7 @@ import {
 } from './agencement.js'
 
 const SCALE = 0.001
-const PAD = 6 // mm — légèrement à l’extérieur du volume
+const PAD = 10 // mm — devant la porte pour pouvoir (dé)sélectionner les cases
 /** Épaisseur des plans de pick (mm) — fine pour éviter les collisions croisées */
 const PLANE_THICK = 4
 

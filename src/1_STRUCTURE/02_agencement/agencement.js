@@ -342,8 +342,8 @@ export function groupPorteBays(bays, selectedIndices = []) {
 }
 
 /** Params zMin/zMax pour buildPorte / buildPanneauComplet. */
-export function porteGroupBuildParams(group, dims, modules) {
-  const params = {}
+export function porteGroupBuildParams(group, dims, modules, extra = {}) {
+  const params = { ...extra }
   if (group.isBottom) {
     const z = porteZMinFromModules(dims, modules)
     if (z > 0) params.zMin = z
@@ -355,6 +355,41 @@ export function porteGroupBuildParams(group, dims, modules) {
     params.zMax = group.zMax
   }
   return params
+}
+
+/** Bornes X naturelles de la porte (pour battants milieu). */
+export function porteXSplit(dims) {
+  const def = PANNEAU_DEFS.porte
+  if (!def) return { xLo: 0, xHi: Number(dims.L) || 0, xMid: (Number(dims.L) || 0) / 2 }
+  const { byId } = buildGeometrie(dims)
+  const { base } = computeQuatreRectangles(def, byId, {})
+  const xs = (base || []).map((p) => p[0])
+  const xLo = xs.length ? Math.min(...xs) : 0
+  const xHi = xs.length ? Math.max(...xs) : Number(dims.L) || 0
+  return { xLo, xHi, xMid: (xLo + xHi) / 2 }
+}
+
+export function inheritPorteHinge(oldGroups = [], newGroups = [], oldHinge = {}) {
+  const next = {}
+  for (const g of newGroups) {
+    if (oldHinge[g.key]) {
+      next[g.key] = oldHinge[g.key]
+      continue
+    }
+    let best = 'left'
+    let bestN = 0
+    for (const og of oldGroups) {
+      const a = Math.max(og.firstIndex, g.firstIndex)
+      const b = Math.min(og.lastIndex, g.lastIndex)
+      const n = b >= a ? b - a + 1 : 0
+      if (n > bestN && oldHinge[og.key]) {
+        bestN = n
+        best = oldHinge[og.key]
+      }
+    }
+    next[g.key] = best
+  }
+  return next
 }
 
 export function porteGroupsForUnit(unit) {

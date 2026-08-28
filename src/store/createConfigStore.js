@@ -14,6 +14,7 @@ import {
   doorBaysFromModules,
   resolvePorteBays,
   porteGroupsForUnit,
+  inheritPorteHinge,
 } from '../1_STRUCTURE/02_agencement/agencement.js'
 import { Meuble } from '../1_STRUCTURE/01_meuble3D/ossature.js'
 import {
@@ -454,7 +455,7 @@ export function createConfigStore(opts = {}) {
               ...u,
               panneaux: u.panneaux.filter((p) => p !== nom),
               ...(nom === 'porte'
-                ? { porteBays: [], porteOpen: {} }
+                ? { porteBays: [], porteOpen: {}, porteHinge: {} }
                 : {}),
             }
           }
@@ -482,6 +483,7 @@ export function createConfigStore(opts = {}) {
           if (u.id !== id) return u
           const bays = doorBaysFromModules(u.dims, u.modules)
           if (n < 0 || n >= bays.length) return u
+          const oldGroups = porteGroupsForUnit(u)
           const current = resolvePorteBays(u, bays)
           const has = current.includes(n)
           const porteBays = has
@@ -492,11 +494,67 @@ export function createConfigStore(opts = {}) {
               ? u.panneaux
               : [...u.panneaux, 'porte']
             : u.panneaux.filter((p) => p !== 'porte')
+          const nextUnit = { ...u, porteBays, panneaux }
+          const newGroups = porteGroupsForUnit(nextUnit)
+          return {
+            ...nextUnit,
+            porteHinge: inheritPorteHinge(
+              oldGroups,
+              newGroups,
+              u.porteHinge || {},
+            ),
+            porteOpen: porteBays.length ? u.porteOpen || {} : {},
+          }
+        }),
+        dirty: true,
+      }))
+    },
+
+    removePorteGroup: (firstIndex, lastIndex) => {
+      const id = get().activeUnitId
+      const a = Number(firstIndex)
+      const b = Number(lastIndex)
+      if (!Number.isInteger(a) || !Number.isInteger(b)) return
+      set((s) => ({
+        units: s.units.map((u) => {
+          if (u.id !== id) return u
+          const bays = doorBaysFromModules(u.dims, u.modules)
+          const oldGroups = porteGroupsForUnit(u)
+          const current = resolvePorteBays(u, bays)
+          const porteBays = current.filter((i) => i < a || i > b)
+          const panneaux = porteBays.length
+            ? u.panneaux.includes('porte')
+              ? u.panneaux
+              : [...u.panneaux, 'porte']
+            : u.panneaux.filter((p) => p !== 'porte')
+          const nextUnit = { ...u, porteBays, panneaux }
+          const newGroups = porteGroupsForUnit(nextUnit)
+          return {
+            ...nextUnit,
+            porteHinge: inheritPorteHinge(
+              oldGroups,
+              newGroups,
+              u.porteHinge || {},
+            ),
+            porteOpen: porteBays.length ? u.porteOpen || {} : {},
+          }
+        }),
+        dirty: true,
+      }))
+    },
+
+    setPorteHinge: (key, hinge) => {
+      if (!key) return
+      const mode = ['left', 'right', 'center'].includes(hinge)
+        ? hinge
+        : 'left'
+      const id = get().activeUnitId
+      set((s) => ({
+        units: s.units.map((u) => {
+          if (u.id !== id) return u
           return {
             ...u,
-            porteBays,
-            panneaux,
-            porteOpen: porteBays.length ? u.porteOpen || {} : {},
+            porteHinge: { ...(u.porteHinge || {}), [key]: mode },
           }
         }),
         dirty: true,
