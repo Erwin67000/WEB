@@ -38,6 +38,7 @@ import { persistDraft } from '../lib/checkoutDraft.js'
 import { STRIPE_ENABLED } from '../lib/payments.js'
 import { writeShopPanelColor } from '../lib/shopPanelColor.js'
 import { labelFromUnits } from '../lib/checkout.js'
+import { estimatePhotoRoom } from '../lib/photoRoomCamera.js'
 import { downloadScenePhoto } from '../lib/sceneCapture.js'
 
 /** Labels courts pour chips des panneaux actifs */
@@ -1022,8 +1023,20 @@ export default function ControlPanel() {
                     /\.(jpe?g|png)$/i.test(file.name)
                   if (!ok) return
                   const reader = new FileReader()
-                  reader.onload = () => {
-                    setScenePhoto(String(reader.result || ''), file.name)
+                  reader.onload = async () => {
+                    const dataUrl = String(reader.result || '')
+                    if (!dataUrl) return
+                    let extras = {}
+                    try {
+                      const estimated = await estimatePhotoRoom(dataUrl)
+                      extras = {
+                        camera: estimated.camera,
+                        room: estimated.axes,
+                      }
+                    } catch {
+                      extras = {}
+                    }
+                    setScenePhoto(dataUrl, file.name, extras)
                   }
                   reader.readAsDataURL(file)
                 }}

@@ -227,6 +227,11 @@ export function createConfigStore(opts = {}) {
     /** Pose du meuble dans la photo : X/Y sol, rot. Z, échelle apparente. */
     photoPose: { xMm: 0, yMm: 0, rotZ: 0, scale: 1 },
     photoCamera: null,
+    /**
+     * Axes pièce extraits de la photo (UV, Y vers le bas) :
+     * X = mur du fond (longueur), Y = mur de profondeur.
+     */
+    photoRoom: null,
     sunEnabled: false,
     sunIntensity: 2.5,
     showGrid: false,
@@ -718,12 +723,15 @@ export function createConfigStore(opts = {}) {
       })
     },
 
-    setScenePhoto: (dataUrl, name = '') => {
+    setScenePhoto: (dataUrl, name = '', extras = {}) => {
       set({
         scenePhotoDataUrl: dataUrl || null,
         scenePhotoName: name || '',
         environmentId: dataUrl ? 'none' : get().environmentId,
         showGrid: dataUrl ? false : get().showGrid,
+        photoPose: { xMm: 0, yMm: 0, rotZ: 0, scale: 1 },
+        photoCamera: extras.camera || null,
+        photoRoom: extras.room || null,
         dirty: true,
       })
     },
@@ -732,6 +740,9 @@ export function createConfigStore(opts = {}) {
       set({
         scenePhotoDataUrl: null,
         scenePhotoName: '',
+        photoPose: { xMm: 0, yMm: 0, rotZ: 0, scale: 1 },
+        photoCamera: null,
+        photoRoom: null,
         dirty: true,
       }),
 

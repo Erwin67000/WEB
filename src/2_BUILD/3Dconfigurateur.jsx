@@ -18,6 +18,10 @@ import {
 } from '../store/ConfigStoreContext.jsx'
 import { useI18n } from '@texte/I18nProvider.jsx'
 import { bindSceneCapture } from '../lib/sceneCapture.js'
+import {
+  DEFAULT_PHOTO_CAMERA,
+  solvePhotoCamera,
+} from '../lib/photoRoomCamera.js'
 
 const SCALE = 0.001
 
@@ -83,6 +87,7 @@ function UnitGroup({
         wireframe={wireframe}
         rotationZ={rotY}
         selected={selected}
+        showAxes={photoMode}
       />
       <group rotation={[0, rotY, 0]}>
         <AgencementView
@@ -188,30 +193,66 @@ function PhotoEnvironment({ url }) {
   return <ShadowFloor />
 }
 
-/** Caméra figée (vue photo) : sauvegarde / restauration en quittant la rubrique. */
+/**
+ * Caméra figée (vue photo).
+ * Si les deux murs ont été lus dans la photo : origine au coin,
+ * +X le long du mur du fond, +Y meuble (profondeur) le long du second mur.
+ * En quittant la rubrique on rétablit la caméra d’orbit.
+ */
 function PhotoCameraLock() {
-  const { camera, controls } = useThree()
+  const { camera, controls, size } = useThree()
   const storeApi = useActiveConfigStoreApi()
+  const scenePhotoDataUrl = useActiveConfigStore((s) => s.scenePhotoDataUrl)
+  const photoRoom = useActiveConfigStore((s) => s.photoRoom)
 
   useLayoutEffect(() => {
-    const saved = storeApi.getState().photoCamera
-    const pos = saved?.pos || DEFAULT_CAMERA_POS
-    const target = saved?.target || DEFAULT_CAMERA_TARGET
+    const prev = {
+      pos: camera.position.toArray(),
+      quat: camera.quaternion.toArray(),
+      fov: camera.fov,
+      target: controls?.target
+        ? controls.target.toArray()
+        : [...DEFAULT_CAMERA_TARGET],
+    }
+
+    const solved =
+      photoRoom && size?.width && size?.height
+        ? solvePhotoCamera(photoRoom, size.width, size.height)
+        : null
+    const saved = solved || storeApi.getState().photoCamera || DEFAULT_PHOTO_CAMERA
+    const pos = saved.pos || DEFAULT_PHOTO_CAMERA.pos
+    const target = saved.target || DEFAULT_PHOTO_CAMERA.target
+    const fov = Number(saved.fov) || DEFAULT_PHOTO_CAMERA.fov
+
+    camera.up.set(0, 1, 0)
     camera.position.set(pos[0], pos[1], pos[2])
     camera.lookAt(target[0], target[1], target[2])
+    camera.fov = fov
+    camera.updateProjectionMatrix()
     if (controls?.target) {
       controls.target.set(target[0], target[1], target[2])
       controls.update?.()
     }
+
     return () => {
-      storeApi.getState().setPhotoCamera({
-        pos: [camera.position.x, camera.position.y, camera.position.z],
-        target: controls?.target
-          ? [controls.target.x, controls.target.y, controls.target.z]
-          : [...DEFAULT_CAMERA_TARGET],
-      })
+      camera.position.set(prev.pos[0], prev.pos[1], prev.pos[2])
+      camera.quaternion.set(prev.quat[0], prev.quat[1], prev.quat[2], prev.quat[3])
+      camera.fov = prev.fov
+      camera.updateProjectionMatrix()
+      if (controls?.target) {
+        controls.target.set(prev.target[0], prev.target[1], prev.target[2])
+        controls.update?.()
+      }
     }
-  }, [camera, controls, storeApi])
+  }, [
+    camera,
+    controls,
+    storeApi,
+    scenePhotoDataUrl,
+    photoRoom,
+    size.width,
+    size.height,
+  ])
 
   return null
 }

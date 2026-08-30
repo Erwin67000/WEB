@@ -123,6 +123,7 @@ export default function OssatureView({
   position = [0, 0, 0],
   rotationZ = 0,
   selected = false,
+  showAxes = false,
 }) {
   const ossature = useMemo(
     () => buildOssature(dims),
@@ -154,8 +155,10 @@ export default function OssatureView({
             metalness={Math.max(surf.metalness ?? 0.05, 0.12)}
           />
         ))}
-        {selected && (
-          <axesHelper args={[Math.max(dims.L, dims.W, dims.H) * 0.35]} />
+        {(selected || showAxes) && (
+          <axesHelper
+            args={[Math.max(dims.L, dims.W, dims.H) * (showAxes ? 0.55 : 0.35)]}
+          />
         )}
       </group>
     </group>
