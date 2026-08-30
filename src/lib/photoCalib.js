@@ -13,6 +13,29 @@ export const PHOTO_STEPS = [
   'scale',
 ]
 
+/** Fov vertical « photo normale » (équivalent ~35 mm). */
+export const PHOTO_FOV_DEFAULT = 58
+export const PHOTO_FOV_MIN = 28
+export const PHOTO_FOV_MAX = 85
+/** Profondeur 3D du meuble (axe Y) — assez pour fuir, sans casser le calage. */
+export const PHOTO_DEPTH_DEFAULT = 1.45
+
+export function clampPhotoFov(v) {
+  const n = Number(v)
+  if (!Number.isFinite(n)) return PHOTO_FOV_DEFAULT
+  return Math.min(PHOTO_FOV_MAX, Math.max(PHOTO_FOV_MIN, n))
+}
+
+export function photoFovTan(fovDeg) {
+  return Math.tan((clampPhotoFov(fovDeg) * Math.PI) / 360)
+}
+
+/** Distance caméra pour que le plan photo (hauteur 2) remplisse le frustum. */
+export function photoCamDistance(zoom = 1, fovDeg = PHOTO_FOV_DEFAULT) {
+  const z0 = 1 / Math.max(0.12, photoFovTan(fovDeg))
+  return z0 / Math.max(0.4, Math.min(4, Number(zoom) || 1))
+}
+
 export function emptyPhotoCalib(xLine) {
   const xA = xLine?.a || [0.08, 0.7]
   const xB = xLine?.b || [0.92, 0.7]
@@ -30,6 +53,7 @@ export function emptyPhotoCalib(xLine) {
     shiftU: 0,
     shiftV: 0,
     zoom: 1,
+    fov: PHOTO_FOV_DEFAULT,
     photoAspect: 1.5,
   }
 }
@@ -259,8 +283,10 @@ export function dirFrom(a, b) {
 }
 
 /**
- * Repère écran (monde Three, caméra photo fov 90° à z=1) :
+ * Repère écran (monde Three, plan photo z=0) :
  * Three X = longueur, Three Y = haut, Three Z = −profondeur.
+ * L’axe profondeur a une vraie composante Z caméra (perspective),
+ * plus seulement un cisaillement 2D (projection parallèle).
  */
 export function calibWorldBasis(calib, aspect, viewH) {
   const origin0 = calib.originUv || calib.hoverUv
@@ -299,20 +325,29 @@ export function calibWorldBasis(calib, aspect, viewH) {
   const yDep = toVec(dirY)
   const ppm = 150 * (Number(calib.scale) || 1)
   const worldPerM = ppm / Math.max(80, viewH * 0.5)
+  const depthK = Number.isFinite(Number(calib.perspective))
+    ? Math.min(3, Math.max(0.2, Number(calib.perspective)))
+    : PHOTO_DEPTH_DEFAULT
 
   return {
     origin: o,
-    axisX: [x[0] * worldPerM, x[1] * worldPerM, 0],
+    /* X recule un peu s’il monte dans l’image (2 points de fuite). */
+    axisX: [
+      x[0] * worldPerM,
+      x[1] * worldPerM,
+      -x[1] * 0.55 * depthK * worldPerM,
+    ],
     axisY: [zUp[0] * worldPerM, zUp[1] * worldPerM, 0.01],
-    axisZ: [-yDep[0] * worldPerM, -yDep[1] * worldPerM, -0.35 * worldPerM],
+    axisZ: [-yDep[0] * worldPerM, -yDep[1] * worldPerM, -depthK * worldPerM],
   }
 }
 
-/** NDC → UV photo (contain, fov 90°). */
-export function ndcToPhotoUv(ndcX, ndcY, viewAspect, camZ, photoAspect) {
+/** NDC → UV photo (contain + dolly-zoom selon le fov). */
+export function ndcToPhotoUv(ndcX, ndcY, viewAspect, camZ, photoAspect, fovDeg) {
   const z = Math.max(0.2, Number(camZ) || 1)
-  const worldX = ndcX * viewAspect * z
-  const worldY = ndcY * z
+  const t = photoFovTan(fovDeg)
+  const worldX = ndcX * viewAspect * z * t
+  const worldY = ndcY * z * t
   const { w: pw, h: ph } = containPlane(viewAspect, photoAspect || viewAspect)
   return [
     clamp01(worldX / Math.max(pw, 1e-6) + 0.5),

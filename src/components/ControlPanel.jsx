@@ -38,7 +38,14 @@ import { persistDraft } from '../lib/checkoutDraft.js'
 import { STRIPE_ENABLED } from '../lib/payments.js'
 import { writeShopPanelColor } from '../lib/shopPanelColor.js'
 import { labelFromUnits } from '../lib/checkout.js'
-import { detectPhotoXAxis, fileToImageDataUrl } from '../lib/photoCalib.js'
+import {
+  detectPhotoXAxis,
+  fileToImageDataUrl,
+  clampPhotoFov,
+  PHOTO_FOV_DEFAULT,
+  PHOTO_FOV_MIN,
+  PHOTO_FOV_MAX,
+} from '../lib/photoCalib.js'
 import { downloadScenePdf } from '../lib/sceneCapture.js'
 
 /** Labels courts pour chips des panneaux actifs */
@@ -270,6 +277,10 @@ export default function ControlPanel() {
   const environmentId = useActiveConfigStore((s) => s.environmentId)
   const scenePhotoDataUrl = useActiveConfigStore((s) => s.scenePhotoDataUrl)
   const scenePhotoName = useActiveConfigStore((s) => s.scenePhotoName)
+  const photoFov = useActiveConfigStore(
+    (s) => s.photoCalib?.fov ?? PHOTO_FOV_DEFAULT,
+  )
+  const setPhotoCalib = useActiveConfigStore((s) => s.setPhotoCalib)
   const sunEnabled = useActiveConfigStore((s) => s.sunEnabled)
   const sunIntensity = useActiveConfigStore((s) => s.sunIntensity)
   const wireframe = useActiveConfigStore((s) => s.wireframe)
@@ -1066,6 +1077,24 @@ export default function ControlPanel() {
                     {t('config.removePhoto')}
                   </button>
                 </div>
+              ) : null}
+              {scenePhotoDataUrl ? (
+                <label className="field compact photo-fov-field">
+                  <span className="field-label">
+                    {t('config.photoPerspective')} ·{' '}
+                    {Math.round(clampPhotoFov(photoFov))}°
+                  </span>
+                  <input
+                    type="range"
+                    min={PHOTO_FOV_MIN}
+                    max={PHOTO_FOV_MAX}
+                    step={1}
+                    value={clampPhotoFov(photoFov)}
+                    onChange={(e) =>
+                      setPhotoCalib({ fov: Number(e.target.value) })
+                    }
+                  />
+                </label>
               ) : null}
               <div className="scene-photo-export">
                 <button

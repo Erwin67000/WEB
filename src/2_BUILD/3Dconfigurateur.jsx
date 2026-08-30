@@ -24,6 +24,11 @@ import {
   dirFrom,
   projectDeltaOnXY,
   containPlane,
+  photoCamDistance,
+  clampPhotoFov,
+  PHOTO_FOV_DEFAULT,
+  PHOTO_FOV_MIN,
+  PHOTO_FOV_MAX,
 } from '../lib/photoCalib.js'
 import PhotoCalibOverlay from '../components/PhotoCalibOverlay.jsx'
 
@@ -256,11 +261,15 @@ function PhotoEnvironment({ url }) {
 }
 
 /**
- * Caméra photo : fov 90°, plan z=0 = l’image. zoom via photoCalib.zoom.
+ * Caméra photo : fov photo (défaut 58°) + dolly pour garder le cliché en contain.
+ * Le meuble a une vraie profondeur Z → fuyantes, plus une projection parallèle.
  */
 function PhotoCameraLock() {
   const { camera, controls } = useThree()
   const zoom = useActiveConfigStore((s) => s.photoCalib?.zoom || 1)
+  const fov = useActiveConfigStore(
+    (s) => s.photoCalib?.fov ?? PHOTO_FOV_DEFAULT,
+  )
 
   useLayoutEffect(() => {
     const prev = {
@@ -272,7 +281,6 @@ function PhotoCameraLock() {
         : [...DEFAULT_CAMERA_TARGET],
     }
     camera.up.set(0, 1, 0)
-    camera.fov = 90
     camera.lookAt(0, 0, 0)
     camera.updateProjectionMatrix()
     if (controls?.target) {
@@ -297,14 +305,51 @@ function PhotoCameraLock() {
   }, [camera, controls])
 
   useLayoutEffect(() => {
-    const z = 1 / Math.max(0.4, Math.min(4, Number(zoom) || 1))
+    const f = clampPhotoFov(fov)
+    const z = photoCamDistance(zoom, f)
     camera.position.set(0, 0, z)
     camera.lookAt(0, 0, 0)
-    camera.fov = 90
+    camera.fov = f
     camera.updateProjectionMatrix()
-  }, [camera, zoom])
+  }, [camera, zoom, fov])
 
   return null
+}
+
+function PhotoPerspectiveControl() {
+  const { t } = useI18n()
+  const fov = useActiveConfigStore(
+    (s) => s.photoCalib?.fov ?? PHOTO_FOV_DEFAULT,
+  )
+  const setPhotoCalib = useActiveConfigStore((s) => s.setPhotoCalib)
+  const value = clampPhotoFov(fov)
+  return (
+    <div className="photo-fov-chip" onPointerDown={(e) => e.stopPropagation()}>
+      <label>
+        <span className="photo-fov-label">
+          {t('config.photoPerspective')}
+          <span className="photo-fov-val">{Math.round(value)}°</span>
+        </span>
+        <input
+          type="range"
+          min={PHOTO_FOV_MIN}
+          max={PHOTO_FOV_MAX}
+          step={1}
+          value={value}
+          aria-label={t('config.photoPerspective')}
+          onChange={(e) => setPhotoCalib({ fov: Number(e.target.value) })}
+        />
+      </label>
+      <button
+        type="button"
+        className="photo-fov-reset"
+        onClick={() => setPhotoCalib({ fov: PHOTO_FOV_DEFAULT })}
+        hidden={Math.abs(value - PHOTO_FOV_DEFAULT) < 0.5}
+      >
+        {t('config.photoPerspectiveReset')}
+      </button>
+    </div>
+  )
 }
 
 function PhotoDoneHandle() {
@@ -324,13 +369,14 @@ function PhotoDoneHandle() {
         ((ev.clientX - rect.left) / Math.max(rect.width, 1)) * 2 - 1
       const ndcY =
         -((ev.clientY - rect.top) / Math.max(rect.height, 1)) * 2 + 1
-      const photoAspect = storeApi.getState().photoCalib?.photoAspect
+      const c = storeApi.getState().photoCalib || {}
       return ndcToPhotoUv(
         ndcX,
         ndcY,
         aspect,
         camera.position.z,
-        photoAspect,
+        c.photoAspect,
+        c.fov,
       )
     }
 
@@ -763,6 +809,7 @@ export default function Configurateur3D({ orbitOnly = false, ivory = false }) {
         <ViewportHint pickMode={panneauPickMode} photoMode={photoMode} />
       )}
       {photoMode && <PhotoCalibOverlay />}
+      {photoMode && <PhotoPerspectiveControl />}
     </div>
   )
 }
