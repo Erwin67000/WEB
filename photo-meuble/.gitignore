@@ -1,0 +1,9 @@
+poids/
+exports/
+configs/*.json
+!configs/.gitkeep
+__pycache__/
+*.pyc
+.venv/
+venv/
+.python-version

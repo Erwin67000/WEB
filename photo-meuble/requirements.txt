@@ -1,0 +1,18 @@
+# Pipeline photo + meuble 3D — tout en local
+# Installer via : python installer.py
+
+numpy>=1.24
+pillow>=10.0
+opencv-python>=4.8
+torch>=2.1
+torchvision>=0.16
+transformers>=4.40
+huggingface_hub>=0.23
+trimesh>=4.0
+open3d>=0.18
+gradio>=4.44
+scipy>=1.11
+
+# Demandé dans le cahier des charges. Non chargé au démarrage
+# (poids trop lourds). Disponible si tu actives une étape SAM plus tard.
+segment-anything>=1.0
