@@ -38,6 +38,7 @@ import { persistDraft } from '../lib/checkoutDraft.js'
 import { STRIPE_ENABLED } from '../lib/payments.js'
 import { writeShopPanelColor } from '../lib/shopPanelColor.js'
 import { labelFromUnits } from '../lib/checkout.js'
+import { downloadScenePhoto } from '../lib/sceneCapture.js'
 
 /** Labels courts pour chips des panneaux actifs */
 const PANNEAU_CHIP_LABELS = Object.fromEntries(
@@ -266,6 +267,8 @@ export default function ControlPanel() {
   const units = useActiveConfigStore((s) => s.units)
   const activeUnitId = useActiveConfigStore((s) => s.activeUnitId)
   const environmentId = useActiveConfigStore((s) => s.environmentId)
+  const scenePhotoDataUrl = useActiveConfigStore((s) => s.scenePhotoDataUrl)
+  const scenePhotoName = useActiveConfigStore((s) => s.scenePhotoName)
   const sunEnabled = useActiveConfigStore((s) => s.sunEnabled)
   const sunIntensity = useActiveConfigStore((s) => s.sunIntensity)
   const wireframe = useActiveConfigStore((s) => s.wireframe)
@@ -289,6 +292,8 @@ export default function ControlPanel() {
   const removeFaceGroup = useActiveConfigStore((s) => s.removeFaceGroup)
   const setPorteHinge = useActiveConfigStore((s) => s.setPorteHinge)
   const setEnvironment = useActiveConfigStore((s) => s.setEnvironment)
+  const setScenePhoto = useActiveConfigStore((s) => s.setScenePhoto)
+  const clearScenePhoto = useActiveConfigStore((s) => s.clearScenePhoto)
   const setSun = useActiveConfigStore((s) => s.setSun)
   const setSunIntensity = useActiveConfigStore((s) => s.setSunIntensity)
   const setWireframe = useActiveConfigStore((s) => s.setWireframe)
@@ -325,6 +330,8 @@ export default function ControlPanel() {
   /** Chip en cours de renommage (id meuble) */
   const [editingUnitId, setEditingUnitId] = useState(null)
   const renameInputRef = useRef(null)
+  const scenePhotoInputRef = useRef(null)
+  const [scenePhotoFormat, setScenePhotoFormat] = useState('png')
   const [openSections, setOpenSections] = useState(() => ({
     meuble: false,
     dims: false,
@@ -996,6 +1003,73 @@ export default function ControlPanel() {
                   ))}
                 </select>
               </label>
+              <input
+                ref={scenePhotoInputRef}
+                type="file"
+                accept="image/jpeg,image/png,.jpg,.jpeg,.png"
+                hidden
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  e.target.value = ''
+                  if (!file) return
+                  const ok = /image\/(jpeg|png)/i.test(file.type) ||
+                    /\.(jpe?g|png)$/i.test(file.name)
+                  if (!ok) return
+                  const reader = new FileReader()
+                  reader.onload = () => {
+                    setScenePhoto(String(reader.result || ''), file.name)
+                  }
+                  reader.readAsDataURL(file)
+                }}
+              />
+              <button
+                type="button"
+                className="btn scene-photo-btn primary"
+                onClick={() => scenePhotoInputRef.current?.click()}
+              >
+                {t('config.importPhoto')}
+              </button>
+              <p className="muted" style={{ margin: 0, fontSize: '0.72rem' }}>
+                {t('config.importPhotoHint')}
+              </p>
+              {scenePhotoDataUrl ? (
+                <div className="scene-photo-loaded">
+                  <span className="scene-photo-name">
+                    {scenePhotoName || t('config.photoLoaded')}
+                  </span>
+                  <button
+                    type="button"
+                    className="btn-sm"
+                    onClick={() => clearScenePhoto()}
+                  >
+                    {t('config.removePhoto')}
+                  </button>
+                </div>
+              ) : null}
+              <div className="scene-photo-export">
+                <span className="field-label">{t('config.downloadView')}</span>
+                <div className="porte-hinge-row">
+                  {['png', 'jpeg'].map((fmt) => (
+                    <button
+                      key={fmt}
+                      type="button"
+                      className={`porte-hinge-btn${
+                        scenePhotoFormat === fmt ? ' active' : ''
+                      }`}
+                      onClick={() => setScenePhotoFormat(fmt)}
+                    >
+                      {fmt === 'jpeg' ? 'JPEG' : 'PNG'}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  className="btn-sm"
+                  onClick={() => downloadScenePhoto(scenePhotoFormat)}
+                >
+                  {t('config.downloadViewBtn')}
+                </button>
+              </div>
               <label className="check-item">
                 <input
                   type="checkbox"

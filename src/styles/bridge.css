@@ -627,6 +627,32 @@ a.site-brand {
   cursor: not-allowed;
 }
 
+.scene-photo-btn {
+  width: 100%;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.scene-photo-loaded {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+}
+
+.scene-photo-name {
+  font-size: 0.72rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scene-photo-export {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
 .porte-hinge-row {
   display: flex;
   gap: 0.25rem;

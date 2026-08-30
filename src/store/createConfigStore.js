@@ -219,6 +219,9 @@ export function createConfigStore(opts = {}) {
     units: [first],
     activeUnitId: first.id,
     environmentId: 'none',
+    /** Photo de pièce (data URL JPEG/PNG) — le meuble = géométrie courante. */
+    scenePhotoDataUrl: null,
+    scenePhotoName: '',
     sunEnabled: false,
     sunIntensity: 2.5,
     showGrid: false,
@@ -709,6 +712,23 @@ export function createConfigStore(opts = {}) {
         dirty: true,
       })
     },
+
+    setScenePhoto: (dataUrl, name = '') => {
+      set({
+        scenePhotoDataUrl: dataUrl || null,
+        scenePhotoName: name || '',
+        environmentId: dataUrl ? 'none' : get().environmentId,
+        showGrid: dataUrl ? false : get().showGrid,
+        dirty: true,
+      })
+    },
+
+    clearScenePhoto: () =>
+      set({
+        scenePhotoDataUrl: null,
+        scenePhotoName: '',
+        dirty: true,
+      }),
 
     setSun: (sunEnabled) => set({ sunEnabled, dirty: true }),
     setSunIntensity: (sunIntensity) => set({ sunIntensity, dirty: true }),

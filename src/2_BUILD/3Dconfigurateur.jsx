@@ -5,6 +5,7 @@ import {
   Grid,
   ContactShadows,
   useGLTF,
+  useTexture,
 } from '@react-three/drei'
 import * as THREE from 'three'
 import OssatureView from '../1_STRUCTURE/01_meuble3D/OssatureView.jsx'
@@ -13,6 +14,7 @@ import FacePickPlanes from '../1_STRUCTURE/02_agencement/FacePickPlanes.jsx'
 import { ENVIRONMENTS } from '../1_STRUCTURE/00_matrice/matrice_configuration.js'
 import { useActiveConfigStore } from '../store/ConfigStoreContext.jsx'
 import { useI18n } from '@texte/I18nProvider.jsx'
+import { bindSceneCapture } from '../lib/sceneCapture.js'
 
 const SCALE = 0.001
 
@@ -131,6 +133,45 @@ function GlbScene({ url, position = [0, 0, 0], rotation = [0, 0, 0], scale = 1 }
   )
 }
 
+function SceneCaptureBinder() {
+  const { gl, scene, camera } = useThree()
+  useEffect(() => {
+    bindSceneCapture((mime) => {
+      gl.render(scene, camera)
+      const src = gl.domElement
+      if (mime === 'image/jpeg') {
+        const c = document.createElement('canvas')
+        c.width = src.width
+        c.height = src.height
+        const ctx = c.getContext('2d')
+        ctx.fillStyle = '#111111'
+        ctx.fillRect(0, 0, c.width, c.height)
+        ctx.drawImage(src, 0, 0)
+        return c.toDataURL('image/jpeg', 0.92)
+      }
+      return src.toDataURL('image/png')
+    })
+    return () => bindSceneCapture(null)
+  }, [gl, scene, camera])
+  return null
+}
+
+/** Photo de pièce en fond ; le meuble reste la géométrie du configurateur. */
+function PhotoEnvironment({ url }) {
+  const { scene } = useThree()
+  const texture = useTexture(url)
+  useEffect(() => {
+    texture.colorSpace = THREE.SRGBColorSpace
+    texture.needsUpdate = true
+    const prev = scene.background
+    scene.background = texture
+    return () => {
+      scene.background = prev
+    }
+  }, [scene, texture])
+  return <ShadowFloor />
+}
+
 function EnvironmentScene({ env }) {
   if (!env || env.id === 'none' || !env.glb) return null
   return (
@@ -197,6 +238,7 @@ function SceneContent({ orbitOnly = false, ivory = false }) {
   const units = useActiveConfigStore((s) => s.units)
   const activeUnitId = useActiveConfigStore((s) => s.activeUnitId)
   const environmentId = useActiveConfigStore((s) => s.environmentId)
+  const scenePhotoDataUrl = useActiveConfigStore((s) => s.scenePhotoDataUrl)
   const sunEnabled = useActiveConfigStore((s) => s.sunEnabled)
   const sunIntensity = useActiveConfigStore((s) => s.sunIntensity)
   const showGridStore = useActiveConfigStore((s) => s.showGrid)
@@ -213,7 +255,8 @@ function SceneContent({ orbitOnly = false, ivory = false }) {
   const env = ivoryLook
     ? { ...ENVIRONMENTS.none, bg: '#f5f0e6', grid: false }
     : envBase
-  const showGrid = orbitOnly ? false : showGridStore
+  const showGrid = orbitOnly || scenePhotoDataUrl ? false : showGridStore
+  const hasPhoto = Boolean(scenePhotoDataUrl) && !orbitOnly && !ivoryLook
 
   const active = units.find((u) => u.id === activeUnitId) || units[0]
   // Cible orbit = centre du volume (origine meuble fixée au coin 0,0,0)
@@ -241,7 +284,13 @@ function SceneContent({ orbitOnly = false, ivory = false }) {
 
   return (
     <>
-      <color attach="background" args={[env.bg || '#0a0a0a']} />
+      <SceneCaptureBinder />
+      {!hasPhoto && <color attach="background" args={[env.bg || '#0a0a0a']} />}
+      {hasPhoto && (
+        <Suspense fallback={null}>
+          <PhotoEnvironment url={scenePhotoDataUrl} />
+        </Suspense>
+      )}
       <ambientLight intensity={ivoryLook ? 0.62 : sunEnabled ? 0.28 : 0.55} />
       <hemisphereLight
         args={[
@@ -259,7 +308,7 @@ function SceneContent({ orbitOnly = false, ivory = false }) {
         />
       )}
 
-      {showGrid && !env.room && (
+      {showGrid && !env.room && !hasPhoto && (
         <Grid
           args={[20, 20]}
           cellSize={0.2}
@@ -275,8 +324,8 @@ function SceneContent({ orbitOnly = false, ivory = false }) {
         />
       )}
 
-      <EnvironmentScene env={env} />
-      {sunEnabled && !ivoryLook && <ShadowFloor />}
+      {!hasPhoto && <EnvironmentScene env={env} />}
+      {sunEnabled && !ivoryLook && !hasPhoto && <ShadowFloor />}
 
       {units.map((u) => (
         <UnitGroup
@@ -388,6 +437,7 @@ export default function Configurateur3D({ orbitOnly = false, ivory = false }) {
           antialias: true,
           toneMapping: THREE.ACESFilmicToneMapping,
           powerPreference: 'high-performance',
+          preserveDrawingBuffer: true,
         }}
         onCreated={({ gl, camera }) => {
           gl.shadowMap.enabled = true
