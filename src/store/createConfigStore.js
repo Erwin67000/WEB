@@ -222,6 +222,11 @@ export function createConfigStore(opts = {}) {
     /** Photo de pièce (data URL JPEG/PNG) — le meuble = géométrie courante. */
     scenePhotoDataUrl: null,
     scenePhotoName: '',
+    /** Rubrique « Scène 3D » ouverte (mini-environnement photo). */
+    sceneSheetOpen: false,
+    /** Pose du meuble dans la photo : X/Y sol, rot. Z, échelle apparente. */
+    photoPose: { xMm: 0, yMm: 0, rotZ: 0, scale: 1 },
+    photoCamera: null,
     sunEnabled: false,
     sunIntensity: 2.5,
     showGrid: false,
@@ -729,6 +734,24 @@ export function createConfigStore(opts = {}) {
         scenePhotoName: '',
         dirty: true,
       }),
+
+    setSceneSheetOpen: (open) => set({ sceneSheetOpen: Boolean(open) }),
+
+    setPhotoPose: (patch) =>
+      set((s) => {
+        const prev = s.photoPose || { xMm: 0, yMm: 0, rotZ: 0, scale: 1 }
+        const scale = Number(patch.scale ?? prev.scale)
+        return {
+          photoPose: {
+            xMm: Number(patch.xMm ?? prev.xMm) || 0,
+            yMm: Number(patch.yMm ?? prev.yMm) || 0,
+            rotZ: Number(patch.rotZ ?? prev.rotZ) || 0,
+            scale: Math.min(4, Math.max(0.25, Number.isFinite(scale) ? scale : 1)),
+          },
+        }
+      }),
+
+    setPhotoCamera: (photoCamera) => set({ photoCamera }),
 
     setSun: (sunEnabled) => set({ sunEnabled, dirty: true }),
     setSunIntensity: (sunIntensity) => set({ sunIntensity, dirty: true }),

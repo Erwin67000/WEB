@@ -424,7 +424,7 @@ export const translations = {
       scene: '3D scene',
       importPhoto: 'Import a photo (JPEG / PNG)',
       importPhotoHint:
-        'The furniture is the current configurator model. No 3D file to upload.',
+        'The furniture is the current configurator model. Open this tab to enter the photo mini-scene (floor locked). Leave the tab to return to the free 3D view.',
       photoLoaded: 'Photo loaded',
       removePhoto: 'Remove photo',
       downloadView: 'Download the view',
@@ -460,6 +460,8 @@ export const translations = {
       unitN: 'Piece {n}',
       hintOrbit: 'Drag to turn · scroll to zoom',
       hintTouch: 'Drag to turn · pinch to zoom',
+      hintPhoto:
+        'Floor locked (Z = 0) · drag to move · Shift/right-drag to rotate · scroll to scale',
       hintPick: 'Click a face of the piece to add / remove a panel',
       drawerTooShallow:
         'Depth below the limit for a drawer: {min} cm',
@@ -1069,7 +1071,7 @@ export const translations = {
       scene: 'Scène 3D',
       importPhoto: 'Importer une photo (JPEG / PNG)',
       importPhotoHint:
-        'Le meuble est la géométrie actuelle du configurateur. Pas de fichier 3D à importer.',
+        'Le meuble est la géométrie du configurateur. Cette rubrique ouvre le mini-environnement photo (sol figé). En changer vous ramène à la vue 3D libre.',
       photoLoaded: 'Photo chargée',
       removePhoto: 'Retirer la photo',
       downloadView: 'Télécharger la vue',
@@ -1105,6 +1107,8 @@ export const translations = {
       unitN: 'Meuble {n}',
       hintOrbit: 'Glisser pour tourner · molette pour zoomer',
       hintTouch: 'Glisser pour tourner · pincer pour zoomer',
+      hintPhoto:
+        'Sol figé (Z = 0) · glisser pour déplacer · Shift/clic droit pour tourner · molette pour l’échelle',
       hintPick: 'Cliquez une face du meuble pour ajouter / retirer un panneau',
       drawerTooShallow:
         'Profondeur inférieure à la limite pour ajout de tiroir : {min} cm',

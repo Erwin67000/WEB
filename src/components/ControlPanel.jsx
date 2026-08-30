@@ -292,6 +292,7 @@ export default function ControlPanel() {
   const removeFaceGroup = useActiveConfigStore((s) => s.removeFaceGroup)
   const setPorteHinge = useActiveConfigStore((s) => s.setPorteHinge)
   const setEnvironment = useActiveConfigStore((s) => s.setEnvironment)
+  const setSceneSheetOpen = useActiveConfigStore((s) => s.setSceneSheetOpen)
   const setScenePhoto = useActiveConfigStore((s) => s.setScenePhoto)
   const clearScenePhoto = useActiveConfigStore((s) => s.clearScenePhoto)
   const setSun = useActiveConfigStore((s) => s.setSun)
@@ -347,6 +348,11 @@ export default function ControlPanel() {
       renameInputRef.current.select()
     }
   }, [editingUnitId])
+
+  useEffect(() => {
+    setSceneSheetOpen(Boolean(openSections.scene))
+    return () => setSceneSheetOpen(false)
+  }, [openSections.scene, setSceneSheetOpen])
 
   if (!unit) return null
 

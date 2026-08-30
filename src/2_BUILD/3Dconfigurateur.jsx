@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useMemo, useRef } from 'react'
+import { Suspense, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import {
   OrbitControls,
@@ -12,7 +12,10 @@ import OssatureView from '../1_STRUCTURE/01_meuble3D/OssatureView.jsx'
 import AgencementView from '../1_STRUCTURE/02_agencement/ModuleMesh.jsx'
 import FacePickPlanes from '../1_STRUCTURE/02_agencement/FacePickPlanes.jsx'
 import { ENVIRONMENTS } from '../1_STRUCTURE/00_matrice/matrice_configuration.js'
-import { useActiveConfigStore } from '../store/ConfigStoreContext.jsx'
+import {
+  useActiveConfigStore,
+  useActiveConfigStoreApi,
+} from '../store/ConfigStoreContext.jsx'
 import { useI18n } from '@texte/I18nProvider.jsx'
 import { bindSceneCapture } from '../lib/sceneCapture.js'
 
@@ -29,7 +32,14 @@ export const DEFAULT_CAMERA_TARGET = [0.35, 0.45, -0.25]
  * Apparition légère : scale + légère montée (meubel 1 ou meuble ajouté).
  * key=unit.id force un rejoue de l’anim à chaque nouvel id.
  */
-function UnitGroup({ unit, selected, wireframe, pickMode, onPickFace }) {
+function UnitGroup({
+  unit,
+  selected,
+  wireframe,
+  pickMode,
+  onPickFace,
+  photoMode = false,
+}) {
   const groupRef = useRef()
   const t0 = useRef(performance.now())
 
@@ -40,6 +50,12 @@ function UnitGroup({ unit, selected, wireframe, pickMode, onPickFace }) {
   useFrame(() => {
     const g = groupRef.current
     if (!g) return
+    if (photoMode) {
+      // Sol Z = 0 figé : pas de lift, l’échelle vient du pose photo.
+      g.scale.setScalar(1)
+      g.position.y = 0
+      return
+    }
     const t = Math.min(1, (performance.now() - t0.current) / 520)
     // easeOutCubic
     const e = 1 - (1 - t) ** 3
@@ -172,6 +188,137 @@ function PhotoEnvironment({ url }) {
   return <ShadowFloor />
 }
 
+/** Caméra figée (vue photo) : sauvegarde / restauration en quittant la rubrique. */
+function PhotoCameraLock() {
+  const { camera, controls } = useThree()
+  const storeApi = useActiveConfigStoreApi()
+
+  useLayoutEffect(() => {
+    const saved = storeApi.getState().photoCamera
+    const pos = saved?.pos || DEFAULT_CAMERA_POS
+    const target = saved?.target || DEFAULT_CAMERA_TARGET
+    camera.position.set(pos[0], pos[1], pos[2])
+    camera.lookAt(target[0], target[1], target[2])
+    if (controls?.target) {
+      controls.target.set(target[0], target[1], target[2])
+      controls.update?.()
+    }
+    return () => {
+      storeApi.getState().setPhotoCamera({
+        pos: [camera.position.x, camera.position.y, camera.position.z],
+        target: controls?.target
+          ? [controls.target.x, controls.target.y, controls.target.z]
+          : [...DEFAULT_CAMERA_TARGET],
+      })
+    }
+  }, [camera, controls, storeApi])
+
+  return null
+}
+
+/**
+ * Mini-environnement photo : plan Z=0 figé.
+ * Glisser = X/Y · Shift/clic droit = rotation Z · molette = échelle.
+ */
+function PhotoFloorHandle() {
+  const storeApi = useActiveConfigStoreApi()
+  const { gl, camera } = useThree()
+  const plane = useMemo(() => new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), [])
+  const raycaster = useMemo(() => new THREE.Raycaster(), [])
+  const ndc = useMemo(() => new THREE.Vector2(), [])
+  const hit = useMemo(() => new THREE.Vector3(), [])
+  const modeRef = useRef(null)
+  const lastRef = useRef(null)
+  const angle0Ref = useRef(0)
+  const rot0Ref = useRef(0)
+
+  useEffect(() => {
+    const el = gl.domElement
+
+    const intersectFloor = (ev) => {
+      const rect = el.getBoundingClientRect()
+      ndc.x = ((ev.clientX - rect.left) / Math.max(rect.width, 1)) * 2 - 1
+      ndc.y = -((ev.clientY - rect.top) / Math.max(rect.height, 1)) * 2 + 1
+      raycaster.setFromCamera(ndc, camera)
+      if (!raycaster.ray.intersectPlane(plane, hit)) return null
+      return hit.clone()
+    }
+
+    const onWheel = (ev) => {
+      ev.preventDefault()
+      const pose = storeApi.getState().photoPose || { scale: 1 }
+      const next = pose.scale * (ev.deltaY > 0 ? 0.92 : 1.08)
+      storeApi.getState().setPhotoPose({ scale: next })
+    }
+
+    const onDown = (ev) => {
+      const p = intersectFloor(ev)
+      if (!p) return
+      const rotate = Boolean(ev.shiftKey) || ev.button === 2
+      modeRef.current = rotate ? 'rotate' : 'move'
+      lastRef.current = p
+      const pose = storeApi.getState().photoPose || { xMm: 0, yMm: 0, rotZ: 0 }
+      const cx = pose.xMm * SCALE
+      const cz = -pose.yMm * SCALE
+      angle0Ref.current = Math.atan2(p.z - cz, p.x - cx)
+      rot0Ref.current = pose.rotZ || 0
+      el.setPointerCapture?.(ev.pointerId)
+    }
+
+    const onMove = (ev) => {
+      if (!modeRef.current || !lastRef.current) return
+      const p = intersectFloor(ev)
+      if (!p) return
+      const pose = storeApi.getState().photoPose || {
+        xMm: 0,
+        yMm: 0,
+        rotZ: 0,
+        scale: 1,
+      }
+      if (modeRef.current === 'move') {
+        const dx = p.x - lastRef.current.x
+        const dz = p.z - lastRef.current.z
+        storeApi.getState().setPhotoPose({
+          xMm: pose.xMm + dx / SCALE,
+          yMm: pose.yMm - dz / SCALE,
+        })
+        lastRef.current = p
+      } else {
+        const cx = pose.xMm * SCALE
+        const cz = -pose.yMm * SCALE
+        const a = Math.atan2(p.z - cz, p.x - cx)
+        const deg = ((a - angle0Ref.current) * 180) / Math.PI
+        storeApi.getState().setPhotoPose({ rotZ: rot0Ref.current - deg })
+      }
+    }
+
+    const onUp = (ev) => {
+      modeRef.current = null
+      lastRef.current = null
+      el.releasePointerCapture?.(ev.pointerId)
+    }
+
+    const onContext = (ev) => ev.preventDefault()
+
+    el.addEventListener('wheel', onWheel, { passive: false })
+    el.addEventListener('pointerdown', onDown)
+    el.addEventListener('pointermove', onMove)
+    el.addEventListener('pointerup', onUp)
+    el.addEventListener('pointercancel', onUp)
+    el.addEventListener('contextmenu', onContext)
+    return () => {
+      el.removeEventListener('wheel', onWheel)
+      el.removeEventListener('pointerdown', onDown)
+      el.removeEventListener('pointermove', onMove)
+      el.removeEventListener('pointerup', onUp)
+      el.removeEventListener('pointercancel', onUp)
+      el.removeEventListener('contextmenu', onContext)
+    }
+  }, [gl, camera, storeApi, plane, raycaster, ndc, hit])
+
+  return null
+}
+
 function EnvironmentScene({ env }) {
   if (!env || env.id === 'none' || !env.glb) return null
   return (
@@ -239,6 +386,8 @@ function SceneContent({ orbitOnly = false, ivory = false }) {
   const activeUnitId = useActiveConfigStore((s) => s.activeUnitId)
   const environmentId = useActiveConfigStore((s) => s.environmentId)
   const scenePhotoDataUrl = useActiveConfigStore((s) => s.scenePhotoDataUrl)
+  const sceneSheetOpen = useActiveConfigStore((s) => s.sceneSheetOpen)
+  const photoPose = useActiveConfigStore((s) => s.photoPose)
   const sunEnabled = useActiveConfigStore((s) => s.sunEnabled)
   const sunIntensity = useActiveConfigStore((s) => s.sunIntensity)
   const showGridStore = useActiveConfigStore((s) => s.showGrid)
@@ -255,8 +404,13 @@ function SceneContent({ orbitOnly = false, ivory = false }) {
   const env = ivoryLook
     ? { ...ENVIRONMENTS.none, bg: '#f5f0e6', grid: false }
     : envBase
-  const showGrid = orbitOnly || scenePhotoDataUrl ? false : showGridStore
-  const hasPhoto = Boolean(scenePhotoDataUrl) && !orbitOnly && !ivoryLook
+  const photoMode =
+    Boolean(scenePhotoDataUrl) &&
+    Boolean(sceneSheetOpen) &&
+    environmentId === 'none' &&
+    !orbitOnly &&
+    !ivoryLook
+  const showGrid = orbitOnly || photoMode ? false : showGridStore
 
   const active = units.find((u) => u.id === activeUnitId) || units[0]
   // Cible orbit = centre du volume (origine meuble fixée au coin 0,0,0)
@@ -285,8 +439,8 @@ function SceneContent({ orbitOnly = false, ivory = false }) {
   return (
     <>
       <SceneCaptureBinder />
-      {!hasPhoto && <color attach="background" args={[env.bg || '#0a0a0a']} />}
-      {hasPhoto && (
+      {!photoMode && <color attach="background" args={[env.bg || '#0a0a0a']} />}
+      {photoMode && (
         <Suspense fallback={null}>
           <PhotoEnvironment url={scenePhotoDataUrl} />
         </Suspense>
@@ -308,7 +462,7 @@ function SceneContent({ orbitOnly = false, ivory = false }) {
         />
       )}
 
-      {showGrid && !env.room && !hasPhoto && (
+      {showGrid && !env.room && !photoMode && (
         <Grid
           args={[20, 20]}
           cellSize={0.2}
@@ -324,19 +478,39 @@ function SceneContent({ orbitOnly = false, ivory = false }) {
         />
       )}
 
-      {!hasPhoto && <EnvironmentScene env={env} />}
-      {sunEnabled && !ivoryLook && !hasPhoto && <ShadowFloor />}
+      {!photoMode && <EnvironmentScene env={env} />}
+      {sunEnabled && !ivoryLook && !photoMode && <ShadowFloor />}
 
-      {units.map((u) => (
-        <UnitGroup
-          key={u.id}
-          unit={u}
-          selected={u.id === activeUnitId}
-          wireframe={wireframe}
-          pickMode={panneauPickMode}
-          onPickFace={onPickFace}
-        />
-      ))}
+      {photoMode && <PhotoCameraLock />}
+      {photoMode && <PhotoFloorHandle />}
+
+      <group
+        position={
+          photoMode
+            ? [
+                (photoPose?.xMm || 0) * SCALE,
+                0,
+                -(photoPose?.yMm || 0) * SCALE,
+              ]
+            : [0, 0, 0]
+        }
+        rotation={
+          photoMode ? [0, ((photoPose?.rotZ || 0) * Math.PI) / 180, 0] : [0, 0, 0]
+        }
+        scale={photoMode ? photoPose?.scale || 1 : 1}
+      >
+        {units.map((u) => (
+          <UnitGroup
+            key={u.id}
+            unit={u}
+            selected={u.id === activeUnitId}
+            wireframe={wireframe}
+            pickMode={panneauPickMode && !photoMode}
+            onPickFace={onPickFace}
+            photoMode={photoMode}
+          />
+        ))}
+      </group>
 
       <ContactShadows
         position={[0, 0.001, 0]}
@@ -350,17 +524,23 @@ function SceneContent({ orbitOnly = false, ivory = false }) {
         makeDefault
         enableDamping
         dampingFactor={0.08}
-        enablePan={!orbitOnly}
-        enableRotate
-        enableZoom
+        enablePan={!orbitOnly && !photoMode}
+        enableRotate={!photoMode}
+        enableZoom={!photoMode}
         minDistance={0.5}
         maxDistance={20}
         /* Mode ajout panneau : on peut passer sous z=0 pour cliquer le socle.
            Sinon z=0 infranchissable (polar max ≈ horizon). */
-        maxPolarAngle={panneauPickMode ? Math.PI * 0.98 : Math.PI * 0.49}
+        maxPolarAngle={
+          photoMode
+            ? Math.PI * 0.49
+            : panneauPickMode
+              ? Math.PI * 0.98
+              : Math.PI * 0.49
+        }
         minPolarAngle={0}
         target={orbitTarget}
-        enabled
+        enabled={!photoMode}
       />
       <CameraFloorClamp pickMode={panneauPickMode} />
     </>
@@ -398,18 +578,20 @@ function CameraFloorClamp({ pickMode }) {
   return null
 }
 
-function ViewportHint({ pickMode }) {
+function ViewportHint({ pickMode, photoMode }) {
   const { t } = useI18n()
   const touch =
     typeof window !== 'undefined' &&
     window.matchMedia?.('(pointer: coarse)').matches
   return (
     <div className="viewport-hint">
-      {pickMode
-        ? t('config.hintPick')
-        : touch
-          ? t('config.hintTouch')
-          : t('config.hintOrbit')}
+      {photoMode
+        ? t('config.hintPhoto')
+        : pickMode
+          ? t('config.hintPick')
+          : touch
+            ? t('config.hintTouch')
+            : t('config.hintOrbit')}
     </div>
   )
 }
@@ -417,6 +599,15 @@ function ViewportHint({ pickMode }) {
 export default function Configurateur3D({ orbitOnly = false, ivory = false }) {
   const panneauPickModeStore = useActiveConfigStore((s) => s.panneauPickMode)
   const panneauPickMode = orbitOnly ? false : panneauPickModeStore
+  const scenePhotoDataUrl = useActiveConfigStore((s) => s.scenePhotoDataUrl)
+  const sceneSheetOpen = useActiveConfigStore((s) => s.sceneSheetOpen)
+  const environmentId = useActiveConfigStore((s) => s.environmentId)
+  const photoMode =
+    Boolean(scenePhotoDataUrl) &&
+    Boolean(sceneSheetOpen) &&
+    environmentId === 'none' &&
+    !orbitOnly &&
+    !ivory
 
   return (
     <div
@@ -450,7 +641,7 @@ export default function Configurateur3D({ orbitOnly = false, ivory = false }) {
         </Suspense>
       </Canvas>
       {!orbitOnly && (
-        <ViewportHint pickMode={panneauPickMode} />
+        <ViewportHint pickMode={panneauPickMode} photoMode={photoMode} />
       )}
     </div>
   )
