@@ -424,7 +424,7 @@ export const translations = {
       scene: '3D scene',
       importPhoto: 'Import a photo (JPEG / PNG)',
       importPhotoHint:
-        'The furniture is the current configurator model. The back wall aligns with X (length), the side wall with Y (depth). Open this tab to enter the photo mini-scene (floor locked). Leave the tab to return to the free 3D view.',
+        'The furniture is the current configurator model. Floor = Z, back wall = X (length), depth = Y. Left-drag rotates, right-drag moves, scroll scales. Leave this tab to return to the free 3D view.',
       photoLoaded: 'Photo loaded',
       removePhoto: 'Remove photo',
       downloadView: 'Download the view',
@@ -461,7 +461,7 @@ export const translations = {
       hintOrbit: 'Drag to turn · scroll to zoom',
       hintTouch: 'Drag to turn · pinch to zoom',
       hintPhoto:
-        'Floor Z = 0 · X along the back wall · Y along the side wall · drag to move · Shift/right-drag to rotate · scroll to scale',
+        'Floor Z = 0 · X along the back wall · Y depth · left-drag to rotate · right-drag to move · scroll to scale',
       hintPick: 'Click a face of the piece to add / remove a panel',
       drawerTooShallow:
         'Depth below the limit for a drawer: {min} cm',
@@ -1071,7 +1071,7 @@ export const translations = {
       scene: 'Scène 3D',
       importPhoto: 'Importer une photo (JPEG / PNG)',
       importPhotoHint:
-        'Le meuble est la géométrie du configurateur. Le mur du fond s’aligne sur X (longueur), le mur latéral sur Y (profondeur). Cette rubrique ouvre le mini-environnement photo (sol figé). En changer vous ramène à la vue 3D libre.',
+        'Le meuble est la géométrie du configurateur. Sol = Z, mur du fond = X (longueur), profondeur = Y. Clic gauche pour tourner, clic droit pour déplacer, molette pour l’échelle. En changer de rubrique vous ramène à la vue 3D libre.',
       photoLoaded: 'Photo chargée',
       removePhoto: 'Retirer la photo',
       downloadView: 'Télécharger la vue',
@@ -1108,7 +1108,7 @@ export const translations = {
       hintOrbit: 'Glisser pour tourner · molette pour zoomer',
       hintTouch: 'Glisser pour tourner · pincer pour zoomer',
       hintPhoto:
-        'Sol Z = 0 · X le long du mur du fond · Y le long du mur de profondeur · glisser pour déplacer · Shift/clic droit pour tourner · molette pour l’échelle',
+        'Sol Z = 0 · X le long du mur du fond · Y profondeur · clic gauche pour tourner · clic droit pour déplacer · molette pour l’échelle',
       hintPick: 'Cliquez une face du meuble pour ajouter / retirer un panneau',
       drawerTooShallow:
         'Profondeur inférieure à la limite pour ajout de tiroir : {min} cm',

@@ -259,7 +259,7 @@ function PhotoCameraLock() {
 
 /**
  * Mini-environnement photo : plan Z=0 figé.
- * Glisser = X/Y · Shift/clic droit = rotation Z · molette = échelle.
+ * Clic gauche = orbit Z · clic droit = déplacer · molette = échelle.
  */
 function PhotoFloorHandle() {
   const storeApi = useActiveConfigStoreApi()
@@ -295,8 +295,8 @@ function PhotoFloorHandle() {
     const onDown = (ev) => {
       const p = intersectFloor(ev)
       if (!p) return
-      const rotate = Boolean(ev.shiftKey) || ev.button === 2
-      modeRef.current = rotate ? 'rotate' : 'move'
+      const move = ev.button === 2 || ev.button === 1
+      modeRef.current = move ? 'move' : 'rotate'
       lastRef.current = p
       const pose = storeApi.getState().photoPose || { xMm: 0, yMm: 0, rotZ: 0 }
       const cx = pose.xMm * SCALE

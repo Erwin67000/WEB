@@ -1033,10 +1033,14 @@ export default function ControlPanel() {
                         camera: estimated.camera,
                         room: estimated.axes,
                       }
+                      setScenePhoto(
+                        estimated.dataUrl || dataUrl,
+                        file.name,
+                        extras,
+                      )
                     } catch {
-                      extras = {}
+                      setScenePhoto(dataUrl, file.name, extras)
                     }
-                    setScenePhoto(dataUrl, file.name, extras)
                   }
                   reader.readAsDataURL(file)
                 }}
