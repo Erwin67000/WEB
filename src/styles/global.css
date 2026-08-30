@@ -133,12 +133,23 @@ textarea {
 .photo-calib {
   position: absolute;
   inset: 0;
-  z-index: 4;
+  z-index: 6;
   cursor: crosshair;
   touch-action: none;
 }
-.photo-calib.is-drawing {
-  cursor: none;
+.photo-calib.is-drawing,
+.photo-calib.is-origin {
+  cursor: crosshair;
+}
+.photo-calib-aim {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  margin-left: -14px;
+  margin-top: -14px;
+  pointer-events: none;
+  z-index: 8;
+  filter: drop-shadow(0 0 1px #000) drop-shadow(0 0 2px rgba(0, 0, 0, 0.7));
 }
 .photo-calib-svg {
   position: absolute;
@@ -241,6 +252,8 @@ textarea {
   border: 1px solid #d4cbb8;
   color: #1a1610;
   pointer-events: auto;
+  cursor: default;
+  z-index: 9;
   box-shadow: 0 10px 28px rgba(20, 16, 10, 0.18);
 }
 .photo-calib-progress {

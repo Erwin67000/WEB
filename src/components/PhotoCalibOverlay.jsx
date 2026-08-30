@@ -274,10 +274,14 @@ export default function PhotoCalibOverlay() {
         )}
       </svg>
 
-      {step === 'origin' && (
-        <div className="photo-calib-gizmo is-pulse" style={pct(calib.hoverUv, rect)} aria-hidden>
-          <svg viewBox="0 0 72 72" width="72" height="72">
-            <circle cx="36" cy="36" r="6" fill="#f5e6b8" stroke="#1a1610" strokeWidth="1.6" />
+      {calib.hoverUv && step !== 'scale' && (
+        <div className="photo-calib-aim" style={pct(calib.hoverUv, rect)} aria-hidden>
+          <svg viewBox="0 0 28 28" width="28" height="28">
+            <line x1="14" y1="1" x2="14" y2="10" stroke="#f5e6b8" strokeWidth="1.6" />
+            <line x1="14" y1="18" x2="14" y2="27" stroke="#f5e6b8" strokeWidth="1.6" />
+            <line x1="1" y1="14" x2="10" y2="14" stroke="#f5e6b8" strokeWidth="1.6" />
+            <line x1="18" y1="14" x2="27" y2="14" stroke="#f5e6b8" strokeWidth="1.6" />
+            <circle cx="14" cy="14" r="2.2" fill="#c9a227" stroke="#1a1610" strokeWidth="1" />
           </svg>
         </div>
       )}
