@@ -1,9 +1,17 @@
 /**
- * Calage photo : origine → X (plinthe) → Z → Y → échelle.
- * Une suggestion de rail X (sol ∩ mur du fond) est proposée, l’utilisateur la trace.
+ * Calage photo : origine → X → Z → Y0 (sur X) → Y → échelle.
+ * UV stockées dans l’espace photo (0–1), pas l’écran : les bandes noires
+ * ne déforment jamais le cliché.
  */
 
-export const PHOTO_STEPS = ['origin', 'axisX', 'axisZ', 'axisY', 'scale']
+export const PHOTO_STEPS = [
+  'origin',
+  'axisX',
+  'axisZ',
+  'axisY0',
+  'axisY',
+  'scale',
+]
 
 export function emptyPhotoCalib(xLine) {
   const xA = xLine?.a || [0.08, 0.7]
@@ -15,12 +23,14 @@ export function emptyPhotoCalib(xLine) {
     originUv: null,
     xUv: null,
     zUv: null,
+    y0Uv: null,
     yUv: null,
-    hoverUv: null,
+    hoverUv: xA,
     scale: 1,
     shiftU: 0,
     shiftV: 0,
     zoom: 1,
+    photoAspect: 1.5,
   }
 }
 
@@ -66,16 +76,17 @@ function grayAt(data, i) {
  * puis on ajuste une droite (pente de la plinthe).
  */
 export async function detectPhotoXAxis(dataUrl) {
-  const fallback = { a: [0.07, 0.7], b: [0.93, 0.7] }
+  const fallback = { a: [0.07, 0.7], b: [0.93, 0.7], aspect: 1.5 }
   try {
     const img = await loadImageElement(dataUrl)
+    const aspect = img.width / Math.max(1, img.height)
     const w = 480
     const h = Math.max(32, Math.round((img.height / img.width) * w))
     const canvas = document.createElement('canvas')
     canvas.width = w
     canvas.height = h
     const ctx = canvas.getContext('2d', { willReadFrequently: true })
-    if (!ctx) return fallback
+    if (!ctx) return { ...fallback, aspect }
     ctx.drawImage(img, 0, 0, w, h)
     const { data } = ctx.getImageData(0, 0, w, h)
     const y0 = (h * 0.38) | 0
@@ -96,7 +107,7 @@ export async function detectPhotoXAxis(dataUrl) {
       }
       if (best > 6) pts.push({ x, y: bestY, e: best })
     }
-    if (pts.length < 8) return fallback
+    if (pts.length < 8) return { ...fallback, aspect }
     pts.sort((a, b) => b.e - a.e)
     const strong = pts.slice(0, Math.max(12, (pts.length * 0.55) | 0))
     let sx = 0
@@ -114,12 +125,12 @@ export async function detectPhotoXAxis(dataUrl) {
     const m = Math.abs(den) < 1e-6 ? 0 : (n * sxy - sx * sy) / den
     const c = (sy - m * sx) / n
     const ang = Math.abs(Math.atan(m))
-    if (ang > 0.7) return fallback
+    if (ang > 0.7) return { ...fallback, aspect }
     const yAt = (xf) => {
       const y = (m * xf * w + c) / h
       return Math.min(0.92, Math.max(0.32, y))
     }
-    return { a: [0.04, yAt(0.04)], b: [0.96, yAt(0.96)] }
+    return { a: [0.04, yAt(0.04)], b: [0.96, yAt(0.96)], aspect }
   } catch {
     return fallback
   }
@@ -129,6 +140,45 @@ export function clamp01(v) {
   return Math.min(1, Math.max(0, v))
 }
 
+/** Plan photo « contain » dans le frustum fov 90° (hauteur visible = 2). */
+export function containPlane(viewAspect, photoAspect) {
+  const va = Math.max(0.2, Number(viewAspect) || 1)
+  const pa = Math.max(0.2, Number(photoAspect) || 1)
+  if (pa >= va) {
+    const w = 2 * va
+    return { w, h: w / pa }
+  }
+  const h = 2
+  return { w: 2 * pa, h }
+}
+
+/** Zone photo dans le viewport (0–1), bandes noires autour. */
+export function letterboxRect(viewAspect, photoAspect) {
+  const { w: pw, h: ph } = containPlane(viewAspect, photoAspect)
+  const vw = pw / (2 * Math.max(0.2, viewAspect))
+  const vh = ph / 2
+  return {
+    x: (1 - vw) / 2,
+    y: (1 - vh) / 2,
+    w: vw,
+    h: vh,
+  }
+}
+
+export function viewToPhotoUv(viewUv, rect) {
+  return [
+    (viewUv[0] - rect.x) / Math.max(rect.w, 1e-6),
+    (viewUv[1] - rect.y) / Math.max(rect.h, 1e-6),
+  ]
+}
+
+export function photoToViewUv(photoUv, rect) {
+  return [
+    rect.x + photoUv[0] * rect.w,
+    rect.y + photoUv[1] * rect.h,
+  ]
+}
+
 export function projectOnSegment(p, a, b) {
   const dx = b[0] - a[0]
   const dy = b[1] - a[1]
@@ -136,6 +186,34 @@ export function projectOnSegment(p, a, b) {
   let t = ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / len2
   t = Math.min(1, Math.max(0, t))
   return [a[0] + dx * t, a[1] + dy * t]
+}
+
+/** Projection sur la droite (pas seulement le segment) — Y SketchUp. */
+export function projectOnLine(p, a, b) {
+  const dx = b[0] - a[0]
+  const dy = b[1] - a[1]
+  const len2 = dx * dx + dy * dy || 1e-8
+  const t = ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / len2
+  return [a[0] + dx * t, a[1] + dy * t]
+}
+
+/** Premier point de Y : sur la droite X, pas forcément à l’origine. */
+export function snapToXAxis(p, calib, origin) {
+  const o = origin || calib.originUv
+  if (!o || !p) return p
+  const dir = xPlusUv(calib, o)
+  const end = calib.xUv || [o[0] + dir[0], o[1] + dir[1]]
+  const snapped = projectOnLine(p, o, end)
+  return [clamp01(snapped[0]), clamp01(snapped[1])]
+}
+
+export function photoUvFromPointer(ev, el, photoAspect) {
+  const viewUv = uvFromPointer(ev, el)
+  const r = el.getBoundingClientRect()
+  const viewAspect = r.width / Math.max(1, r.height)
+  const rect = letterboxRect(viewAspect, photoAspect || viewAspect)
+  const uv = viewToPhotoUv(viewUv, rect)
+  return [clamp01(uv[0]), clamp01(uv[1])]
 }
 
 export function uvFromPointer(ev, el) {
@@ -166,11 +244,12 @@ export function defaultZuv(origin) {
 }
 
 /** Perpendiculaire à X, vers le bas de l’image (le sol). */
-export function defaultYuv(origin, dirX) {
+export function defaultYuv(origin, dirX, from = origin) {
   const p1 = [-dirX[1], dirX[0]]
   const p2 = [dirX[1], -dirX[0]]
   const pick = p1[1] > p2[1] ? p1 : p2
-  return [origin[0] + pick[0] * 0.2, origin[1] + pick[1] * 0.2]
+  const start = from || origin
+  return [start[0] + pick[0] * 0.2, start[1] + pick[1] * 0.2]
 }
 
 export function dirFrom(a, b) {
@@ -196,13 +275,18 @@ export function calibWorldBasis(calib, aspect, viewH) {
   const zEnd =
     calib.zUv || (calib.step === 'axisZ' ? calib.hoverUv : null)
   const dirZ = zEnd ? dirFrom(origin0, zEnd) : [0, -1]
+  const yStart = calib.y0Uv || origin0
   const yEnd =
     calib.yUv || (calib.step === 'axisY' ? calib.hoverUv : null)
   const dirY = yEnd
-    ? dirFrom(origin0, yEnd)
-    : dirFrom(origin0, defaultYuv(origin0, dirX))
+    ? dirFrom(yStart, yEnd)
+    : dirFrom(yStart, defaultYuv(origin0, dirX, yStart))
 
-  const uvToXY = (uv) => [(uv[0] * 2 - 1) * aspect, -(uv[1] * 2 - 1)]
+  const { w: planeW, h: planeH } = containPlane(
+    aspect,
+    calib.photoAspect || aspect,
+  )
+  const uvToXY = (uv) => [(uv[0] - 0.5) * planeW, (0.5 - uv[1]) * planeH]
   const o = uvToXY(origin)
   const toVec = (dir) => {
     const p = uvToXY([origin[0] + dir[0], origin[1] + dir[1]])
@@ -224,14 +308,15 @@ export function calibWorldBasis(calib, aspect, viewH) {
   }
 }
 
-/** NDC → UV sur le plan photo z=0 (caméra fov 90° sur l’axe Z). */
-export function ndcToPhotoUv(ndcX, ndcY, aspect, camZ) {
+/** NDC → UV photo (contain, fov 90°). */
+export function ndcToPhotoUv(ndcX, ndcY, viewAspect, camZ, photoAspect) {
   const z = Math.max(0.2, Number(camZ) || 1)
-  const worldX = ndcX * aspect * z
+  const worldX = ndcX * viewAspect * z
   const worldY = ndcY * z
+  const { w: pw, h: ph } = containPlane(viewAspect, photoAspect || viewAspect)
   return [
-    clamp01((worldX / Math.max(aspect, 1e-6) + 1) / 2),
-    clamp01((1 - worldY) / 2),
+    clamp01(worldX / Math.max(pw, 1e-6) + 0.5),
+    clamp01(0.5 - worldY / Math.max(ph, 1e-6)),
   ]
 }
 

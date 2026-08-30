@@ -424,7 +424,7 @@ export const translations = {
       scene: '3D scene',
       importPhoto: 'Add a photo',
       importPhotoHint:
-        'From your computer or phone library — JPEG, PNG, HEIC, WebP… Then place the corner, draw X, Z, Y, and scale.',
+        'From your computer or phone library — JPEG, PNG, HEIC, WebP… Then place the corner, draw X, Z, Y start, Y, and scale.',
       photoLoaded: 'Photo loaded',
       removePhoto: 'Remove photo',
       photoSteporigin: '1 · Place the corner',
@@ -436,10 +436,13 @@ export const translations = {
       photoStepaxisZ: '3 · Draw the vertical',
       photoHelpaxisZ:
         'Pull the blue Z axis upward (a door edge, a corner…). Click when it matches the photo.',
-      photoStepaxisY: '4 · Draw the depth',
+      photoStepaxisY0: '4 · Y starting point',
+      photoHelpaxisY0:
+        'Click a point on the red X axis: that is where Y starts, even if it is not the origin — like in SketchUp.',
+      photoStepaxisY: '5 · Draw depth Y',
       photoHelpaxisY:
-        'Pull the green Y axis along the floor, toward you or along the side wall. Click to lock it.',
-      photoStepscale: '5 · Scale',
+        'Pull the green Y axis from that point along a floor or wall line — it does not have to pass through the origin. Click to lock it.',
+      photoStepscale: '6 · Scale',
       photoHelpscale:
         'Scroll to match the real size. Click or press Confirm when it looks right.',
       photoStepdone: 'Locked in the photo',
@@ -481,7 +484,7 @@ export const translations = {
       hintOrbit: 'Drag to turn · scroll to zoom',
       hintTouch: 'Drag to turn · pinch to zoom',
       hintPhoto:
-        'Corner · X along the skirting · Z · Y · scroll to scale',
+        'Corner · X along the skirting · Z · Y start on X · Y · scroll to scale',
       hintPhotoDone:
         'Left-click: doors & drawers · right-drag: move X/Y · scroll: zoom',
       hintPick: 'Click a face of the piece to add / remove a panel',
@@ -1093,7 +1096,7 @@ export const translations = {
       scene: 'Scène 3D',
       importPhoto: 'Ajouter la photo',
       importPhotoHint:
-        'Depuis le dossier du PC ou la photothèque du téléphone — JPEG, PNG, HEIC, WebP… Puis pose l’angle, trace X, Z, Y, et l’échelle.',
+        'Depuis le dossier du PC ou la photothèque du téléphone — JPEG, PNG, HEIC, WebP… Puis pose l’angle, trace X, Z, le départ de Y, Y, et l’échelle.',
       photoLoaded: 'Photo chargée',
       removePhoto: 'Retirer la photo',
       photoSteporigin: '1 · Pose l’angle',
@@ -1105,10 +1108,13 @@ export const translations = {
       photoStepaxisZ: '3 · Trace la verticale',
       photoHelpaxisZ:
         'Tire l’axe Z (bleu) vers le haut — un montant de porte, un angle de mur… Clique quand ça colle.',
-      photoStepaxisY: '4 · Trace la profondeur',
+      photoStepaxisY0: '4 · Point de départ Y',
+      photoHelpaxisY0:
+        'Clique un point sur l’axe X (rouge) : c’est le début de l’axe Y, même s’il n’est pas à l’origine — comme dans SketchUp.',
+      photoStepaxisY: '5 · Trace la profondeur Y',
       photoHelpaxisY:
-        'Tire l’axe Y (vert) au sol, vers toi ou le long du mur latéral. Clique pour le figer.',
-      photoStepscale: '5 · Échelle',
+        'Tire l’axe Y (vert) depuis ce point, le long d’une ligne du sol ou d’un mur — il n’a pas besoin de passer par l’origine. Clique pour le figer.',
+      photoStepscale: '6 · Échelle',
       photoHelpscale:
         'Molette pour coller à la taille réelle. Clique ou « C’est bon » quand le meuble est à l’échelle.',
       photoStepdone: 'Calé dans la photo',
@@ -1150,7 +1156,7 @@ export const translations = {
       hintOrbit: 'Glisser pour tourner · molette pour zoomer',
       hintTouch: 'Glisser pour tourner · pincer pour zoomer',
       hintPhoto:
-        'Angle · X le long de la plinthe · Z · Y · molette pour l’échelle',
+        'Angle · X le long de la plinthe · Z · Y0 sur X · Y · molette pour l’échelle',
       hintPhotoDone:
         'Clic gauche : portes et tiroirs · clic droit : déplacer X/Y · molette : zoom',
       hintPick: 'Cliquez une face du meuble pour ajouter / retirer un panneau',

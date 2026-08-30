@@ -1,24 +1,41 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useActiveConfigStore } from '../store/ConfigStoreContext.jsx'
 import { useI18n } from '@texte/I18nProvider.jsx'
 import {
   PHOTO_STEPS,
-  uvFromPointer,
+  photoUvFromPointer,
+  photoToViewUv,
+  letterboxRect,
   xPlusUv,
   defaultZuv,
   defaultYuv,
+  snapToXAxis,
+  dirFrom,
 } from '../lib/photoCalib.js'
 
-function pct([u, v]) {
+function pct(photoUv, rect) {
+  if (!photoUv) return { left: '50%', top: '50%' }
+  const [u, v] = photoToViewUv(photoUv, rect)
   return { left: `${u * 100}%`, top: `${v * 100}%` }
 }
 
-function GizmoMark({ uv, pulse }) {
+function linePts(a, b, rect) {
+  const A = photoToViewUv(a, rect)
+  const B = photoToViewUv(b, rect)
+  return {
+    x1: `${A[0] * 100}%`,
+    y1: `${A[1] * 100}%`,
+    x2: `${B[0] * 100}%`,
+    y2: `${B[1] * 100}%`,
+  }
+}
+
+function GizmoMark({ uv, pulse, rect }) {
   if (!uv) return null
   return (
     <div
       className={`photo-calib-gizmo${pulse ? ' is-pulse' : ''}`}
-      style={pct(uv)}
+      style={pct(uv, rect)}
       aria-hidden
     >
       <svg viewBox="0 0 72 72" width="72" height="72">
@@ -50,19 +67,46 @@ export default function PhotoCalibOverlay() {
   const setPhotoCalib = useActiveConfigStore((s) => s.setPhotoCalib)
   const resetPhotoCalib = useActiveConfigStore((s) => s.resetPhotoCalib)
   const step = calib?.step || 'origin'
+  const photoAspect = calib?.photoAspect || 1.5
+  const [rect, setRect] = useState({ x: 0, y: 0, w: 1, h: 1 })
+
+  const syncRect = useCallback(() => {
+    const el = wrapRef.current
+    if (!el) return
+    const r = el.getBoundingClientRect()
+    setRect(letterboxRect(r.width / Math.max(1, r.height), photoAspect))
+  }, [photoAspect])
+
+  useLayoutEffect(() => {
+    syncRect()
+    const el = wrapRef.current
+    if (!el) return undefined
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', syncRect)
+      return () => window.removeEventListener('resize', syncRect)
+    }
+    const ro = new ResizeObserver(syncRect)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [syncRect])
 
   const toUv = useCallback(
     (ev) => {
       const el = wrapRef.current
       if (!el) return [0.5, 0.5]
-      return uvFromPointer(ev, el)
+      return photoUvFromPointer(ev, el, photoAspect)
     },
-    [],
+    [photoAspect],
   )
 
   const onMove = (ev) => {
     if (!calib || step === 'done') return
-    setPhotoCalib({ hoverUv: toUv(ev) })
+    const uv = toUv(ev)
+    if (step === 'axisY0' && calib.originUv) {
+      setPhotoCalib({ hoverUv: snapToXAxis(uv, calib, calib.originUv) })
+      return
+    }
+    setPhotoCalib({ hoverUv: uv })
   }
 
   const onClick = (ev) => {
@@ -78,7 +122,12 @@ export default function PhotoCalibOverlay() {
       return
     }
     if (step === 'axisZ') {
-      setPhotoCalib({ zUv: uv, step: 'axisY' })
+      setPhotoCalib({ zUv: uv, step: 'axisY0' })
+      return
+    }
+    if (step === 'axisY0') {
+      const y0 = snapToXAxis(uv, calib, calib.originUv)
+      setPhotoCalib({ y0Uv: y0, hoverUv: y0, step: 'axisY' })
       return
     }
     if (step === 'axisY') {
@@ -114,6 +163,7 @@ export default function PhotoCalibOverlay() {
         if (prev === 'origin') patch.originUv = null
         if (prev === 'axisX') patch.xUv = null
         if (prev === 'axisZ') patch.zUv = null
+        if (prev === 'axisY0') patch.y0Uv = null
         if (prev === 'axisY') patch.yUv = null
         setPhotoCalib(patch)
       }
@@ -131,21 +181,47 @@ export default function PhotoCalibOverlay() {
   const zPt =
     calib.zUv ||
     (step === 'axisZ' && origin && calib.hoverUv ? calib.hoverUv : null)
+  const dirX = origin ? xPlusUv({ ...calib, xUv: xPt || calib.xUv }, origin) : [1, 0]
+  const y0Pt =
+    calib.y0Uv ||
+    (step === 'axisY0' && origin && calib.hoverUv
+      ? snapToXAxis(calib.hoverUv, { ...calib, xUv: xPt || calib.xUv }, origin)
+      : null)
   const yPt =
     calib.yUv ||
-    (step === 'axisY' && origin && calib.hoverUv ? calib.hoverUv : null)
-  const dirX = origin ? xPlusUv({ ...calib, xUv: xPt || calib.xUv }, origin) : [1, 0]
+    (step === 'axisY' && y0Pt && calib.hoverUv ? calib.hoverUv : null)
   const ghostZ = origin && !calib.zUv ? defaultZuv(origin) : null
+  const ghostYFrom = y0Pt || origin
   const ghostY =
-    origin && !calib.yUv ? defaultYuv(origin, dirX) : null
+    ghostYFrom && !calib.yUv ? defaultYuv(origin || ghostYFrom, dirX, ghostYFrom) : null
+  const yDir = y0Pt && yPt ? dirFrom(y0Pt, yPt) : null
+  const yFromOrigin =
+    origin && yDir
+      ? [origin[0] + yDir[0] * 0.18, origin[1] + yDir[1] * 0.18]
+      : null
+  const xRail =
+    origin && dirX && (step === 'axisY0' || step === 'axisY')
+      ? [
+          [origin[0] - dirX[0] * 1.4, origin[1] - dirX[1] * 1.4],
+          [origin[0] + dirX[0] * 1.4, origin[1] + dirX[1] * 1.4],
+        ]
+      : null
 
   const stepIndex =
-    step === 'done' ? 5 : Math.max(1, PHOTO_STEPS.indexOf(step) + 1)
+    step === 'done' ? PHOTO_STEPS.length : Math.max(1, PHOTO_STEPS.indexOf(step) + 1)
   const hideCursor =
     step === 'origin' ||
     step === 'axisX' ||
     step === 'axisZ' ||
+    step === 'axisY0' ||
     step === 'axisY'
+
+  const frame = {
+    x: `${rect.x * 100}%`,
+    y: `${rect.y * 100}%`,
+    width: `${rect.w * 100}%`,
+    height: `${rect.h * 100}%`,
+  }
 
   return (
     <div
@@ -161,68 +237,55 @@ export default function PhotoCalibOverlay() {
       onContextMenu={(e) => e.preventDefault()}
     >
       <svg className="photo-calib-svg" aria-hidden>
+        <rect className="photo-calib-frame" {...frame} />
         {step === 'origin' && (
           <line
             className="rail-x is-hint"
-            x1={`${calib.xA[0] * 100}%`}
-            y1={`${calib.xA[1] * 100}%`}
-            x2={`${calib.xB[0] * 100}%`}
-            y2={`${calib.xB[1] * 100}%`}
+            {...linePts(calib.xA, calib.xB, rect)}
           />
+        )}
+        {xRail && (
+          <line className="rail-x is-hint" {...linePts(xRail[0], xRail[1], rect)} />
         )}
         {origin && xPt && (
-          <line
-            className="axis-x"
-            x1={`${origin[0] * 100}%`}
-            y1={`${origin[1] * 100}%`}
-            x2={`${xPt[0] * 100}%`}
-            y2={`${xPt[1] * 100}%`}
-          />
+          <line className="axis-x" {...linePts(origin, xPt, rect)} />
         )}
         {ghostZ && origin && (step === 'origin' || step === 'axisX') && (
-          <line
-            className="axis-ghost z"
-            x1={`${origin[0] * 100}%`}
-            y1={`${origin[1] * 100}%`}
-            x2={`${ghostZ[0] * 100}%`}
-            y2={`${ghostZ[1] * 100}%`}
-          />
+          <line className="axis-ghost z" {...linePts(origin, ghostZ, rect)} />
         )}
-        {ghostY && origin && (step === 'origin' || step === 'axisX' || step === 'axisZ') && (
-          <line
-            className="axis-ghost y"
-            x1={`${origin[0] * 100}%`}
-            y1={`${origin[1] * 100}%`}
-            x2={`${ghostY[0] * 100}%`}
-            y2={`${ghostY[1] * 100}%`}
-          />
-        )}
+        {ghostY &&
+          ghostYFrom &&
+          (step === 'origin' ||
+            step === 'axisX' ||
+            step === 'axisZ' ||
+            step === 'axisY0') && (
+            <line className="axis-ghost y" {...linePts(ghostYFrom, ghostY, rect)} />
+          )}
         {origin && zPt && (
-          <line
-            className="axis-z"
-            x1={`${origin[0] * 100}%`}
-            y1={`${origin[1] * 100}%`}
-            x2={`${zPt[0] * 100}%`}
-            y2={`${zPt[1] * 100}%`}
-          />
+          <line className="axis-z" {...linePts(origin, zPt, rect)} />
         )}
-        {origin && yPt && (
-          <line
-            className="axis-y"
-            x1={`${origin[0] * 100}%`}
-            y1={`${origin[1] * 100}%`}
-            x2={`${yPt[0] * 100}%`}
-            y2={`${yPt[1] * 100}%`}
+        {y0Pt && yPt && (
+          <line className="axis-y" {...linePts(y0Pt, yPt, rect)} />
+        )}
+        {yFromOrigin && origin && (
+          <line className="axis-y is-from-origin" {...linePts(origin, yFromOrigin, rect)} />
+        )}
+        {y0Pt && (
+          <circle
+            className="y0-mark"
+            cx={`${photoToViewUv(y0Pt, rect)[0] * 100}%`}
+            cy={`${photoToViewUv(y0Pt, rect)[1] * 100}%`}
+            r="6"
           />
         )}
       </svg>
 
-      {step === 'origin' && <GizmoMark uv={calib.hoverUv} pulse />}
-      {origin && step !== 'origin' && <GizmoMark uv={origin} />}
+      {step === 'origin' && <GizmoMark uv={calib.hoverUv} pulse rect={rect} />}
+      {origin && step !== 'origin' && <GizmoMark uv={origin} rect={rect} />}
 
       <div className="photo-calib-card">
         <div className="photo-calib-progress" aria-hidden>
-          {['1', '2', '3', '4', '·'].map((n, i) => (
+          {['1', '2', '3', '4', '5', '·'].map((n, i) => (
             <span
               key={n + i}
               className={`dot${stepIndex > i ? ' on' : ''}${

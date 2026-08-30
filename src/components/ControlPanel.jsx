@@ -352,9 +352,8 @@ export default function ControlPanel() {
 
   useEffect(() => {
     setSceneSheetOpen(Boolean(openSections.scene))
-    if (!openSections.scene) clearScenePhoto()
     return () => setSceneSheetOpen(false)
-  }, [openSections.scene, setSceneSheetOpen, clearScenePhoto])
+  }, [openSections.scene, setSceneSheetOpen])
 
   if (!unit) return null
 
@@ -1030,7 +1029,7 @@ export default function ControlPanel() {
                   let extras = {}
                   try {
                     const xLine = await detectPhotoXAxis(dataUrl)
-                    extras = { xLine }
+                    extras = { xLine, photoAspect: xLine.aspect }
                   } catch {
                     extras = {}
                   }

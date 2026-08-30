@@ -174,6 +174,20 @@ textarea {
   stroke-width: 3.5;
   stroke-linecap: round;
 }
+.photo-calib-svg .axis-y.is-from-origin {
+  stroke-width: 2.4;
+  opacity: 0.85;
+}
+.photo-calib-svg .photo-calib-frame {
+  fill: none;
+  stroke: rgba(245, 230, 184, 0.16);
+  stroke-width: 1;
+}
+.photo-calib-svg .y0-mark {
+  fill: #3dce6a;
+  stroke: #1a1610;
+  stroke-width: 1.5;
+}
 .photo-calib-svg .axis-ghost {
   stroke-width: 2;
   stroke-dasharray: 5 6;

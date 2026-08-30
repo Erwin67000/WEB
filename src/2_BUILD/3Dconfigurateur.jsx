@@ -23,6 +23,7 @@ import {
   ndcToPhotoUv,
   dirFrom,
   projectDeltaOnXY,
+  containPlane,
 } from '../lib/photoCalib.js'
 import PhotoCalibOverlay from '../components/PhotoCalibOverlay.jsx'
 
@@ -225,18 +226,30 @@ function SceneCaptureBinder() {
   return null
 }
 
-/** Photo sur un plan z=0 (zoom caméra = zoom photo + meuble). */
+/** Photo contain : proportions d’origine, bandes noires autour. */
 function PhotoEnvironment({ url }) {
   const { size } = useThree()
   const texture = useTexture(url)
-  const aspect = size.width / Math.max(1, size.height)
+  const photoAspectStore = useActiveConfigStore((s) => s.photoCalib?.photoAspect)
+  const setPhotoCalib = useActiveConfigStore((s) => s.setPhotoCalib)
+  const viewAspect = size.width / Math.max(1, size.height)
+  const img = texture.image
+  const fromImg =
+    img && img.width && img.height ? img.width / Math.max(1, img.height) : 0
+  const photoAspect = fromImg || photoAspectStore || viewAspect
   useEffect(() => {
     texture.colorSpace = THREE.SRGBColorSpace
     texture.needsUpdate = true
   }, [texture])
+  useEffect(() => {
+    if (!fromImg) return
+    if (Math.abs(fromImg - (Number(photoAspectStore) || 0)) < 0.002) return
+    setPhotoCalib({ photoAspect: fromImg })
+  }, [fromImg, photoAspectStore, setPhotoCalib])
+  const { w, h } = containPlane(viewAspect, photoAspect)
   return (
     <mesh position={[0, 0, -0.02]} renderOrder={-2} raycast={() => {}}>
-      <planeGeometry args={[2 * aspect * 1.04, 2.08]} />
+      <planeGeometry key={`${w.toFixed(4)}x${h.toFixed(4)}`} args={[w, h]} />
       <meshBasicMaterial map={texture} depthWrite={false} />
     </mesh>
   )
@@ -311,7 +324,14 @@ function PhotoDoneHandle() {
         ((ev.clientX - rect.left) / Math.max(rect.width, 1)) * 2 - 1
       const ndcY =
         -((ev.clientY - rect.top) / Math.max(rect.height, 1)) * 2 + 1
-      return ndcToPhotoUv(ndcX, ndcY, aspect, camera.position.z)
+      const photoAspect = storeApi.getState().photoCalib?.photoAspect
+      return ndcToPhotoUv(
+        ndcX,
+        ndcY,
+        aspect,
+        camera.position.z,
+        photoAspect,
+      )
     }
 
     const onWheel = (ev) => {
@@ -342,7 +362,8 @@ function PhotoDoneHandle() {
       const dv = uv[1] - dragRef.current.uv[1]
       const origin = c.originUv
       const dirX = origin && c.xUv ? dirFrom(origin, c.xUv) : [1, 0]
-      const dirY = origin && c.yUv ? dirFrom(origin, c.yUv) : [0, 1]
+      const yStart = c.y0Uv || origin
+      const dirY = yStart && c.yUv ? dirFrom(yStart, c.yUv) : [0, 1]
       const [su, sv] = projectDeltaOnXY(du, dv, dirX, dirY)
       storeApi.getState().setPhotoCalib({
         shiftU: dragRef.current.su + su,

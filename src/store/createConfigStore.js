@@ -24,6 +24,7 @@ import {
   SEGMENTED_FACES,
 } from '../1_STRUCTURE/02_agencement/agencement.js'
 import { Meuble } from '../1_STRUCTURE/01_meuble3D/ossature.js'
+import { emptyPhotoCalib } from '../lib/photoCalib.js'
 import {
   PRIX,
   TVA,
@@ -228,7 +229,7 @@ export function createConfigStore(opts = {}) {
     photoPose: { xMm: 0, yMm: 0, rotZ: 0, scale: 1 },
     photoCamera: null,
     photoRoom: null,
-    /** Calage : origine → X → Z → Y + molette. */
+    /** Calage : origine → X → Z → Y0 (sur X) → Y + molette. Conservé hors Scène. */
     photoCalib: null,
     sunEnabled: false,
     sunIntensity: 2.5,
@@ -722,8 +723,12 @@ export function createConfigStore(opts = {}) {
     },
 
     setScenePhoto: (dataUrl, name = '', extras = {}) => {
-      const xA = extras.xLine?.a || [0.07, 0.7]
-      const xB = extras.xLine?.b || [0.93, 0.7]
+      const nextCalib = extras.calib || emptyPhotoCalib(extras.xLine)
+      if (Number(extras.photoAspect) > 0.05) {
+        nextCalib.photoAspect = Number(extras.photoAspect)
+      } else if (Number(extras.xLine?.aspect) > 0.05) {
+        nextCalib.photoAspect = Number(extras.xLine.aspect)
+      }
       set({
         scenePhotoDataUrl: dataUrl || null,
         scenePhotoName: name || '',
@@ -732,22 +737,7 @@ export function createConfigStore(opts = {}) {
         photoPose: { xMm: 0, yMm: 0, rotZ: 0, scale: 1 },
         photoCamera: null,
         photoRoom: null,
-        photoCalib: dataUrl
-          ? extras.calib || {
-              step: 'origin',
-              xA,
-              xB,
-              originUv: null,
-              xUv: null,
-              zUv: null,
-              yUv: null,
-              hoverUv: xA,
-              scale: 1,
-              shiftU: 0,
-              shiftV: 0,
-              zoom: 1,
-            }
-          : null,
+        photoCalib: dataUrl ? nextCalib : null,
         dirty: true,
       })
     },
@@ -799,8 +789,9 @@ export function createConfigStore(opts = {}) {
             originUv: null,
             xUv: null,
             zUv: null,
+            y0Uv: null,
             yUv: null,
-            hoverUv: null,
+            hoverUv: prev.xA || null,
             scale: 1,
             shiftU: 0,
             shiftV: 0,
