@@ -273,6 +273,14 @@ function midpoint(ln) {
  * Résout la caméra. Unités monde = mètres, origine 3D = coin cliqué.
  */
 export function solvePhotoMatch(calib) {
+  try {
+    return solvePhotoMatchUnsafe(calib)
+  } catch {
+    return null
+  }
+}
+
+function solvePhotoMatchUnsafe(calib) {
   if (!calib) return null
   const lines = calib.lines
   const hasX = axisReady(lines, 'x')
@@ -287,7 +295,7 @@ export function solvePhotoMatch(calib) {
   if (hasZ && !vpZ) return null
   if (hasY && !vpY) return null
 
-  const finite = [vpX, vpZ, vpY].filter((v) => !v.infinite && v.uv)
+  const finite = [vpX, vpZ, vpY].filter((v) => v && !v.infinite && v.uv)
   let pp = [0.5, 0.5]
   if (finite.length === 3) {
     const A = uvToXY(vpX.uv, aspect)
@@ -312,6 +320,7 @@ export function solvePhotoMatch(calib) {
   ]
   let f = null
   for (const [a, b] of pairs) {
+    if (!a || !b) continue
     const cand = focalFromPair(a, b, aspect, pp)
     if (cand && cand > 0.15 && cand < 12) {
       f = cand
