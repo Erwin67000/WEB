@@ -638,6 +638,7 @@ a.site-brand {
   align-items: center;
   justify-content: space-between;
   gap: 0.4rem;
+  flex-wrap: wrap;
 }
 
 .scene-photo-name {

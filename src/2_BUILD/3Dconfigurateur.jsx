@@ -12,16 +12,11 @@ import OssatureView from '../1_STRUCTURE/01_meuble3D/OssatureView.jsx'
 import AgencementView from '../1_STRUCTURE/02_agencement/ModuleMesh.jsx'
 import FacePickPlanes from '../1_STRUCTURE/02_agencement/FacePickPlanes.jsx'
 import { ENVIRONMENTS } from '../1_STRUCTURE/00_matrice/matrice_configuration.js'
-import {
-  useActiveConfigStore,
-  useActiveConfigStoreApi,
-} from '../store/ConfigStoreContext.jsx'
+import { useActiveConfigStore } from '../store/ConfigStoreContext.jsx'
 import { useI18n } from '@texte/I18nProvider.jsx'
 import { bindSceneCapture } from '../lib/sceneCapture.js'
-import {
-  DEFAULT_PHOTO_CAMERA,
-  solvePhotoCamera,
-} from '../lib/photoRoomCamera.js'
+import { calibWorldBasis } from '../lib/photoCalib.js'
+import PhotoCalibOverlay from '../components/PhotoCalibOverlay.jsx'
 
 const SCALE = 0.001
 
@@ -36,6 +31,44 @@ export const DEFAULT_CAMERA_TARGET = [0.35, 0.45, -0.25]
  * Apparition légère : scale + légère montée (meubel 1 ou meuble ajouté).
  * key=unit.id force un rejoue de l’anim à chaque nouvel id.
  */
+function PhotoGhost({ active, children }) {
+  const ref = useRef()
+  useLayoutEffect(() => {
+    const root = ref.current
+    if (!root || !active) return
+    const backups = []
+    root.traverse((obj) => {
+      const mats = obj.material
+      if (!mats) return
+      const list = Array.isArray(mats) ? mats : [mats]
+      list.forEach((m) => {
+        backups.push({
+          m,
+          o: m.opacity,
+          t: m.transparent,
+          w: m.wireframe,
+          dw: m.depthWrite,
+        })
+        m.transparent = true
+        m.opacity =
+          obj.isLine || obj.isLineSegments || obj.isLineSegments2 ? 0.9 : 0.16
+        if ('wireframe' in m && obj.isMesh) m.wireframe = true
+        m.depthWrite = false
+        m.needsUpdate = true
+      })
+    })
+    return () => {
+      backups.forEach(({ m, o, t, w, dw }) => {
+        m.opacity = o
+        m.transparent = t
+        if ('wireframe' in m) m.wireframe = w
+        m.depthWrite = dw
+      })
+    }
+  }, [active])
+  return <group ref={ref}>{children}</group>
+}
+
 function UnitGroup({
   unit,
   selected,
@@ -43,6 +76,7 @@ function UnitGroup({
   pickMode,
   onPickFace,
   photoMode = false,
+  ghost = false,
 }) {
   const groupRef = useRef()
   const t0 = useRef(performance.now())
@@ -78,16 +112,16 @@ function UnitGroup({
   ]
   const rotY = (unit.rotationZ || 0) * (Math.PI / 180)
 
-  return (
-    <group ref={groupRef} position={pos}>
+  const body = (
+    <>
       <OssatureView
         dims={unit.dims}
         woodFinish={unit.woodFinish}
         ossatureFinish={unit.ossatureFinish}
-        wireframe={wireframe}
+        wireframe={wireframe || ghost}
         rotationZ={rotY}
-        selected={selected}
-        showAxes={photoMode}
+        selected={selected && !photoMode}
+        showAxes={false}
       />
       <group rotation={[0, rotY, 0]}>
         <AgencementView
@@ -118,6 +152,12 @@ function UnitGroup({
           />
         </group>
       )}
+    </>
+  )
+
+  return (
+    <group ref={groupRef} position={pos}>
+      {ghost ? <PhotoGhost active>{body}</PhotoGhost> : body}
     </group>
   )
 }
@@ -194,16 +234,11 @@ function PhotoEnvironment({ url }) {
 }
 
 /**
- * Caméra figée (vue photo).
- * Si les deux murs ont été lus dans la photo : origine au coin,
- * +X le long du mur du fond, +Y meuble (profondeur) le long du second mur.
- * En quittant la rubrique on rétablit la caméra d’orbit.
+ * Caméra photo : vue de face, fov 90°, le plan z=0 = l’image.
+ * L’utilisateur trace X/Y/Z dans la photo ; le meuble est collé à ce repère.
  */
 function PhotoCameraLock() {
-  const { camera, controls, size } = useThree()
-  const storeApi = useActiveConfigStoreApi()
-  const scenePhotoDataUrl = useActiveConfigStore((s) => s.scenePhotoDataUrl)
-  const photoRoom = useActiveConfigStore((s) => s.photoRoom)
+  const { camera, controls } = useThree()
 
   useLayoutEffect(() => {
     const prev = {
@@ -214,29 +249,23 @@ function PhotoCameraLock() {
         ? controls.target.toArray()
         : [...DEFAULT_CAMERA_TARGET],
     }
-
-    const solved =
-      photoRoom && size?.width && size?.height
-        ? solvePhotoCamera(photoRoom, size.width, size.height)
-        : null
-    const saved = solved || storeApi.getState().photoCamera || DEFAULT_PHOTO_CAMERA
-    const pos = saved.pos || DEFAULT_PHOTO_CAMERA.pos
-    const target = saved.target || DEFAULT_PHOTO_CAMERA.target
-    const fov = Number(saved.fov) || DEFAULT_PHOTO_CAMERA.fov
-
     camera.up.set(0, 1, 0)
-    camera.position.set(pos[0], pos[1], pos[2])
-    camera.lookAt(target[0], target[1], target[2])
-    camera.fov = fov
+    camera.position.set(0, 0, 1)
+    camera.lookAt(0, 0, 0)
+    camera.fov = 90
     camera.updateProjectionMatrix()
     if (controls?.target) {
-      controls.target.set(target[0], target[1], target[2])
+      controls.target.set(0, 0, 0)
       controls.update?.()
     }
-
     return () => {
       camera.position.set(prev.pos[0], prev.pos[1], prev.pos[2])
-      camera.quaternion.set(prev.quat[0], prev.quat[1], prev.quat[2], prev.quat[3])
+      camera.quaternion.set(
+        prev.quat[0],
+        prev.quat[1],
+        prev.quat[2],
+        prev.quat[3],
+      )
       camera.fov = prev.fov
       camera.updateProjectionMatrix()
       if (controls?.target) {
@@ -244,120 +273,42 @@ function PhotoCameraLock() {
         controls.update?.()
       }
     }
-  }, [
-    camera,
-    controls,
-    storeApi,
-    scenePhotoDataUrl,
-    photoRoom,
-    size.width,
-    size.height,
-  ])
+  }, [camera, controls])
 
   return null
 }
 
-/**
- * Mini-environnement photo : plan Z=0 figé.
- * Clic gauche = orbit Z · clic droit = déplacer · molette = échelle.
- */
-function PhotoFloorHandle() {
-  const storeApi = useActiveConfigStoreApi()
-  const { gl, camera } = useThree()
-  const plane = useMemo(() => new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), [])
-  const raycaster = useMemo(() => new THREE.Raycaster(), [])
-  const ndc = useMemo(() => new THREE.Vector2(), [])
-  const hit = useMemo(() => new THREE.Vector3(), [])
-  const modeRef = useRef(null)
-  const lastRef = useRef(null)
-  const angle0Ref = useRef(0)
-  const rot0Ref = useRef(0)
-
-  useEffect(() => {
-    const el = gl.domElement
-
-    const intersectFloor = (ev) => {
-      const rect = el.getBoundingClientRect()
-      ndc.x = ((ev.clientX - rect.left) / Math.max(rect.width, 1)) * 2 - 1
-      ndc.y = -((ev.clientY - rect.top) / Math.max(rect.height, 1)) * 2 + 1
-      raycaster.setFromCamera(ndc, camera)
-      if (!raycaster.ray.intersectPlane(plane, hit)) return null
-      return hit.clone()
+function PhotoFurnitureFrame({ children }) {
+  const calib = useActiveConfigStore((s) => s.photoCalib)
+  const { size } = useThree()
+  const aspect = size.width / Math.max(1, size.height)
+  const basis = useMemo(
+    () => (calib ? calibWorldBasis(calib, aspect, size.height) : null),
+    [calib, aspect, size.height],
+  )
+  const groupRef = useRef()
+  useLayoutEffect(() => {
+    const g = groupRef.current
+    if (!g) return
+    if (!basis) {
+      g.visible = false
+      return
     }
-
-    const onWheel = (ev) => {
-      ev.preventDefault()
-      const pose = storeApi.getState().photoPose || { scale: 1 }
-      const next = pose.scale * (ev.deltaY > 0 ? 0.92 : 1.08)
-      storeApi.getState().setPhotoPose({ scale: next })
-    }
-
-    const onDown = (ev) => {
-      const p = intersectFloor(ev)
-      if (!p) return
-      const move = ev.button === 2 || ev.button === 1
-      modeRef.current = move ? 'move' : 'rotate'
-      lastRef.current = p
-      const pose = storeApi.getState().photoPose || { xMm: 0, yMm: 0, rotZ: 0 }
-      const cx = pose.xMm * SCALE
-      const cz = -pose.yMm * SCALE
-      angle0Ref.current = Math.atan2(p.z - cz, p.x - cx)
-      rot0Ref.current = pose.rotZ || 0
-      el.setPointerCapture?.(ev.pointerId)
-    }
-
-    const onMove = (ev) => {
-      if (!modeRef.current || !lastRef.current) return
-      const p = intersectFloor(ev)
-      if (!p) return
-      const pose = storeApi.getState().photoPose || {
-        xMm: 0,
-        yMm: 0,
-        rotZ: 0,
-        scale: 1,
-      }
-      if (modeRef.current === 'move') {
-        const dx = p.x - lastRef.current.x
-        const dz = p.z - lastRef.current.z
-        storeApi.getState().setPhotoPose({
-          xMm: pose.xMm + dx / SCALE,
-          yMm: pose.yMm - dz / SCALE,
-        })
-        lastRef.current = p
-      } else {
-        const cx = pose.xMm * SCALE
-        const cz = -pose.yMm * SCALE
-        const a = Math.atan2(p.z - cz, p.x - cx)
-        const deg = ((a - angle0Ref.current) * 180) / Math.PI
-        storeApi.getState().setPhotoPose({ rotZ: rot0Ref.current - deg })
-      }
-    }
-
-    const onUp = (ev) => {
-      modeRef.current = null
-      lastRef.current = null
-      el.releasePointerCapture?.(ev.pointerId)
-    }
-
-    const onContext = (ev) => ev.preventDefault()
-
-    el.addEventListener('wheel', onWheel, { passive: false })
-    el.addEventListener('pointerdown', onDown)
-    el.addEventListener('pointermove', onMove)
-    el.addEventListener('pointerup', onUp)
-    el.addEventListener('pointercancel', onUp)
-    el.addEventListener('contextmenu', onContext)
-    return () => {
-      el.removeEventListener('wheel', onWheel)
-      el.removeEventListener('pointerdown', onDown)
-      el.removeEventListener('pointermove', onMove)
-      el.removeEventListener('pointerup', onUp)
-      el.removeEventListener('pointercancel', onUp)
-      el.removeEventListener('contextmenu', onContext)
-    }
-  }, [gl, camera, storeApi, plane, raycaster, ndc, hit])
-
-  return null
+    g.visible = true
+    const x = new THREE.Vector3(...basis.axisX)
+    const y = new THREE.Vector3(...basis.axisY)
+    const z = new THREE.Vector3(...basis.axisZ)
+    if (x.lengthSq() < 1e-8) x.set(1, 0, 0)
+    if (y.lengthSq() < 1e-8) y.set(0, 1, 0)
+    if (z.lengthSq() < 1e-8) z.set(0, 0, 1)
+    const m = new THREE.Matrix4()
+    m.makeBasis(x, y, z)
+    m.setPosition(basis.origin[0], basis.origin[1], 0)
+    g.matrixAutoUpdate = false
+    g.matrix.copy(m)
+    g.matrixWorldNeedsUpdate = true
+  }, [basis])
+  return <group ref={groupRef}>{children}</group>
 }
 
 function EnvironmentScene({ env }) {
@@ -428,7 +379,7 @@ function SceneContent({ orbitOnly = false, ivory = false }) {
   const environmentId = useActiveConfigStore((s) => s.environmentId)
   const scenePhotoDataUrl = useActiveConfigStore((s) => s.scenePhotoDataUrl)
   const sceneSheetOpen = useActiveConfigStore((s) => s.sceneSheetOpen)
-  const photoPose = useActiveConfigStore((s) => s.photoPose)
+  const photoCalib = useActiveConfigStore((s) => s.photoCalib)
   const sunEnabled = useActiveConfigStore((s) => s.sunEnabled)
   const sunIntensity = useActiveConfigStore((s) => s.sunIntensity)
   const showGridStore = useActiveConfigStore((s) => s.showGrid)
@@ -523,43 +474,47 @@ function SceneContent({ orbitOnly = false, ivory = false }) {
       {sunEnabled && !ivoryLook && !photoMode && <ShadowFloor />}
 
       {photoMode && <PhotoCameraLock />}
-      {photoMode && <PhotoFloorHandle />}
 
-      <group
-        position={
-          photoMode
-            ? [
-                (photoPose?.xMm || 0) * SCALE,
-                0,
-                -(photoPose?.yMm || 0) * SCALE,
-              ]
-            : [0, 0, 0]
-        }
-        rotation={
-          photoMode ? [0, ((photoPose?.rotZ || 0) * Math.PI) / 180, 0] : [0, 0, 0]
-        }
-        scale={photoMode ? photoPose?.scale || 1 : 1}
-      >
-        {units.map((u) => (
-          <UnitGroup
-            key={u.id}
-            unit={u}
-            selected={u.id === activeUnitId}
-            wireframe={wireframe}
-            pickMode={panneauPickMode && !photoMode}
-            onPickFace={onPickFace}
-            photoMode={photoMode}
-          />
-        ))}
-      </group>
+      {photoMode ? (
+        <PhotoFurnitureFrame>
+          {units.map((u) => (
+            <UnitGroup
+              key={u.id}
+              unit={u}
+              selected={u.id === activeUnitId}
+              wireframe={wireframe}
+              pickMode={false}
+              onPickFace={onPickFace}
+              photoMode
+              ghost={photoCalib?.step !== 'done'}
+            />
+          ))}
+        </PhotoFurnitureFrame>
+      ) : (
+        <group>
+          {units.map((u) => (
+            <UnitGroup
+              key={u.id}
+              unit={u}
+              selected={u.id === activeUnitId}
+              wireframe={wireframe}
+              pickMode={panneauPickMode}
+              onPickFace={onPickFace}
+              photoMode={false}
+            />
+          ))}
+        </group>
+      )}
 
-      <ContactShadows
-        position={[0, 0.001, 0]}
-        opacity={sunEnabled ? 0.22 : 0.35}
-        scale={12}
-        blur={2.5}
-        far={4}
-      />
+      {!photoMode && (
+        <ContactShadows
+          position={[0, 0.001, 0]}
+          opacity={sunEnabled ? 0.22 : 0.35}
+          scale={12}
+          blur={2.5}
+          far={4}
+        />
+      )}
 
       <OrbitControls
         makeDefault
@@ -624,15 +579,14 @@ function ViewportHint({ pickMode, photoMode }) {
   const touch =
     typeof window !== 'undefined' &&
     window.matchMedia?.('(pointer: coarse)').matches
+  if (photoMode) return null
   return (
     <div className="viewport-hint">
-      {photoMode
-        ? t('config.hintPhoto')
-        : pickMode
-          ? t('config.hintPick')
-          : touch
-            ? t('config.hintTouch')
-            : t('config.hintOrbit')}
+      {pickMode
+        ? t('config.hintPick')
+        : touch
+          ? t('config.hintTouch')
+          : t('config.hintOrbit')}
     </div>
   )
 }
@@ -684,6 +638,7 @@ export default function Configurateur3D({ orbitOnly = false, ivory = false }) {
       {!orbitOnly && (
         <ViewportHint pickMode={panneauPickMode} photoMode={photoMode} />
       )}
+      {photoMode && <PhotoCalibOverlay />}
     </div>
   )
 }

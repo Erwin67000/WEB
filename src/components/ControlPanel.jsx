@@ -38,7 +38,7 @@ import { persistDraft } from '../lib/checkoutDraft.js'
 import { STRIPE_ENABLED } from '../lib/payments.js'
 import { writeShopPanelColor } from '../lib/shopPanelColor.js'
 import { labelFromUnits } from '../lib/checkout.js'
-import { estimatePhotoRoom } from '../lib/photoRoomCamera.js'
+import { detectPhotoXAxis } from '../lib/photoCalib.js'
 import { downloadScenePhoto } from '../lib/sceneCapture.js'
 
 /** Labels courts pour chips des panneaux actifs */
@@ -296,6 +296,7 @@ export default function ControlPanel() {
   const setSceneSheetOpen = useActiveConfigStore((s) => s.setSceneSheetOpen)
   const setScenePhoto = useActiveConfigStore((s) => s.setScenePhoto)
   const clearScenePhoto = useActiveConfigStore((s) => s.clearScenePhoto)
+  const resetPhotoCalib = useActiveConfigStore((s) => s.resetPhotoCalib)
   const setSun = useActiveConfigStore((s) => s.setSun)
   const setSunIntensity = useActiveConfigStore((s) => s.setSunIntensity)
   const setWireframe = useActiveConfigStore((s) => s.setWireframe)
@@ -1028,19 +1029,12 @@ export default function ControlPanel() {
                     if (!dataUrl) return
                     let extras = {}
                     try {
-                      const estimated = await estimatePhotoRoom(dataUrl)
-                      extras = {
-                        camera: estimated.camera,
-                        room: estimated.axes,
-                      }
-                      setScenePhoto(
-                        estimated.dataUrl || dataUrl,
-                        file.name,
-                        extras,
-                      )
+                      const xLine = await detectPhotoXAxis(dataUrl)
+                      extras = { xLine }
                     } catch {
-                      setScenePhoto(dataUrl, file.name, extras)
+                      extras = {}
                     }
+                    setScenePhoto(dataUrl, file.name, extras)
                   }
                   reader.readAsDataURL(file)
                 }}
@@ -1060,6 +1054,13 @@ export default function ControlPanel() {
                   <span className="scene-photo-name">
                     {scenePhotoName || t('config.photoLoaded')}
                   </span>
+                  <button
+                    type="button"
+                    className="btn-sm"
+                    onClick={() => resetPhotoCalib()}
+                  >
+                    {t('config.photoRestart')}
+                  </button>
                   <button
                     type="button"
                     className="btn-sm"

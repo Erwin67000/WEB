@@ -424,9 +424,26 @@ export const translations = {
       scene: '3D scene',
       importPhoto: 'Import a photo (JPEG / PNG)',
       importPhotoHint:
-        'The furniture is the current configurator model. Floor = Z, back wall = X (length), depth = Y. Left-drag rotates, right-drag moves, scroll scales. Leave this tab to return to the free 3D view.',
+        '3 clicks to place the piece in your photo: corner, vertical, depth — then scroll to scale.',
       photoLoaded: 'Photo loaded',
       removePhoto: 'Remove photo',
+      photoSteporigin: '1 · Place the corner',
+      photoHelporigin:
+        'The cursor slides along the back wall, on the floor. Click where the corner of the piece should sit.',
+      photoStepaxisZ: '2 · Draw the vertical',
+      photoHelpaxisZ:
+        'Pull the blue Z axis upward (a door edge, a corner…). Click when it matches the photo.',
+      photoStepaxisY: '3 · Draw the depth',
+      photoHelpaxisY:
+        'Pull the green Y axis along the floor, toward you or along the side wall. Click to lock it.',
+      photoStepscale: '4 · Scale',
+      photoHelpscale:
+        'Scroll to match the real size. Click or press Confirm when it looks right.',
+      photoStepdone: 'Locked in the photo',
+      photoHelpdone:
+        'Scroll still resizes. Restart to place again.',
+      photoRestart: 'Restart',
+      photoConfirm: 'Looks good',
       downloadView: 'Download the view',
       downloadViewBtn: 'Download',
       environment: 'Environment',
@@ -461,7 +478,7 @@ export const translations = {
       hintOrbit: 'Drag to turn · scroll to zoom',
       hintTouch: 'Drag to turn · pinch to zoom',
       hintPhoto:
-        'Floor Z = 0 · X along the back wall · Y depth · left-drag to rotate · right-drag to move · scroll to scale',
+        'Click the corner · draw Z · draw Y · scroll to scale',
       hintPick: 'Click a face of the piece to add / remove a panel',
       drawerTooShallow:
         'Depth below the limit for a drawer: {min} cm',
@@ -1071,9 +1088,26 @@ export const translations = {
       scene: 'Scène 3D',
       importPhoto: 'Importer une photo (JPEG / PNG)',
       importPhotoHint:
-        'Le meuble est la géométrie du configurateur. Sol = Z, mur du fond = X (longueur), profondeur = Y. Clic gauche pour tourner, clic droit pour déplacer, molette pour l’échelle. En changer de rubrique vous ramène à la vue 3D libre.',
+        '3 clics pour caler le meuble dans la photo : l’angle, la verticale, la profondeur — puis la molette pour l’échelle.',
       photoLoaded: 'Photo chargée',
       removePhoto: 'Retirer la photo',
+      photoSteporigin: '1 · Pose l’angle',
+      photoHelporigin:
+        'Le curseur glisse au sol, contre le mur du fond. Clique où doit se trouver l’angle du meuble.',
+      photoStepaxisZ: '2 · Trace la verticale',
+      photoHelpaxisZ:
+        'Tire l’axe Z (bleu) vers le haut — un montant de porte, un angle de mur… Clique quand ça colle.',
+      photoStepaxisY: '3 · Trace la profondeur',
+      photoHelpaxisY:
+        'Tire l’axe Y (vert) au sol, vers toi ou le long du mur latéral. Clique pour le figer.',
+      photoStepscale: '4 · Échelle',
+      photoHelpscale:
+        'Molette pour coller à la taille réelle. Clique ou « C’est bon » quand le meuble est à l’échelle.',
+      photoStepdone: 'Calé dans la photo',
+      photoHelpdone:
+        'La molette ajuste encore l’échelle. Recommencer pour replacer.',
+      photoRestart: 'Recommencer',
+      photoConfirm: 'C’est bon',
       downloadView: 'Télécharger la vue',
       downloadViewBtn: 'Télécharger',
       environment: 'Environnement',
@@ -1108,7 +1142,7 @@ export const translations = {
       hintOrbit: 'Glisser pour tourner · molette pour zoomer',
       hintTouch: 'Glisser pour tourner · pincer pour zoomer',
       hintPhoto:
-        'Sol Z = 0 · X le long du mur du fond · Y profondeur · clic gauche pour tourner · clic droit pour déplacer · molette pour l’échelle',
+        'Clic sur l’angle · trace Z · trace Y · molette pour l’échelle',
       hintPick: 'Cliquez une face du meuble pour ajouter / retirer un panneau',
       drawerTooShallow:
         'Profondeur inférieure à la limite pour ajout de tiroir : {min} cm',

@@ -227,11 +227,9 @@ export function createConfigStore(opts = {}) {
     /** Pose du meuble dans la photo : X/Y sol, rot. Z, échelle apparente. */
     photoPose: { xMm: 0, yMm: 0, rotZ: 0, scale: 1 },
     photoCamera: null,
-    /**
-     * Axes pièce extraits de la photo (UV, Y vers le bas) :
-     * X = mur du fond (longueur), Y = mur de profondeur.
-     */
     photoRoom: null,
+    /** Calage manuel 3 clics (origine → Z → Y) + molette. */
+    photoCalib: null,
     sunEnabled: false,
     sunIntensity: 2.5,
     showGrid: false,
@@ -724,14 +722,28 @@ export function createConfigStore(opts = {}) {
     },
 
     setScenePhoto: (dataUrl, name = '', extras = {}) => {
+      const xA = extras.xLine?.a || [0.07, 0.7]
+      const xB = extras.xLine?.b || [0.93, 0.7]
       set({
         scenePhotoDataUrl: dataUrl || null,
         scenePhotoName: name || '',
         environmentId: dataUrl ? 'none' : get().environmentId,
         showGrid: dataUrl ? false : get().showGrid,
         photoPose: { xMm: 0, yMm: 0, rotZ: 0, scale: 1 },
-        photoCamera: extras.camera || null,
-        photoRoom: extras.room || null,
+        photoCamera: null,
+        photoRoom: null,
+        photoCalib: dataUrl
+          ? extras.calib || {
+              step: 'origin',
+              xA,
+              xB,
+              originUv: null,
+              zUv: null,
+              yUv: null,
+              hoverUv: xA,
+              scale: 1,
+            }
+          : null,
         dirty: true,
       })
     },
@@ -743,6 +755,7 @@ export function createConfigStore(opts = {}) {
         photoPose: { xMm: 0, yMm: 0, rotZ: 0, scale: 1 },
         photoCamera: null,
         photoRoom: null,
+        photoCalib: null,
         dirty: true,
       }),
 
@@ -763,6 +776,30 @@ export function createConfigStore(opts = {}) {
       }),
 
     setPhotoCamera: (photoCamera) => set({ photoCamera }),
+
+    setPhotoCalib: (patch) =>
+      set((s) => {
+        const prev = s.photoCalib
+        if (!prev) return {}
+        return { photoCalib: { ...prev, ...patch } }
+      }),
+
+    resetPhotoCalib: () =>
+      set((s) => {
+        const prev = s.photoCalib
+        if (!prev) return {}
+        return {
+          photoCalib: {
+            ...prev,
+            step: 'origin',
+            originUv: null,
+            zUv: null,
+            yUv: null,
+            hoverUv: prev.xA,
+            scale: 1,
+          },
+        }
+      }),
 
     setSun: (sunEnabled) => set({ sunEnabled, dirty: true }),
     setSunIntensity: (sunIntensity) => set({ sunIntensity, dirty: true }),
