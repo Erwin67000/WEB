@@ -12,10 +12,18 @@ import OssatureView from '../1_STRUCTURE/01_meuble3D/OssatureView.jsx'
 import AgencementView from '../1_STRUCTURE/02_agencement/ModuleMesh.jsx'
 import FacePickPlanes from '../1_STRUCTURE/02_agencement/FacePickPlanes.jsx'
 import { ENVIRONMENTS } from '../1_STRUCTURE/00_matrice/matrice_configuration.js'
-import { useActiveConfigStore } from '../store/ConfigStoreContext.jsx'
+import {
+  useActiveConfigStore,
+  useActiveConfigStoreApi,
+} from '../store/ConfigStoreContext.jsx'
 import { useI18n } from '@texte/I18nProvider.jsx'
 import { bindSceneCapture } from '../lib/sceneCapture.js'
-import { calibWorldBasis } from '../lib/photoCalib.js'
+import {
+  calibWorldBasis,
+  ndcToPhotoUv,
+  dirFrom,
+  projectDeltaOnXY,
+} from '../lib/photoCalib.js'
 import PhotoCalibOverlay from '../components/PhotoCalibOverlay.jsx'
 
 const SCALE = 0.001
@@ -217,28 +225,29 @@ function SceneCaptureBinder() {
   return null
 }
 
-/** Photo de pièce en fond ; le meuble reste la géométrie du configurateur. */
+/** Photo sur un plan z=0 (zoom caméra = zoom photo + meuble). */
 function PhotoEnvironment({ url }) {
-  const { scene } = useThree()
+  const { size } = useThree()
   const texture = useTexture(url)
+  const aspect = size.width / Math.max(1, size.height)
   useEffect(() => {
     texture.colorSpace = THREE.SRGBColorSpace
     texture.needsUpdate = true
-    const prev = scene.background
-    scene.background = texture
-    return () => {
-      scene.background = prev
-    }
-  }, [scene, texture])
-  return <ShadowFloor />
+  }, [texture])
+  return (
+    <mesh position={[0, 0, -0.02]} renderOrder={-2} raycast={() => {}}>
+      <planeGeometry args={[2 * aspect * 1.04, 2.08]} />
+      <meshBasicMaterial map={texture} depthWrite={false} />
+    </mesh>
+  )
 }
 
 /**
- * Caméra photo : vue de face, fov 90°, le plan z=0 = l’image.
- * L’utilisateur trace X/Y/Z dans la photo ; le meuble est collé à ce repère.
+ * Caméra photo : fov 90°, plan z=0 = l’image. zoom via photoCalib.zoom.
  */
 function PhotoCameraLock() {
   const { camera, controls } = useThree()
+  const zoom = useActiveConfigStore((s) => s.photoCalib?.zoom || 1)
 
   useLayoutEffect(() => {
     const prev = {
@@ -250,9 +259,8 @@ function PhotoCameraLock() {
         : [...DEFAULT_CAMERA_TARGET],
     }
     camera.up.set(0, 1, 0)
-    camera.position.set(0, 0, 1)
-    camera.lookAt(0, 0, 0)
     camera.fov = 90
+    camera.lookAt(0, 0, 0)
     camera.updateProjectionMatrix()
     if (controls?.target) {
       controls.target.set(0, 0, 0)
@@ -274,6 +282,96 @@ function PhotoCameraLock() {
       }
     }
   }, [camera, controls])
+
+  useLayoutEffect(() => {
+    const z = 1 / Math.max(0.4, Math.min(4, Number(zoom) || 1))
+    camera.position.set(0, 0, z)
+    camera.lookAt(0, 0, 0)
+    camera.fov = 90
+    camera.updateProjectionMatrix()
+  }, [camera, zoom])
+
+  return null
+}
+
+function PhotoDoneHandle() {
+  const step = useActiveConfigStore((s) => s.photoCalib?.step)
+  const storeApi = useActiveConfigStoreApi()
+  const { gl, camera, size } = useThree()
+  const dragRef = useRef(null)
+
+  useEffect(() => {
+    if (step !== 'done') return undefined
+    const el = gl.domElement
+    const aspect = size.width / Math.max(1, size.height)
+
+    const uvOf = (ev) => {
+      const rect = el.getBoundingClientRect()
+      const ndcX =
+        ((ev.clientX - rect.left) / Math.max(rect.width, 1)) * 2 - 1
+      const ndcY =
+        -((ev.clientY - rect.top) / Math.max(rect.height, 1)) * 2 + 1
+      return ndcToPhotoUv(ndcX, ndcY, aspect, camera.position.z)
+    }
+
+    const onWheel = (ev) => {
+      ev.preventDefault()
+      const prev = Number(storeApi.getState().photoCalib?.zoom) || 1
+      const next = Math.min(4, Math.max(0.4, prev * (ev.deltaY > 0 ? 0.92 : 1.08)))
+      storeApi.getState().setPhotoCalib({ zoom: next })
+    }
+
+    const onDown = (ev) => {
+      if (ev.button !== 2) return
+      ev.preventDefault()
+      ev.stopImmediatePropagation()
+      const c = storeApi.getState().photoCalib || {}
+      dragRef.current = {
+        uv: uvOf(ev),
+        su: Number(c.shiftU) || 0,
+        sv: Number(c.shiftV) || 0,
+      }
+      el.setPointerCapture?.(ev.pointerId)
+    }
+
+    const onMove = (ev) => {
+      if (!dragRef.current) return
+      const c = storeApi.getState().photoCalib || {}
+      const uv = uvOf(ev)
+      const du = uv[0] - dragRef.current.uv[0]
+      const dv = uv[1] - dragRef.current.uv[1]
+      const origin = c.originUv
+      const dirX = origin && c.xUv ? dirFrom(origin, c.xUv) : [1, 0]
+      const dirY = origin && c.yUv ? dirFrom(origin, c.yUv) : [0, 1]
+      const [su, sv] = projectDeltaOnXY(du, dv, dirX, dirY)
+      storeApi.getState().setPhotoCalib({
+        shiftU: dragRef.current.su + su,
+        shiftV: dragRef.current.sv + sv,
+      })
+    }
+
+    const onUp = (ev) => {
+      dragRef.current = null
+      el.releasePointerCapture?.(ev.pointerId)
+    }
+
+    const onContext = (ev) => ev.preventDefault()
+
+    el.addEventListener('wheel', onWheel, { passive: false, capture: true })
+    el.addEventListener('pointerdown', onDown, true)
+    el.addEventListener('pointermove', onMove)
+    el.addEventListener('pointerup', onUp)
+    el.addEventListener('pointercancel', onUp)
+    el.addEventListener('contextmenu', onContext)
+    return () => {
+      el.removeEventListener('wheel', onWheel, true)
+      el.removeEventListener('pointerdown', onDown, true)
+      el.removeEventListener('pointermove', onMove)
+      el.removeEventListener('pointerup', onUp)
+      el.removeEventListener('pointercancel', onUp)
+      el.removeEventListener('contextmenu', onContext)
+    }
+  }, [step, gl, camera, size.width, size.height, storeApi])
 
   return null
 }
@@ -431,7 +529,7 @@ function SceneContent({ orbitOnly = false, ivory = false }) {
   return (
     <>
       <SceneCaptureBinder />
-      {!photoMode && <color attach="background" args={[env.bg || '#0a0a0a']} />}
+      <color attach="background" args={[photoMode ? '#111111' : env.bg || '#0a0a0a']} />
       {photoMode && (
         <Suspense fallback={null}>
           <PhotoEnvironment url={scenePhotoDataUrl} />
@@ -474,6 +572,7 @@ function SceneContent({ orbitOnly = false, ivory = false }) {
       {sunEnabled && !ivoryLook && !photoMode && <ShadowFloor />}
 
       {photoMode && <PhotoCameraLock />}
+      {photoMode && photoCalib?.step === 'done' && <PhotoDoneHandle />}
 
       {photoMode ? (
         <PhotoFurnitureFrame>
@@ -486,7 +585,7 @@ function SceneContent({ orbitOnly = false, ivory = false }) {
               pickMode={false}
               onPickFace={onPickFace}
               photoMode
-              ghost={photoCalib?.step !== 'done'}
+              ghost={photoCalib?.step && photoCalib.step !== 'done'}
             />
           ))}
         </PhotoFurnitureFrame>
@@ -576,9 +675,13 @@ function CameraFloorClamp({ pickMode }) {
 
 function ViewportHint({ pickMode, photoMode }) {
   const { t } = useI18n()
+  const photoStep = useActiveConfigStore((s) => s.photoCalib?.step)
   const touch =
     typeof window !== 'undefined' &&
     window.matchMedia?.('(pointer: coarse)').matches
+  if (photoMode && photoStep === 'done') {
+    return <div className="viewport-hint">{t('config.hintPhotoDone')}</div>
+  }
   if (photoMode) return null
   return (
     <div className="viewport-hint">

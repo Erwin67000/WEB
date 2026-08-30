@@ -18,7 +18,32 @@ export function emptyPhotoCalib(xLine) {
     yUv: null,
     hoverUv: null,
     scale: 1,
+    shiftU: 0,
+    shiftV: 0,
+    zoom: 1,
   }
+}
+
+export async function fileToImageDataUrl(file) {
+  if (typeof createImageBitmap === 'function') {
+    try {
+      const bmp = await createImageBitmap(file)
+      const c = document.createElement('canvas')
+      c.width = bmp.width
+      c.height = bmp.height
+      c.getContext('2d').drawImage(bmp, 0, 0)
+      bmp.close?.()
+      return c.toDataURL('image/jpeg', 0.92)
+    } catch {
+      /* HEIC / formats non décodés : essai data URL brut */
+    }
+  }
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(String(reader.result || ''))
+    reader.onerror = () => reject(new Error('lecture photo'))
+    reader.readAsDataURL(file)
+  })
 }
 
 export function loadImageElement(url) {
@@ -159,19 +184,23 @@ export function dirFrom(a, b) {
  * Three X = longueur, Three Y = haut, Three Z = −profondeur.
  */
 export function calibWorldBasis(calib, aspect, viewH) {
-  const origin = calib.originUv || calib.hoverUv
-  if (!origin) return null
+  const origin0 = calib.originUv || calib.hoverUv
+  if (!origin0) return null
+  const origin = [
+    origin0[0] + (Number(calib.shiftU) || 0),
+    origin0[1] + (Number(calib.shiftV) || 0),
+  ]
   const xEnd =
     calib.xUv || (calib.step === 'axisX' ? calib.hoverUv : null)
-  const dirX = xEnd ? dirFrom(origin, xEnd) : xPlusUv(calib, origin)
+  const dirX = xEnd ? dirFrom(origin0, xEnd) : xPlusUv(calib, origin0)
   const zEnd =
     calib.zUv || (calib.step === 'axisZ' ? calib.hoverUv : null)
-  const dirZ = zEnd ? dirFrom(origin, zEnd) : [0, -1]
+  const dirZ = zEnd ? dirFrom(origin0, zEnd) : [0, -1]
   const yEnd =
     calib.yUv || (calib.step === 'axisY' ? calib.hoverUv : null)
   const dirY = yEnd
-    ? dirFrom(origin, yEnd)
-    : dirFrom(origin, defaultYuv(origin, dirX))
+    ? dirFrom(origin0, yEnd)
+    : dirFrom(origin0, defaultYuv(origin0, dirX))
 
   const uvToXY = (uv) => [(uv[0] * 2 - 1) * aspect, -(uv[1] * 2 - 1)]
   const o = uvToXY(origin)
@@ -193,4 +222,27 @@ export function calibWorldBasis(calib, aspect, viewH) {
     axisY: [zUp[0] * worldPerM, zUp[1] * worldPerM, 0.01],
     axisZ: [-yDep[0] * worldPerM, -yDep[1] * worldPerM, -0.35 * worldPerM],
   }
+}
+
+/** NDC → UV sur le plan photo z=0 (caméra fov 90° sur l’axe Z). */
+export function ndcToPhotoUv(ndcX, ndcY, aspect, camZ) {
+  const z = Math.max(0.2, Number(camZ) || 1)
+  const worldX = ndcX * aspect * z
+  const worldY = ndcY * z
+  return [
+    clamp01((worldX / Math.max(aspect, 1e-6) + 1) / 2),
+    clamp01((1 - worldY) / 2),
+  ]
+}
+
+export function projectDeltaOnXY(du, dv, dirX, dirY) {
+  const a = dirX[0]
+  const b = dirY[0]
+  const c = dirX[1]
+  const d = dirY[1]
+  const det = a * d - b * c
+  if (Math.abs(det) < 1e-8) return [du, dv]
+  const tX = (d * du - b * dv) / det
+  const tY = (-c * du + a * dv) / det
+  return [tX * dirX[0] + tY * dirY[0], tX * dirX[1] + tY * dirY[1]]
 }

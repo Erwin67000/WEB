@@ -122,7 +122,7 @@ export default function PhotoCalibOverlay() {
     return () => window.removeEventListener('keydown', onKey)
   }, [step, calib, setPhotoCalib])
 
-  if (!calib) return null
+  if (!calib || step === 'done') return null
 
   const origin = calib.originUv || (step === 'origin' ? calib.hoverUv : null)
   const xPt =

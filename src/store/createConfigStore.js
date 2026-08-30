@@ -743,6 +743,9 @@ export function createConfigStore(opts = {}) {
               yUv: null,
               hoverUv: xA,
               scale: 1,
+              shiftU: 0,
+              shiftV: 0,
+              zoom: 1,
             }
           : null,
         dirty: true,
@@ -799,6 +802,9 @@ export function createConfigStore(opts = {}) {
             yUv: null,
             hoverUv: null,
             scale: 1,
+            shiftU: 0,
+            shiftV: 0,
+            zoom: 1,
           },
         }
       }),

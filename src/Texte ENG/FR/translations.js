@@ -422,9 +422,9 @@ export const translations = {
       customColor: 'Custom — RGB spectrum',
       custom: 'Custom',
       scene: '3D scene',
-      importPhoto: 'Import a photo (JPEG / PNG)',
+      importPhoto: 'Add a photo',
       importPhotoHint:
-        'Place the corner, draw X along the skirting, then Z, then Y — scroll to scale.',
+        'From your computer or phone library — JPEG, PNG, HEIC, WebP… Then place the corner, draw X, Z, Y, and scale.',
       photoLoaded: 'Photo loaded',
       removePhoto: 'Remove photo',
       photoSteporigin: '1 · Place the corner',
@@ -445,10 +445,10 @@ export const translations = {
       photoStepdone: 'Locked in the photo',
       photoHelpdone:
         'Scroll still resizes. Restart to place again.',
-      photoRestart: 'Restart',
+      photoRestart: 'Redefine the frame',
       photoConfirm: 'Looks good',
-      downloadView: 'Download the view',
-      downloadViewBtn: 'Download',
+      downloadView: 'Download PDF',
+      downloadViewBtn: 'Download PDF',
       environment: 'Environment',
       sun: 'Sun',
       intensity: 'Intensity {n}',
@@ -482,6 +482,8 @@ export const translations = {
       hintTouch: 'Drag to turn · pinch to zoom',
       hintPhoto:
         'Corner · X along the skirting · Z · Y · scroll to scale',
+      hintPhotoDone:
+        'Left-click: doors & drawers · right-drag: move X/Y · scroll: zoom',
       hintPick: 'Click a face of the piece to add / remove a panel',
       drawerTooShallow:
         'Depth below the limit for a drawer: {min} cm',
@@ -1089,9 +1091,9 @@ export const translations = {
       customColor: 'Sur mesure — spectre RVB',
       custom: 'Sur mesure',
       scene: 'Scène 3D',
-      importPhoto: 'Importer une photo (JPEG / PNG)',
+      importPhoto: 'Ajouter la photo',
       importPhotoHint:
-        'Pose l’angle, trace X le long de la plinthe, puis Z, puis Y — molette pour l’échelle.',
+        'Depuis le dossier du PC ou la photothèque du téléphone — JPEG, PNG, HEIC, WebP… Puis pose l’angle, trace X, Z, Y, et l’échelle.',
       photoLoaded: 'Photo chargée',
       removePhoto: 'Retirer la photo',
       photoSteporigin: '1 · Pose l’angle',
@@ -1112,10 +1114,10 @@ export const translations = {
       photoStepdone: 'Calé dans la photo',
       photoHelpdone:
         'La molette ajuste encore l’échelle. Recommencer pour replacer.',
-      photoRestart: 'Recommencer',
+      photoRestart: 'Redéfinir le repère',
       photoConfirm: 'C’est bon',
-      downloadView: 'Télécharger la vue',
-      downloadViewBtn: 'Télécharger',
+      downloadView: 'Télécharger le PDF',
+      downloadViewBtn: 'Télécharger le PDF',
       environment: 'Environnement',
       sun: 'Soleil',
       intensity: 'Intensité {n}',
@@ -1149,6 +1151,8 @@ export const translations = {
       hintTouch: 'Glisser pour tourner · pincer pour zoomer',
       hintPhoto:
         'Angle · X le long de la plinthe · Z · Y · molette pour l’échelle',
+      hintPhotoDone:
+        'Clic gauche : portes et tiroirs · clic droit : déplacer X/Y · molette : zoom',
       hintPick: 'Cliquez une face du meuble pour ajouter / retirer un panneau',
       drawerTooShallow:
         'Profondeur inférieure à la limite pour ajout de tiroir : {min} cm',

@@ -38,8 +38,8 @@ import { persistDraft } from '../lib/checkoutDraft.js'
 import { STRIPE_ENABLED } from '../lib/payments.js'
 import { writeShopPanelColor } from '../lib/shopPanelColor.js'
 import { labelFromUnits } from '../lib/checkout.js'
-import { detectPhotoXAxis } from '../lib/photoCalib.js'
-import { downloadScenePhoto } from '../lib/sceneCapture.js'
+import { detectPhotoXAxis, fileToImageDataUrl } from '../lib/photoCalib.js'
+import { downloadScenePdf } from '../lib/sceneCapture.js'
 
 /** Labels courts pour chips des panneaux actifs */
 const PANNEAU_CHIP_LABELS = Object.fromEntries(
@@ -334,7 +334,6 @@ export default function ControlPanel() {
   const [editingUnitId, setEditingUnitId] = useState(null)
   const renameInputRef = useRef(null)
   const scenePhotoInputRef = useRef(null)
-  const [scenePhotoFormat, setScenePhotoFormat] = useState('png')
   const [openSections, setOpenSections] = useState(() => ({
     meuble: false,
     dims: false,
@@ -353,8 +352,9 @@ export default function ControlPanel() {
 
   useEffect(() => {
     setSceneSheetOpen(Boolean(openSections.scene))
+    if (!openSections.scene) clearScenePhoto()
     return () => setSceneSheetOpen(false)
-  }, [openSections.scene, setSceneSheetOpen])
+  }, [openSections.scene, setSceneSheetOpen, clearScenePhoto])
 
   if (!unit) return null
 
@@ -1014,29 +1014,27 @@ export default function ControlPanel() {
               <input
                 ref={scenePhotoInputRef}
                 type="file"
-                accept="image/jpeg,image/png,.jpg,.jpeg,.png"
+                accept="image/*,.heic,.heif,.webp,.jpg,.jpeg,.png,.gif,.bmp,.tif,.tiff"
                 hidden
-                onChange={(e) => {
+                onChange={async (e) => {
                   const file = e.target.files?.[0]
                   e.target.value = ''
                   if (!file) return
-                  const ok = /image\/(jpeg|png)/i.test(file.type) ||
-                    /\.(jpe?g|png)$/i.test(file.name)
-                  if (!ok) return
-                  const reader = new FileReader()
-                  reader.onload = async () => {
-                    const dataUrl = String(reader.result || '')
-                    if (!dataUrl) return
-                    let extras = {}
-                    try {
-                      const xLine = await detectPhotoXAxis(dataUrl)
-                      extras = { xLine }
-                    } catch {
-                      extras = {}
-                    }
-                    setScenePhoto(dataUrl, file.name, extras)
+                  let dataUrl = ''
+                  try {
+                    dataUrl = await fileToImageDataUrl(file)
+                  } catch {
+                    return
                   }
-                  reader.readAsDataURL(file)
+                  if (!dataUrl) return
+                  let extras = {}
+                  try {
+                    const xLine = await detectPhotoXAxis(dataUrl)
+                    extras = { xLine }
+                  } catch {
+                    extras = {}
+                  }
+                  setScenePhoto(dataUrl, file.name, extras)
                 }}
               />
               <button
@@ -1071,25 +1069,22 @@ export default function ControlPanel() {
                 </div>
               ) : null}
               <div className="scene-photo-export">
-                <span className="field-label">{t('config.downloadView')}</span>
-                <div className="porte-hinge-row">
-                  {['png', 'jpeg'].map((fmt) => (
-                    <button
-                      key={fmt}
-                      type="button"
-                      className={`porte-hinge-btn${
-                        scenePhotoFormat === fmt ? ' active' : ''
-                      }`}
-                      onClick={() => setScenePhotoFormat(fmt)}
-                    >
-                      {fmt === 'jpeg' ? 'JPEG' : 'PNG'}
-                    </button>
-                  ))}
-                </div>
                 <button
                   type="button"
-                  className="btn-sm"
-                  onClick={() => downloadScenePhoto(scenePhotoFormat)}
+                  className="btn scene-photo-btn"
+                  onClick={() => {
+                    const u = units[0]
+                    const L = formatMmAsCm(u?.dims?.L)
+                    const P = formatMmAsCm(u?.dims?.W)
+                    const H = formatMmAsCm(u?.dims?.H)
+                    downloadScenePdf({
+                      title: u?.label || t('config.unitN', { n: 1 }),
+                      lines: [
+                        L && P && H ? `L ${L} × P ${P} × H ${H} cm` : '',
+                        'philae.design',
+                      ],
+                    })
+                  }}
                 >
                   {t('config.downloadViewBtn')}
                 </button>
