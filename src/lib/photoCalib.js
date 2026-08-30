@@ -13,11 +13,11 @@ export const PHOTO_STEPS = [
   'scale',
 ]
 
-/** Fov vertical « photo normale » (équivalent ~35 mm). */
-export const PHOTO_FOV_DEFAULT = 58
-export const PHOTO_FOV_MIN = 28
-export const PHOTO_FOV_MAX = 85
-/** Profondeur 3D du meuble (axe Y) — assez pour fuir, sans casser le calage. */
+/** Curseur perspective : 0° = parallèle (arête arrière figée sur X), 60° = max. */
+export const PHOTO_FOV_DEFAULT = 40
+export const PHOTO_FOV_MIN = 0
+export const PHOTO_FOV_MAX = 60
+/** Profondeur 3D du meuble à 60° — l’avant vient vers la caméra, pas l’arrière. */
 export const PHOTO_DEPTH_DEFAULT = 1.45
 
 export function clampPhotoFov(v) {
@@ -26,8 +26,15 @@ export function clampPhotoFov(v) {
   return Math.min(PHOTO_FOV_MAX, Math.max(PHOTO_FOV_MIN, n))
 }
 
+/** tan(fov/2) ; 0° → quasi-ortho (évite tan(0)). */
 export function photoFovTan(fovDeg) {
-  return Math.tan((clampPhotoFov(fovDeg) * Math.PI) / 360)
+  const f = Math.max(0.5, clampPhotoFov(fovDeg))
+  return Math.tan((f * Math.PI) / 360)
+}
+
+/** 0° = plat dans le plan photo ; 60° = profondeur max. */
+export function photoDepthK(fovDeg) {
+  return (clampPhotoFov(fovDeg) / PHOTO_FOV_MAX) * PHOTO_DEPTH_DEFAULT
 }
 
 /** Distance caméra pour que le plan photo (hauteur 2) remplisse le frustum. */
@@ -325,18 +332,12 @@ export function calibWorldBasis(calib, aspect, viewH) {
   const yDep = toVec(dirY)
   const ppm = 150 * (Number(calib.scale) || 1)
   const worldPerM = ppm / Math.max(80, viewH * 0.5)
-  const depthK = Number.isFinite(Number(calib.perspective))
-    ? Math.min(3, Math.max(0.2, Number(calib.perspective)))
-    : PHOTO_DEPTH_DEFAULT
-
+  const depthK = photoDepthK(calib.fov)
+  /* X et Z (hauteur) restent dans le plan photo : l’arête arrière colle à X.
+     Seule la profondeur (Y) sort vers la caméra → c’est l’avant qui bouge. */
   return {
     origin: o,
-    /* X recule un peu s’il monte dans l’image (2 points de fuite). */
-    axisX: [
-      x[0] * worldPerM,
-      x[1] * worldPerM,
-      -x[1] * 0.55 * depthK * worldPerM,
-    ],
+    axisX: [x[0] * worldPerM, x[1] * worldPerM, 0],
     axisY: [zUp[0] * worldPerM, zUp[1] * worldPerM, 0.01],
     axisZ: [-yDep[0] * worldPerM, -yDep[1] * worldPerM, -depthK * worldPerM],
   }

@@ -305,7 +305,7 @@ function PhotoCameraLock() {
   }, [camera, controls])
 
   useLayoutEffect(() => {
-    const f = clampPhotoFov(fov)
+    const f = Math.max(0.5, clampPhotoFov(fov))
     const z = photoCamDistance(zoom, f)
     camera.position.set(0, 0, z)
     camera.lookAt(0, 0, 0)
