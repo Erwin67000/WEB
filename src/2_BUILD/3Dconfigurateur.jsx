@@ -479,7 +479,6 @@ function PhotoFurnitureFrame({ children }) {
     }
     g.visible = true
     const s = Math.min(4, Math.max(0.25, Number(calib.scale) || 1))
-    g.scale.setScalar(s)
     const uv = defaultOriginUv(calib)
     const viewAspect = size.width / Math.max(1, size.height)
     const pa = calib.photoAspect || viewAspect
@@ -494,6 +493,9 @@ function PhotoFurnitureFrame({ children }) {
         hit.z + (Number(calib.shiftZ) || 0),
       )
     }
+    /* Façades vers la caméra, origine = coin arrière au mur. */
+    const towardCamZ = camera.position.z - g.position.z
+    g.scale.set(s, s, towardCamZ > 0 ? -s : s)
   })
 
   if (!match?.ok) return null
