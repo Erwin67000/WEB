@@ -67,6 +67,31 @@ export function axisReady(lines, axis) {
   return isLine(lines?.[axis]?.[0]) && isLine(lines?.[axis]?.[1])
 }
 
+/** Prolonge un segment : la fuyante = la ligne tracée, pas un VP recadré. */
+export function extendSeg(a, b, span = 6) {
+  const dx = b[0] - a[0]
+  const dy = b[1] - a[1]
+  const n = Math.hypot(dx, dy) || 1
+  const ux = dx / n
+  const uy = dy / n
+  return [
+    [a[0] - ux * span, a[1] - uy * span],
+    [b[0] + ux * span, b[1] + uy * span],
+  ]
+}
+
+export function defaultOriginUv(calib) {
+  if (calib?.originUv) return calib.originUv
+  const x0 = calib?.lines?.x?.[0]
+  const z0 = calib?.lines?.z?.[0]
+  if (isLine(x0) && isLine(z0)) {
+    const hit = lineIntersect(x0.a, x0.b, z0.a, z0.b)
+    if (!hit.infinite && hit.uv) return hit.uv
+  }
+  if (isLine(x0)) return [...x0.a]
+  return [0.42, 0.78]
+}
+
 function hypot3(x, y, z) {
   return Math.hypot(x, y, z)
 }
@@ -250,14 +275,17 @@ function midpoint(ln) {
 export function solvePhotoMatch(calib) {
   if (!calib) return null
   const lines = calib.lines
-  if (!axisReady(lines, 'x') || !axisReady(lines, 'z') || !axisReady(lines, 'y')) {
-    return null
-  }
+  const hasX = axisReady(lines, 'x')
+  const hasZ = axisReady(lines, 'z')
+  const hasY = axisReady(lines, 'y')
+  if ([hasX, hasZ, hasY].filter(Boolean).length < 2) return null
   const aspect = Math.max(0.2, Number(calib.photoAspect) || 1.5)
-  const vpX = vanishPoint(lines.x[0], lines.x[1])
-  const vpZ = vanishPoint(lines.z[0], lines.z[1])
-  const vpY = vanishPoint(lines.y[0], lines.y[1])
-  if (!vpX || !vpZ || !vpY) return null
+  const vpX = hasX ? vanishPoint(lines.x[0], lines.x[1]) : null
+  const vpZ = hasZ ? vanishPoint(lines.z[0], lines.z[1]) : null
+  const vpY = hasY ? vanishPoint(lines.y[0], lines.y[1]) : null
+  if (hasX && !vpX) return null
+  if (hasZ && !vpZ) return null
+  if (hasY && !vpY) return null
 
   const finite = [vpX, vpZ, vpY].filter((v) => !v.infinite && v.uv)
   let pp = [0.5, 0.5]
@@ -292,11 +320,16 @@ export function solvePhotoMatch(calib) {
   }
   if (!f) f = 1.1
 
-  let dX = axisDir(vpX, aspect, f, pp)
-  let dUp = axisDir(vpZ, aspect, f, pp)
-  let dDepth = axisDir(vpY, aspect, f, pp)
-  if (!dX || !dUp || !dDepth) return null
+  let dX = vpX ? axisDir(vpX, aspect, f, pp) : null
+  let dUp = vpZ ? axisDir(vpZ, aspect, f, pp) : null
+  let dDepth = vpY ? axisDir(vpY, aspect, f, pp) : null
 
+  if (dUp && dUp[1] < 0) dUp = [-dUp[0], -dUp[1], -dUp[2]]
+
+  if (dX && dUp && !dDepth) dDepth = norm3(cross3(dX, dUp))
+  if (dX && dDepth && !dUp) dUp = norm3(cross3(dDepth, dX))
+  if (dUp && dDepth && !dX) dX = norm3(cross3(dUp, dDepth))
+  if (!dX || !dUp || !dDepth) return null
   if (dUp[1] < 0) dUp = [-dUp[0], -dUp[1], -dUp[2]]
 
   let dZ = cross3(dX, dUp)
@@ -312,7 +345,7 @@ export function solvePhotoMatch(calib) {
     dX = [-dX[0], -dX[1], -dX[2]]
   }
 
-  const originUv = calib.originUv || [0.5, 0.72]
+  const originUv = defaultOriginUv(calib)
   const ray = axisDir({ infinite: false, uv: originUv }, aspect, f, pp)
   if (!ray) return null
 

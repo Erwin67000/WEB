@@ -448,9 +448,9 @@ export const translations = {
       photoSteporigin: '7 · Place the origin',
       photoHelporigin:
         'Click the corner of the piece — typically on the floor, against the back wall. That is 3D (0,0,0).',
-      photoStepscale: '8 · Scale',
+      photoStepscale: '8 · Scale & adjust',
       photoHelpscale:
-        'Scroll to match the real size. Parallel edges should now vanish like the photo. Confirm when it looks right.',
+        'Scroll to size. Drag the 12 handles and the origin until edges vanish with the photo. Confirm when it looks right.',
       photoFovReadout: 'Matched lens · {n}°',
       photoStepdone: 'Locked in the photo',
       photoHelpdone:
@@ -1129,9 +1129,9 @@ export const translations = {
       photoSteporigin: '7 · Pose l’origine',
       photoHelporigin:
         'Clique le coin du meuble — au sol, contre le mur du fond. C’est le (0,0,0) 3D.',
-      photoStepscale: '8 · Échelle',
+      photoStepscale: '8 · Échelle et ajustements',
       photoHelpscale:
-        'Molette pour coller à la taille réelle. Les arêtes parallèles doivent maintenant fuir comme dans la photo. « C’est bon » pour valider.',
+        'Molette pour la taille. Glisse les 12 boutons et l’origine jusqu’à ce que les fuyantes collent à la photo. « C’est bon » pour valider.',
       photoFovReadout: 'Focale calée · {n}°',
       photoStepdone: 'Calé dans la photo',
       photoHelpdone:

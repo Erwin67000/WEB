@@ -6,8 +6,8 @@ import {
   MATCH_STEPS,
   MATCH_LINE_OF,
   AXIS_COLOR,
-  vanishPoint,
   isLine,
+  extendSeg,
   matchFovDeg,
 } from '../lib/photoMatch.js'
 
@@ -28,13 +28,6 @@ function linePts(a, b, rect) {
   }
 }
 
-function clipUv(uv) {
-  return [
-    Math.min(2.4, Math.max(-1.4, uv[0])),
-    Math.min(2.4, Math.max(-1.4, uv[1])),
-  ]
-}
-
 function nextStep(step) {
   const i = MATCH_STEPS.indexOf(step)
   return MATCH_STEPS[Math.min(MATCH_STEPS.length - 1, i + 1)]
@@ -45,48 +38,23 @@ function prevStep(step) {
   return MATCH_STEPS[Math.max(0, i - 1)]
 }
 
-function Handle({ uv, color, rect }) {
-  if (!uv) return null
-  const p = photoToViewUv(uv, rect)
-  return (
-    <circle
-      cx={`${p[0] * 100}%`}
-      cy={`${p[1] * 100}%`}
-      r="5"
-      fill={color}
-      stroke="#1a1610"
-      strokeWidth="1.4"
-    />
-  )
-}
-
 function AxisPair({ lines, axis, rect, hoverLine }) {
-  const color = AXIS_COLOR[axis]
   const pair = [lines?.[axis]?.[0], lines?.[axis]?.[1]]
   const hover = hoverLine && hoverLine.axis === axis ? hoverLine : null
-  const l0 = pair[0]
-  const l1 = pair[1] || hover
-  const vp = isLine(l0) && isLine(l1) ? vanishPoint(l0, l1) : null
   const segs = pair.filter(isLine)
   if (hover) segs.push(hover)
+  const cls = axis === 'z' ? 'z' : axis === 'y' ? 'y' : 'x'
   return (
     <g className={`vp-axis vp-${axis}`}>
-      {vp && !vp.infinite && vp.uv &&
-        segs.map((ln, i) => (
-          <line
-            key={`g${i}`}
-            className="vp-guide"
-            stroke={color}
-            {...linePts(ln.a, clipUv(vp.uv), rect)}
-          />
-        ))}
-      {segs.map((ln, i) => (
-        <g key={i}>
-          <line className={`axis-${axis === 'z' ? 'z' : axis === 'y' ? 'y' : 'x'}`} {...linePts(ln.a, ln.b, rect)} />
-          <Handle uv={ln.a} color={color} rect={rect} />
-          <Handle uv={ln.b} color={color} rect={rect} />
-        </g>
-      ))}
+      {segs.map((ln, i) => {
+        const [p, q] = extendSeg(ln.a, ln.b)
+        return (
+          <g key={i}>
+            <line className="vp-guide" stroke={AXIS_COLOR[axis]} {...linePts(p, q, rect)} />
+            <line className={`axis-${cls}`} {...linePts(ln.a, ln.b, rect)} />
+          </g>
+        )
+      })}
     </g>
   )
 }
@@ -101,6 +69,7 @@ export default function PhotoCalibOverlay() {
   const photoAspect = calib?.photoAspect || 1.5
   const [rect, setRect] = useState({ x: 0, y: 0, w: 1, h: 1 })
   const dragRef = useRef(null)
+  const handleDrag = useRef(null)
 
   const syncRect = useCallback(() => {
     const el = wrapRef.current
@@ -145,41 +114,85 @@ export default function PhotoCalibOverlay() {
     setPhotoCalib({ lines, pending: null, hoverUv: b, step: nextStep(step) })
   }
 
+  const patchLinePoint = (axis, idx, end, uv) => {
+    const lines = {
+      x: [...(calib.lines?.x || [null, null])],
+      y: [...(calib.lines?.y || [null, null])],
+      z: [...(calib.lines?.z || [null, null])],
+    }
+    lines[axis] = [...lines[axis]]
+    const prev = lines[axis][idx]
+    if (!isLine(prev)) return
+    lines[axis][idx] = { ...prev, [end]: uv }
+    setPhotoCalib({ lines, hoverUv: uv })
+  }
+
   const onMove = (ev) => {
     if (!calib || step === 'done') return
-    setPhotoCalib({ hoverUv: toUv(ev) })
+    const uv = toUv(ev)
+    if (handleDrag.current) {
+      const h = handleDrag.current
+      if (h.type === 'origin') setPhotoCalib({ originUv: uv, hoverUv: uv })
+      else patchLinePoint(h.axis, h.idx, h.end, uv)
+      return
+    }
+    setPhotoCalib({ hoverUv: uv })
   }
 
   const onDown = (ev) => {
     if (!calib || ev.button !== 0) return
     if (ev.target.closest('.photo-calib-card')) return
+    if (ev.target.closest('.photo-calib-handle')) return
     ev.preventDefault()
     const uv = toUv(ev)
     if (step === 'origin') {
       setPhotoCalib({ originUv: uv, hoverUv: uv, step: 'scale' })
       return
     }
-    if (step === 'scale') {
-      setPhotoCalib({ step: 'done' })
-      return
-    }
+    if (step === 'scale') return
     if (!MATCH_LINE_OF[step]) return
     if (calib.pending) {
       commitLine(calib.pending, uv)
       dragRef.current = null
       return
     }
-    dragRef.current = { start: uv, moved: false }
+    dragRef.current = { start: uv }
     setPhotoCalib({ pending: uv, hoverUv: uv })
   }
 
   const onUp = (ev) => {
+    if (handleDrag.current) {
+      handleDrag.current = null
+      return
+    }
     if (!dragRef.current || !calib?.pending) return
     const uv = toUv(ev)
     const s = dragRef.current.start
     const dist = Math.hypot(uv[0] - s[0], uv[1] - s[1])
     dragRef.current = null
     if (dist > 0.012) commitLine(s, uv)
+  }
+
+  const startHandleDrag = (ev, payload) => {
+    ev.stopPropagation()
+    ev.preventDefault()
+    handleDrag.current = payload
+    const onWinMove = (e) => {
+      const uv = toUv(e)
+      const h = handleDrag.current
+      if (!h) return
+      if (h.type === 'origin') setPhotoCalib({ originUv: uv, hoverUv: uv })
+      else patchLinePoint(h.axis, h.idx, h.end, uv)
+    }
+    const onWinUp = () => {
+      handleDrag.current = null
+      window.removeEventListener('pointermove', onWinMove)
+      window.removeEventListener('pointerup', onWinUp)
+      window.removeEventListener('pointercancel', onWinUp)
+    }
+    window.addEventListener('pointermove', onWinMove)
+    window.addEventListener('pointerup', onWinUp)
+    window.addEventListener('pointercancel', onWinUp)
   }
 
   useEffect(() => {
@@ -261,20 +274,40 @@ export default function PhotoCalibOverlay() {
         <AxisPair lines={calib.lines} axis="x" rect={rect} hoverLine={hoverLine} />
         <AxisPair lines={calib.lines} axis="z" rect={rect} hoverLine={hoverLine} />
         <AxisPair lines={calib.lines} axis="y" rect={rect} hoverLine={hoverLine} />
-        {calib.originUv && (
-          <circle
-            className="origin-mark"
-            cx={`${photoToViewUv(calib.originUv, rect)[0] * 100}%`}
-            cy={`${photoToViewUv(calib.originUv, rect)[1] * 100}%`}
-            r="7"
-            fill="#f5e6b8"
-            stroke="#1a1610"
-            strokeWidth="1.6"
-          />
-        )}
       </svg>
 
-      {calib.hoverUv && step !== 'scale' && (
+      {['x', 'z', 'y'].flatMap((axis) =>
+        (calib.lines?.[axis] || []).flatMap((ln, idx) =>
+          isLine(ln)
+            ? ['a', 'b'].map((end) => (
+                <button
+                  key={`${axis}-${idx}-${end}`}
+                  type="button"
+                  className="photo-calib-handle"
+                  style={{
+                    ...pct(ln[end], rect),
+                    background: AXIS_COLOR[axis],
+                  }}
+                  aria-label={`${axis} ${idx + 1} ${end}`}
+                  onPointerDown={(e) =>
+                    startHandleDrag(e, { type: 'line', axis, idx, end })
+                  }
+                />
+              ))
+            : [],
+        ),
+      )}
+      {calib.originUv && (
+        <button
+          type="button"
+          className="photo-calib-handle is-origin"
+          style={pct(calib.originUv, rect)}
+          aria-label="origine"
+          onPointerDown={(e) => startHandleDrag(e, { type: 'origin' })}
+        />
+      )}
+
+      {calib.hoverUv && MATCH_LINE_OF[step] && (
         <div className="photo-calib-aim" style={pct(calib.hoverUv, rect)} aria-hidden>
           <svg viewBox="0 0 28 28" width="28" height="28">
             <line x1="14" y1="1" x2="14" y2="10" stroke="#f5e6b8" strokeWidth="1.6" />

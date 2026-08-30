@@ -221,7 +221,7 @@ function SceneCaptureBinder() {
   return null
 }
 
-/** Photo contain, puis collée à la caméra une fois le match résolu. */
+/** Photo toujours visible : contain, puis billboard caméra une fois calée. */
 function PhotoEnvironment({ url, match }) {
   const { camera, size } = useThree()
   const texture = useTexture(url)
@@ -245,40 +245,46 @@ function PhotoEnvironment({ url, match }) {
     setPhotoCalib({ photoAspect: fromImg })
   }, [fromImg, photoAspectStore, setPhotoCalib])
 
-  useLayoutEffect(() => {
-    const mesh = meshRef.current
-    if (!mesh || !attached) return undefined
-    const parent = mesh.parent
-    camera.add(mesh)
-    return () => {
-      parent?.add(mesh)
-    }
-  }, [attached, camera])
+  const fwd = useMemo(() => new THREE.Vector3(), [])
 
-  useLayoutEffect(() => {
+  const placeContain = () => {
     const mesh = meshRef.current
     if (!mesh) return
-    if (attached) {
-      const dist = 8
-      const { w, h } = cameraBgPlane(match.fov, photoAspect, dist)
-      mesh.position.set(0, 0, -dist)
-      mesh.scale.set(w, h, 1)
-      mesh.quaternion.identity()
-    } else {
-      const { w, h } = containPlane(viewAspect, photoAspect)
-      mesh.position.set(0, 0, -0.02)
-      mesh.scale.set(w, h, 1)
-      mesh.quaternion.identity()
-    }
-  }, [attached, match, photoAspect, viewAspect])
+    const { w, h } = containPlane(viewAspect, photoAspect)
+    mesh.position.set(0, 0, -0.02)
+    mesh.quaternion.identity()
+    mesh.scale.set(w, h, 1)
+  }
+
+  const placeBillboard = () => {
+    const mesh = meshRef.current
+    if (!mesh || !match?.ok) return
+    const dist = 8
+    const { w, h } = cameraBgPlane(match.fov, photoAspect, dist)
+    fwd.set(0, 0, -1).applyQuaternion(camera.quaternion)
+    mesh.quaternion.copy(camera.quaternion)
+    mesh.position.copy(camera.position).addScaledVector(fwd, dist)
+    mesh.scale.set(w, h, 1)
+  }
+
+  useLayoutEffect(() => {
+    if (attached) placeBillboard()
+    else placeContain()
+  }, [attached, match, photoAspect, viewAspect, camera])
+
+  useFrame(() => {
+    if (attached) placeBillboard()
+  })
 
   return (
-    <mesh ref={meshRef} renderOrder={-2} raycast={() => {}}>
+    <mesh ref={meshRef} renderOrder={-8} raycast={() => {}}>
       <planeGeometry args={[1, 1]} />
       <meshBasicMaterial
         map={texture}
         depthWrite={false}
+        depthTest={false}
         side={THREE.DoubleSide}
+        toneMapped={false}
       />
     </mesh>
   )
@@ -447,7 +453,7 @@ function PhotoDoneHandle() {
 function PhotoFurnitureFrame({ children }) {
   const calib = useActiveConfigStore((s) => s.photoCalib)
   const match = useMemo(() => solvePhotoMatch(calib), [calib])
-  const ready = Boolean(match?.ok && calib?.originUv)
+  const ready = Boolean(match?.ok)
   const s = Math.min(4, Math.max(0.25, Number(calib?.scale) || 1))
   if (!ready) return null
   return (
@@ -552,7 +558,7 @@ function SceneContent({ orbitOnly = false, ivory = false }) {
     !orbitOnly &&
     !ivoryLook
   const photoMatch = useMemo(() => {
-    if (!photoMode || !photoCalib?.originUv) return null
+    if (!photoMode || !photoCalib) return null
     return solvePhotoMatch(photoCalib)
   }, [photoMode, photoCalib])
   const showGrid = orbitOnly || photoMode ? false : showGridStore

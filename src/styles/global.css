@@ -151,6 +151,28 @@ textarea {
   z-index: 8;
   filter: drop-shadow(0 0 1px #000) drop-shadow(0 0 2px rgba(0, 0, 0, 0.7));
 }
+.photo-calib-handle {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  margin: -8px 0 0 -8px;
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid #1a1610;
+  z-index: 10;
+  pointer-events: auto;
+  cursor: grab;
+  box-shadow: 0 0 0 1px rgba(245, 230, 184, 0.35);
+}
+.photo-calib-handle:active {
+  cursor: grabbing;
+}
+.photo-calib-handle.is-origin {
+  width: 18px;
+  height: 18px;
+  margin: -9px 0 0 -9px;
+  background: #f5e6b8;
+}
 .photo-calib-svg {
   position: absolute;
   inset: 0;
