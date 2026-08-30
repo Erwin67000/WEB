@@ -424,19 +424,22 @@ export const translations = {
       scene: '3D scene',
       importPhoto: 'Import a photo (JPEG / PNG)',
       importPhotoHint:
-        '3 clicks to place the piece in your photo: corner, vertical, depth — then scroll to scale.',
+        'Place the corner, draw X along the skirting, then Z, then Y — scroll to scale.',
       photoLoaded: 'Photo loaded',
       removePhoto: 'Remove photo',
       photoSteporigin: '1 · Place the corner',
       photoHelporigin:
-        'The cursor slides along the back wall, on the floor. Click where the corner of the piece should sit.',
-      photoStepaxisZ: '2 · Draw the vertical',
+        'Click on the photo where the corner of the piece sits — typically on the floor, against the back wall.',
+      photoStepaxisX: '2 · Draw X (skirting)',
+      photoHelpaxisX:
+        'Pull the red X axis along the meeting of floor and wall (the skirting). Click when it follows that line.',
+      photoStepaxisZ: '3 · Draw the vertical',
       photoHelpaxisZ:
         'Pull the blue Z axis upward (a door edge, a corner…). Click when it matches the photo.',
-      photoStepaxisY: '3 · Draw the depth',
+      photoStepaxisY: '4 · Draw the depth',
       photoHelpaxisY:
         'Pull the green Y axis along the floor, toward you or along the side wall. Click to lock it.',
-      photoStepscale: '4 · Scale',
+      photoStepscale: '5 · Scale',
       photoHelpscale:
         'Scroll to match the real size. Click or press Confirm when it looks right.',
       photoStepdone: 'Locked in the photo',
@@ -478,7 +481,7 @@ export const translations = {
       hintOrbit: 'Drag to turn · scroll to zoom',
       hintTouch: 'Drag to turn · pinch to zoom',
       hintPhoto:
-        'Click the corner · draw Z · draw Y · scroll to scale',
+        'Corner · X along the skirting · Z · Y · scroll to scale',
       hintPick: 'Click a face of the piece to add / remove a panel',
       drawerTooShallow:
         'Depth below the limit for a drawer: {min} cm',
@@ -1088,19 +1091,22 @@ export const translations = {
       scene: 'Scène 3D',
       importPhoto: 'Importer une photo (JPEG / PNG)',
       importPhotoHint:
-        '3 clics pour caler le meuble dans la photo : l’angle, la verticale, la profondeur — puis la molette pour l’échelle.',
+        'Pose l’angle, trace X le long de la plinthe, puis Z, puis Y — molette pour l’échelle.',
       photoLoaded: 'Photo chargée',
       removePhoto: 'Retirer la photo',
       photoSteporigin: '1 · Pose l’angle',
       photoHelporigin:
-        'Le curseur glisse au sol, contre le mur du fond. Clique où doit se trouver l’angle du meuble.',
-      photoStepaxisZ: '2 · Trace la verticale',
+        'Clique dans la photo où se trouve l’angle du meuble — au sol, contre le mur du fond.',
+      photoStepaxisX: '2 · Trace X (la plinthe)',
+      photoHelpaxisX:
+        'Tire l’axe X (rouge) le long de la rencontre sol / mur — la plinthe. Clique quand il suit cette ligne.',
+      photoStepaxisZ: '3 · Trace la verticale',
       photoHelpaxisZ:
         'Tire l’axe Z (bleu) vers le haut — un montant de porte, un angle de mur… Clique quand ça colle.',
-      photoStepaxisY: '3 · Trace la profondeur',
+      photoStepaxisY: '4 · Trace la profondeur',
       photoHelpaxisY:
         'Tire l’axe Y (vert) au sol, vers toi ou le long du mur latéral. Clique pour le figer.',
-      photoStepscale: '4 · Échelle',
+      photoStepscale: '5 · Échelle',
       photoHelpscale:
         'Molette pour coller à la taille réelle. Clique ou « C’est bon » quand le meuble est à l’échelle.',
       photoStepdone: 'Calé dans la photo',
@@ -1142,7 +1148,7 @@ export const translations = {
       hintOrbit: 'Glisser pour tourner · molette pour zoomer',
       hintTouch: 'Glisser pour tourner · pincer pour zoomer',
       hintPhoto:
-        'Clic sur l’angle · trace Z · trace Y · molette pour l’échelle',
+        'Angle · X le long de la plinthe · Z · Y · molette pour l’échelle',
       hintPick: 'Cliquez une face du meuble pour ajouter / retirer un panneau',
       drawerTooShallow:
         'Profondeur inférieure à la limite pour ajout de tiroir : {min} cm',

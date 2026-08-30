@@ -1,10 +1,9 @@
 /**
- * Calage photo ludique : le programme ne propose que le rail X
- * (intersection sol Z=0 ∩ mur du fond Y=0). L’utilisateur pose l’origine,
- * trace Z, trace Y, puis règle l’échelle à la molette.
+ * Calage photo : origine → X (plinthe) → Z → Y → échelle.
+ * Une suggestion de rail X (sol ∩ mur du fond) est proposée, l’utilisateur la trace.
  */
 
-export const PHOTO_STEPS = ['origin', 'axisZ', 'axisY', 'scale']
+export const PHOTO_STEPS = ['origin', 'axisX', 'axisZ', 'axisY', 'scale']
 
 export function emptyPhotoCalib(xLine) {
   const xA = xLine?.a || [0.08, 0.7]
@@ -14,6 +13,7 @@ export function emptyPhotoCalib(xLine) {
     xA,
     xB,
     originUv: null,
+    xUv: null,
     zUv: null,
     yUv: null,
     hoverUv: null,
@@ -36,15 +36,15 @@ function grayAt(data, i) {
 }
 
 /**
- * Rail X = plinthe du mur du fond (intersection sol ∩ fond).
- * Détection volontairement simple : plus forte ligne quasi-horizontale
- * dans le tiers bas-médian. Sinon, rail horizontal par défaut.
+ * Suggestion du rail X = rencontre sol / mur du fond (plinthe).
+ * On cherche, colonne par colonne, le plus fort bord horizontal
+ * puis on ajuste une droite (pente de la plinthe).
  */
 export async function detectPhotoXAxis(dataUrl) {
   const fallback = { a: [0.07, 0.7], b: [0.93, 0.7] }
   try {
     const img = await loadImageElement(dataUrl)
-    const w = 420
+    const w = 480
     const h = Math.max(32, Math.round((img.height / img.width) * w))
     const canvas = document.createElement('canvas')
     canvas.width = w
@@ -53,28 +53,48 @@ export async function detectPhotoXAxis(dataUrl) {
     if (!ctx) return fallback
     ctx.drawImage(img, 0, 0, w, h)
     const { data } = ctx.getImageData(0, 0, w, h)
-    const y0 = (h * 0.42) | 0
-    const y1 = (h * 0.82) | 0
-    const row = new Float64Array(h)
-    for (let y = y0 + 1; y < y1 - 1; y += 1) {
-      let s = 0
-      for (let x = 2; x < w - 2; x += 1) {
-        const up = grayAt(data, ((y - 1) * w + x) * 4)
-        const dn = grayAt(data, ((y + 1) * w + x) * 4)
-        s += Math.abs(dn - up)
+    const y0 = (h * 0.38) | 0
+    const y1 = (h * 0.88) | 0
+    const pts = []
+    const step = 6
+    for (let x = 8; x < w - 8; x += step) {
+      let bestY = (y0 + y1) >> 1
+      let best = -1
+      for (let y = y0 + 2; y < y1 - 2; y += 1) {
+        const up = grayAt(data, ((y - 2) * w + x) * 4)
+        const dn = grayAt(data, ((y + 2) * w + x) * 4)
+        const e = Math.abs(dn - up)
+        if (e > best) {
+          best = e
+          bestY = y
+        }
       }
-      row[y] = s
+      if (best > 6) pts.push({ x, y: bestY, e: best })
     }
-    let bestY = ((y0 + y1) / 2) | 0
-    let best = 0
-    for (let y = y0; y < y1; y += 1) {
-      if (row[y] > best) {
-        best = row[y]
-        bestY = y
-      }
+    if (pts.length < 8) return fallback
+    pts.sort((a, b) => b.e - a.e)
+    const strong = pts.slice(0, Math.max(12, (pts.length * 0.55) | 0))
+    let sx = 0
+    let sy = 0
+    let sxx = 0
+    let sxy = 0
+    const n = strong.length
+    for (let i = 0; i < n; i += 1) {
+      sx += strong[i].x
+      sy += strong[i].y
+      sxx += strong[i].x * strong[i].x
+      sxy += strong[i].x * strong[i].y
     }
-    const yf = Math.min(0.88, Math.max(0.38, bestY / h))
-    return { a: [0.06, yf], b: [0.94, yf] }
+    const den = n * sxx - sx * sx
+    const m = Math.abs(den) < 1e-6 ? 0 : (n * sxy - sx * sy) / den
+    const c = (sy - m * sx) / n
+    const ang = Math.abs(Math.atan(m))
+    if (ang > 0.7) return fallback
+    const yAt = (xf) => {
+      const y = (m * xf * w + c) / h
+      return Math.min(0.92, Math.max(0.32, y))
+    }
+    return { a: [0.04, yAt(0.04)], b: [0.96, yAt(0.96)] }
   } catch {
     return fallback
   }
@@ -103,10 +123,11 @@ export function uvFromPointer(ev, el) {
   ]
 }
 
-/** +X le long du rail, vers le plus long restant (le meuble occupe le mur). */
+/** +X : tracé utilisateur (origine → xUv), sinon suggestion de plinthe. */
 export function xPlusUv(calib, origin) {
   const o = origin || calib.originUv
   if (!o) return [1, 0]
+  if (calib.xUv) return dirFrom(o, calib.xUv)
   const dA = Math.hypot(calib.xA[0] - o[0], calib.xA[1] - o[1])
   const dB = Math.hypot(calib.xB[0] - o[0], calib.xB[1] - o[1])
   const end = dB >= dA ? calib.xB : calib.xA
@@ -140,12 +161,16 @@ export function dirFrom(a, b) {
 export function calibWorldBasis(calib, aspect, viewH) {
   const origin = calib.originUv || calib.hoverUv
   if (!origin) return null
-  const dirX = xPlusUv(calib, origin)
-  const dirZ = calib.zUv
-    ? dirFrom(origin, calib.zUv)
-    : [0, -1]
-  const dirY = calib.yUv
-    ? dirFrom(origin, calib.yUv)
+  const xEnd =
+    calib.xUv || (calib.step === 'axisX' ? calib.hoverUv : null)
+  const dirX = xEnd ? dirFrom(origin, xEnd) : xPlusUv(calib, origin)
+  const zEnd =
+    calib.zUv || (calib.step === 'axisZ' ? calib.hoverUv : null)
+  const dirZ = zEnd ? dirFrom(origin, zEnd) : [0, -1]
+  const yEnd =
+    calib.yUv || (calib.step === 'axisY' ? calib.hoverUv : null)
+  const dirY = yEnd
+    ? dirFrom(origin, yEnd)
     : dirFrom(origin, defaultYuv(origin, dirX))
 
   const uvToXY = (uv) => [(uv[0] * 2 - 1) * aspect, -(uv[1] * 2 - 1)]

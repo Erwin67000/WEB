@@ -155,6 +155,15 @@ textarea {
   stroke-linecap: round;
   opacity: 0.85;
 }
+.photo-calib-svg .rail-x.is-hint {
+  opacity: 0.4;
+  stroke-width: 2.5;
+}
+.photo-calib-svg .axis-x {
+  stroke: #e24b4b;
+  stroke-width: 3.5;
+  stroke-linecap: round;
+}
 .photo-calib-svg .axis-z {
   stroke: #4aa3ff;
   stroke-width: 3.5;

@@ -228,7 +228,7 @@ export function createConfigStore(opts = {}) {
     photoPose: { xMm: 0, yMm: 0, rotZ: 0, scale: 1 },
     photoCamera: null,
     photoRoom: null,
-    /** Calage manuel 3 clics (origine → Z → Y) + molette. */
+    /** Calage : origine → X → Z → Y + molette. */
     photoCalib: null,
     sunEnabled: false,
     sunIntensity: 2.5,
@@ -738,6 +738,7 @@ export function createConfigStore(opts = {}) {
               xA,
               xB,
               originUv: null,
+              xUv: null,
               zUv: null,
               yUv: null,
               hoverUv: xA,
@@ -793,9 +794,10 @@ export function createConfigStore(opts = {}) {
             ...prev,
             step: 'origin',
             originUv: null,
+            xUv: null,
             zUv: null,
             yUv: null,
-            hoverUv: prev.xA,
+            hoverUv: null,
             scale: 1,
           },
         }

@@ -3,7 +3,6 @@ import { useActiveConfigStore } from '../store/ConfigStoreContext.jsx'
 import { useI18n } from '@texte/I18nProvider.jsx'
 import {
   PHOTO_STEPS,
-  projectOnSegment,
   uvFromPointer,
   xPlusUv,
   defaultZuv,
@@ -61,16 +60,9 @@ export default function PhotoCalibOverlay() {
     [],
   )
 
-  const hoverOrigin = (uv) => {
-    if (!calib) return uv
-    return projectOnSegment(uv, calib.xA, calib.xB)
-  }
-
   const onMove = (ev) => {
     if (!calib || step === 'done') return
-    const uv = toUv(ev)
-    if (step === 'origin') setPhotoCalib({ hoverUv: hoverOrigin(uv) })
-    else setPhotoCalib({ hoverUv: uv })
+    setPhotoCalib({ hoverUv: toUv(ev) })
   }
 
   const onClick = (ev) => {
@@ -78,8 +70,11 @@ export default function PhotoCalibOverlay() {
     ev.preventDefault()
     const uv = toUv(ev)
     if (step === 'origin') {
-      const originUv = hoverOrigin(uv)
-      setPhotoCalib({ originUv, hoverUv: originUv, step: 'axisZ' })
+      setPhotoCalib({ originUv: uv, hoverUv: uv, step: 'axisX' })
+      return
+    }
+    if (step === 'axisX') {
+      setPhotoCalib({ xUv: uv, step: 'axisZ' })
       return
     }
     if (step === 'axisZ') {
@@ -117,6 +112,7 @@ export default function PhotoCalibOverlay() {
         const prev = i <= 0 ? 'origin' : PHOTO_STEPS[i - 1]
         const patch = { step: prev, hoverUv: calib.hoverUv }
         if (prev === 'origin') patch.originUv = null
+        if (prev === 'axisX') patch.xUv = null
         if (prev === 'axisZ') patch.zUv = null
         if (prev === 'axisY') patch.yUv = null
         setPhotoCalib(patch)
@@ -129,20 +125,27 @@ export default function PhotoCalibOverlay() {
   if (!calib) return null
 
   const origin = calib.originUv || (step === 'origin' ? calib.hoverUv : null)
+  const xPt =
+    calib.xUv ||
+    (step === 'axisX' && origin && calib.hoverUv ? calib.hoverUv : null)
   const zPt =
     calib.zUv ||
     (step === 'axisZ' && origin && calib.hoverUv ? calib.hoverUv : null)
   const yPt =
     calib.yUv ||
     (step === 'axisY' && origin && calib.hoverUv ? calib.hoverUv : null)
-  const dirX = origin ? xPlusUv(calib, origin) : [1, 0]
+  const dirX = origin ? xPlusUv({ ...calib, xUv: xPt || calib.xUv }, origin) : [1, 0]
   const ghostZ = origin && !calib.zUv ? defaultZuv(origin) : null
   const ghostY =
     origin && !calib.yUv ? defaultYuv(origin, dirX) : null
 
   const stepIndex =
-    step === 'done' ? 4 : Math.max(1, PHOTO_STEPS.indexOf(step) + 1)
-  const hideCursor = step === 'origin' || step === 'axisZ' || step === 'axisY'
+    step === 'done' ? 5 : Math.max(1, PHOTO_STEPS.indexOf(step) + 1)
+  const hideCursor =
+    step === 'origin' ||
+    step === 'axisX' ||
+    step === 'axisZ' ||
+    step === 'axisY'
 
   return (
     <div
@@ -158,14 +161,25 @@ export default function PhotoCalibOverlay() {
       onContextMenu={(e) => e.preventDefault()}
     >
       <svg className="photo-calib-svg" aria-hidden>
-        <line
-          className="rail-x"
-          x1={`${calib.xA[0] * 100}%`}
-          y1={`${calib.xA[1] * 100}%`}
-          x2={`${calib.xB[0] * 100}%`}
-          y2={`${calib.xB[1] * 100}%`}
-        />
-        {ghostZ && origin && step === 'origin' && (
+        {step === 'origin' && (
+          <line
+            className="rail-x is-hint"
+            x1={`${calib.xA[0] * 100}%`}
+            y1={`${calib.xA[1] * 100}%`}
+            x2={`${calib.xB[0] * 100}%`}
+            y2={`${calib.xB[1] * 100}%`}
+          />
+        )}
+        {origin && xPt && (
+          <line
+            className="axis-x"
+            x1={`${origin[0] * 100}%`}
+            y1={`${origin[1] * 100}%`}
+            x2={`${xPt[0] * 100}%`}
+            y2={`${xPt[1] * 100}%`}
+          />
+        )}
+        {ghostZ && origin && (step === 'origin' || step === 'axisX') && (
           <line
             className="axis-ghost z"
             x1={`${origin[0] * 100}%`}
@@ -174,7 +188,7 @@ export default function PhotoCalibOverlay() {
             y2={`${ghostZ[1] * 100}%`}
           />
         )}
-        {ghostY && origin && (step === 'origin' || step === 'axisZ') && (
+        {ghostY && origin && (step === 'origin' || step === 'axisX' || step === 'axisZ') && (
           <line
             className="axis-ghost y"
             x1={`${origin[0] * 100}%`}
@@ -208,7 +222,7 @@ export default function PhotoCalibOverlay() {
 
       <div className="photo-calib-card">
         <div className="photo-calib-progress" aria-hidden>
-          {['1', '2', '3', '·'].map((n, i) => (
+          {['1', '2', '3', '4', '·'].map((n, i) => (
             <span
               key={n + i}
               className={`dot${stepIndex > i ? ' on' : ''}${
