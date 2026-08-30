@@ -18,18 +18,8 @@ import {
 } from '../store/ConfigStoreContext.jsx'
 import { useI18n } from '@texte/I18nProvider.jsx'
 import { bindSceneCapture } from '../lib/sceneCapture.js'
-import {
-  calibWorldBasis,
-  ndcToPhotoUv,
-  dirFrom,
-  projectDeltaOnXY,
-  containPlane,
-  photoCamDistance,
-  clampPhotoFov,
-  PHOTO_FOV_DEFAULT,
-  PHOTO_FOV_MIN,
-  PHOTO_FOV_MAX,
-} from '../lib/photoCalib.js'
+import { containPlane, letterboxRect, photoCamDistance } from '../lib/photoCalib.js'
+import { solvePhotoMatch, cameraBgPlane } from '../lib/photoMatch.js'
 import PhotoCalibOverlay from '../components/PhotoCalibOverlay.jsx'
 
 const SCALE = 0.001
@@ -231,10 +221,11 @@ function SceneCaptureBinder() {
   return null
 }
 
-/** Photo contain : proportions d’origine, bandes noires autour. */
-function PhotoEnvironment({ url }) {
-  const { size } = useThree()
+/** Photo contain, puis collée à la caméra une fois le match résolu. */
+function PhotoEnvironment({ url, match }) {
+  const { camera, size } = useThree()
   const texture = useTexture(url)
+  const meshRef = useRef()
   const photoAspectStore = useActiveConfigStore((s) => s.photoCalib?.photoAspect)
   const setPhotoCalib = useActiveConfigStore((s) => s.setPhotoCalib)
   const viewAspect = size.width / Math.max(1, size.height)
@@ -242,6 +233,8 @@ function PhotoEnvironment({ url }) {
   const fromImg =
     img && img.width && img.height ? img.width / Math.max(1, img.height) : 0
   const photoAspect = fromImg || photoAspectStore || viewAspect
+  const attached = Boolean(match?.ok)
+
   useEffect(() => {
     texture.colorSpace = THREE.SRGBColorSpace
     texture.needsUpdate = true
@@ -251,42 +244,64 @@ function PhotoEnvironment({ url }) {
     if (Math.abs(fromImg - (Number(photoAspectStore) || 0)) < 0.002) return
     setPhotoCalib({ photoAspect: fromImg })
   }, [fromImg, photoAspectStore, setPhotoCalib])
-  const { w, h } = containPlane(viewAspect, photoAspect)
+
+  useLayoutEffect(() => {
+    const mesh = meshRef.current
+    if (!mesh || !attached) return undefined
+    const parent = mesh.parent
+    camera.add(mesh)
+    return () => {
+      parent?.add(mesh)
+    }
+  }, [attached, camera])
+
+  useLayoutEffect(() => {
+    const mesh = meshRef.current
+    if (!mesh) return
+    if (attached) {
+      const dist = 8
+      const { w, h } = cameraBgPlane(match.fov, photoAspect, dist)
+      mesh.position.set(0, 0, -dist)
+      mesh.scale.set(w, h, 1)
+      mesh.quaternion.identity()
+    } else {
+      const { w, h } = containPlane(viewAspect, photoAspect)
+      mesh.position.set(0, 0, -0.02)
+      mesh.scale.set(w, h, 1)
+      mesh.quaternion.identity()
+    }
+  }, [attached, match, photoAspect, viewAspect])
+
   return (
-    <mesh position={[0, 0, -0.02]} renderOrder={-2} raycast={() => {}}>
-      <planeGeometry key={`${w.toFixed(4)}x${h.toFixed(4)}`} args={[w, h]} />
-      <meshBasicMaterial map={texture} depthWrite={false} />
+    <mesh ref={meshRef} renderOrder={-2} raycast={() => {}}>
+      <planeGeometry args={[1, 1]} />
+      <meshBasicMaterial
+        map={texture}
+        depthWrite={false}
+        side={THREE.DoubleSide}
+      />
     </mesh>
   )
 }
 
-/**
- * Caméra photo : fov photo (défaut 58°) + dolly pour garder le cliché en contain.
- * Le meuble a une vraie profondeur Z → fuyantes, plus une projection parallèle.
- */
-function PhotoCameraLock() {
-  const { camera, controls } = useThree()
-  const zoom = useActiveConfigStore((s) => s.photoCalib?.zoom || 1)
-  const fov = useActiveConfigStore(
-    (s) => s.photoCalib?.fov ?? PHOTO_FOV_DEFAULT,
-  )
+function PhotoCameraLock({ match }) {
+  const { camera, controls, size } = useThree()
+  const photoAspect = useActiveConfigStore((s) => s.photoCalib?.photoAspect || 1.5)
+  const viewAspect = size.width / Math.max(1, size.height)
 
   useLayoutEffect(() => {
     const prev = {
       pos: camera.position.toArray(),
       quat: camera.quaternion.toArray(),
       fov: camera.fov,
+      aspect: camera.aspect,
+      near: camera.near,
+      far: camera.far,
       target: controls?.target
         ? controls.target.toArray()
         : [...DEFAULT_CAMERA_TARGET],
     }
     camera.up.set(0, 1, 0)
-    camera.lookAt(0, 0, 0)
-    camera.updateProjectionMatrix()
-    if (controls?.target) {
-      controls.target.set(0, 0, 0)
-      controls.update?.()
-    }
     return () => {
       camera.position.set(prev.pos[0], prev.pos[1], prev.pos[2])
       camera.quaternion.set(
@@ -296,6 +311,9 @@ function PhotoCameraLock() {
         prev.quat[3],
       )
       camera.fov = prev.fov
+      camera.aspect = prev.aspect
+      camera.near = prev.near
+      camera.far = prev.far
       camera.updateProjectionMatrix()
       if (controls?.target) {
         controls.target.set(prev.target[0], prev.target[1], prev.target[2])
@@ -305,79 +323,68 @@ function PhotoCameraLock() {
   }, [camera, controls])
 
   useLayoutEffect(() => {
-    const f = Math.max(0.5, clampPhotoFov(fov))
-    const z = photoCamDistance(zoom, f)
-    camera.position.set(0, 0, z)
+    camera.near = 0.05
+    camera.far = 80
+    camera.aspect = viewAspect
+    if (match?.ok) {
+      const lb = letterboxRect(viewAspect, photoAspect)
+      const fovPhoto = match.fov * (Math.PI / 180)
+      const fovView =
+        (2 *
+          Math.atan(
+            Math.tan(fovPhoto / 2) / Math.max(0.08, lb.h),
+          ) *
+          180) /
+        Math.PI
+      camera.fov = fovView
+      camera.position.fromArray(match.position)
+      const m = new THREE.Matrix4()
+      m.makeBasis(
+        new THREE.Vector3(...match.camRight),
+        new THREE.Vector3(...match.camUp),
+        new THREE.Vector3(...match.camBack),
+      )
+      camera.quaternion.setFromRotationMatrix(m)
+      camera.updateProjectionMatrix()
+      if (controls?.target) {
+        controls.target.set(0, 0, 0)
+        controls.update?.()
+      }
+      return
+    }
+    camera.fov = 40
+    camera.position.set(0, 0, photoCamDistance(1, 40))
+    camera.quaternion.identity()
     camera.lookAt(0, 0, 0)
-    camera.fov = f
     camera.updateProjectionMatrix()
-  }, [camera, zoom, fov])
+  }, [camera, controls, match, photoAspect, viewAspect])
 
   return null
-}
-
-function PhotoPerspectiveControl() {
-  const { t } = useI18n()
-  const fov = useActiveConfigStore(
-    (s) => s.photoCalib?.fov ?? PHOTO_FOV_DEFAULT,
-  )
-  const setPhotoCalib = useActiveConfigStore((s) => s.setPhotoCalib)
-  const value = clampPhotoFov(fov)
-  return (
-    <div className="photo-fov-chip" onPointerDown={(e) => e.stopPropagation()}>
-      <label>
-        <span className="photo-fov-label">
-          {t('config.photoPerspective')}
-          <span className="photo-fov-val">{Math.round(value)}°</span>
-        </span>
-        <input
-          type="range"
-          min={PHOTO_FOV_MIN}
-          max={PHOTO_FOV_MAX}
-          step={1}
-          value={value}
-          aria-label={t('config.photoPerspective')}
-          onChange={(e) => setPhotoCalib({ fov: Number(e.target.value) })}
-        />
-      </label>
-      <button
-        type="button"
-        className="photo-fov-reset"
-        onClick={() => setPhotoCalib({ fov: PHOTO_FOV_DEFAULT })}
-        hidden={Math.abs(value - PHOTO_FOV_DEFAULT) < 0.5}
-      >
-        {t('config.photoPerspectiveReset')}
-      </button>
-    </div>
-  )
 }
 
 function PhotoDoneHandle() {
   const step = useActiveConfigStore((s) => s.photoCalib?.step)
   const storeApi = useActiveConfigStoreApi()
-  const { gl, camera, size } = useThree()
+  const { gl, camera } = useThree()
   const dragRef = useRef(null)
+  const ray = useMemo(() => new THREE.Raycaster(), [])
+  const floor = useMemo(() => new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), [])
+  const hit = useMemo(() => new THREE.Vector3(), [])
+  const ndc = useMemo(() => new THREE.Vector2(), [])
 
   useEffect(() => {
     if (step !== 'done') return undefined
     const el = gl.domElement
-    const aspect = size.width / Math.max(1, size.height)
 
-    const uvOf = (ev) => {
+    const floorHit = (ev) => {
       const rect = el.getBoundingClientRect()
-      const ndcX =
-        ((ev.clientX - rect.left) / Math.max(rect.width, 1)) * 2 - 1
-      const ndcY =
-        -((ev.clientY - rect.top) / Math.max(rect.height, 1)) * 2 + 1
-      const c = storeApi.getState().photoCalib || {}
-      return ndcToPhotoUv(
-        ndcX,
-        ndcY,
-        aspect,
-        camera.position.z,
-        c.photoAspect,
-        c.fov,
+      ndc.set(
+        ((ev.clientX - rect.left) / Math.max(rect.width, 1)) * 2 - 1,
+        -((ev.clientY - rect.top) / Math.max(rect.height, 1)) * 2 + 1,
       )
+      ray.setFromCamera(ndc, camera)
+      if (!ray.ray.intersectPlane(floor, hit)) return null
+      return hit.clone()
     }
 
     const onWheel = (ev) => {
@@ -391,29 +398,23 @@ function PhotoDoneHandle() {
       if (ev.button !== 2) return
       ev.preventDefault()
       ev.stopImmediatePropagation()
+      const p = floorHit(ev)
       const c = storeApi.getState().photoCalib || {}
       dragRef.current = {
-        uv: uvOf(ev),
-        su: Number(c.shiftU) || 0,
-        sv: Number(c.shiftV) || 0,
+        hit: p,
+        sx: Number(c.shiftX) || 0,
+        sz: Number(c.shiftZ) || 0,
       }
       el.setPointerCapture?.(ev.pointerId)
     }
 
     const onMove = (ev) => {
-      if (!dragRef.current) return
-      const c = storeApi.getState().photoCalib || {}
-      const uv = uvOf(ev)
-      const du = uv[0] - dragRef.current.uv[0]
-      const dv = uv[1] - dragRef.current.uv[1]
-      const origin = c.originUv
-      const dirX = origin && c.xUv ? dirFrom(origin, c.xUv) : [1, 0]
-      const yStart = c.y0Uv || origin
-      const dirY = yStart && c.yUv ? dirFrom(yStart, c.yUv) : [0, 1]
-      const [su, sv] = projectDeltaOnXY(du, dv, dirX, dirY)
+      if (!dragRef.current?.hit) return
+      const p = floorHit(ev)
+      if (!p) return
       storeApi.getState().setPhotoCalib({
-        shiftU: dragRef.current.su + su,
-        shiftV: dragRef.current.sv + sv,
+        shiftX: dragRef.current.sx + (p.x - dragRef.current.hit.x),
+        shiftZ: dragRef.current.sz + (p.z - dragRef.current.hit.z),
       })
     }
 
@@ -438,42 +439,25 @@ function PhotoDoneHandle() {
       el.removeEventListener('pointercancel', onUp)
       el.removeEventListener('contextmenu', onContext)
     }
-  }, [step, gl, camera, size.width, size.height, storeApi])
+  }, [step, gl, camera, storeApi, ray, floor, hit, ndc])
 
   return null
 }
 
 function PhotoFurnitureFrame({ children }) {
   const calib = useActiveConfigStore((s) => s.photoCalib)
-  const { size } = useThree()
-  const aspect = size.width / Math.max(1, size.height)
-  const basis = useMemo(
-    () => (calib ? calibWorldBasis(calib, aspect, size.height) : null),
-    [calib, aspect, size.height],
+  const match = useMemo(() => solvePhotoMatch(calib), [calib])
+  const ready = Boolean(match?.ok && calib?.originUv)
+  const s = Math.min(4, Math.max(0.25, Number(calib?.scale) || 1))
+  if (!ready) return null
+  return (
+    <group
+      position={[Number(calib.shiftX) || 0, 0, Number(calib.shiftZ) || 0]}
+      scale={s}
+    >
+      {children}
+    </group>
   )
-  const groupRef = useRef()
-  useLayoutEffect(() => {
-    const g = groupRef.current
-    if (!g) return
-    if (!basis) {
-      g.visible = false
-      return
-    }
-    g.visible = true
-    const x = new THREE.Vector3(...basis.axisX)
-    const y = new THREE.Vector3(...basis.axisY)
-    const z = new THREE.Vector3(...basis.axisZ)
-    if (x.lengthSq() < 1e-8) x.set(1, 0, 0)
-    if (y.lengthSq() < 1e-8) y.set(0, 1, 0)
-    if (z.lengthSq() < 1e-8) z.set(0, 0, 1)
-    const m = new THREE.Matrix4()
-    m.makeBasis(x, y, z)
-    m.setPosition(basis.origin[0], basis.origin[1], 0)
-    g.matrixAutoUpdate = false
-    g.matrix.copy(m)
-    g.matrixWorldNeedsUpdate = true
-  }, [basis])
-  return <group ref={groupRef}>{children}</group>
 }
 
 function EnvironmentScene({ env }) {
@@ -567,6 +551,10 @@ function SceneContent({ orbitOnly = false, ivory = false }) {
     environmentId === 'none' &&
     !orbitOnly &&
     !ivoryLook
+  const photoMatch = useMemo(() => {
+    if (!photoMode || !photoCalib?.originUv) return null
+    return solvePhotoMatch(photoCalib)
+  }, [photoMode, photoCalib])
   const showGrid = orbitOnly || photoMode ? false : showGridStore
 
   const active = units.find((u) => u.id === activeUnitId) || units[0]
@@ -599,7 +587,7 @@ function SceneContent({ orbitOnly = false, ivory = false }) {
       <color attach="background" args={[photoMode ? '#111111' : env.bg || '#0a0a0a']} />
       {photoMode && (
         <Suspense fallback={null}>
-          <PhotoEnvironment url={scenePhotoDataUrl} />
+          <PhotoEnvironment url={scenePhotoDataUrl} match={photoMatch} />
         </Suspense>
       )}
       <ambientLight intensity={ivoryLook ? 0.62 : sunEnabled ? 0.28 : 0.55} />
@@ -638,7 +626,7 @@ function SceneContent({ orbitOnly = false, ivory = false }) {
       {!photoMode && <EnvironmentScene env={env} />}
       {sunEnabled && !ivoryLook && !photoMode && <ShadowFloor />}
 
-      {photoMode && <PhotoCameraLock />}
+      {photoMode && <PhotoCameraLock match={photoMatch} />}
       {photoMode && photoCalib?.step === 'done' && <PhotoDoneHandle />}
 
       {photoMode ? (
@@ -809,7 +797,6 @@ export default function Configurateur3D({ orbitOnly = false, ivory = false }) {
         <ViewportHint pickMode={panneauPickMode} photoMode={photoMode} />
       )}
       {photoMode && <PhotoCalibOverlay />}
-      {photoMode && <PhotoPerspectiveControl />}
     </div>
   )
 }

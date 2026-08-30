@@ -785,16 +785,18 @@ export function createConfigStore(opts = {}) {
         return {
           photoCalib: {
             ...prev,
-            step: 'origin',
+            step: 'x1',
+            lines: {
+              x: [null, null],
+              y: [null, null],
+              z: [null, null],
+            },
+            pending: null,
             originUv: null,
-            xUv: null,
-            zUv: null,
-            y0Uv: null,
-            yUv: null,
             hoverUv: prev.xA || null,
             scale: 1,
-            shiftU: 0,
-            shiftV: 0,
+            shiftX: 0,
+            shiftZ: 0,
             zoom: 1,
           },
         }

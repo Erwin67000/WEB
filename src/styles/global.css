@@ -188,6 +188,15 @@ textarea {
   stroke: #1a1610;
   stroke-width: 1.5;
 }
+.photo-calib-svg .vp-guide {
+  stroke-width: 1.15;
+  stroke-dasharray: 4 6;
+  opacity: 0.45;
+  stroke-linecap: round;
+}
+.photo-calib-svg .origin-mark {
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
+}
 .photo-calib-svg .axis-ghost {
   stroke-width: 2;
   stroke-dasharray: 5 6;

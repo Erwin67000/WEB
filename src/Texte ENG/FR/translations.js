@@ -424,27 +424,34 @@ export const translations = {
       scene: '3D scene',
       importPhoto: 'Add a photo',
       importPhotoHint:
-        'From your computer or phone library — JPEG, PNG, HEIC, WebP… Then place the corner, draw X, Z, Y start, Y, and scale.',
+        'From your computer or phone library — JPEG, PNG, HEIC, WebP… Then Match Photo: two vanishing lines per axis, origin, scale.',
       photoLoaded: 'Photo loaded',
       removePhoto: 'Remove photo',
-      photoSteporigin: '1 · Place the corner',
+      photoStepx1: '1 · X vanishing — 1st line',
+      photoHelpx1:
+        'Trace an edge that recedes in X (skirting, floorboard, top of a wall). Click start, then end — or drag.',
+      photoStepx2: '2 · X vanishing — 2nd line',
+      photoHelpx2:
+        'A second edge parallel to the first in 3D (other skirting, ceiling, bed). A wider angle between the two is more accurate.',
+      photoStepz1: '3 · Vertical Z — 1st line',
+      photoHelpz1:
+        'Trace a vertical (door frame, wall corner, radiator). Click start then end.',
+      photoStepz2: '4 · Vertical Z — 2nd line',
+      photoHelpz2:
+        'A second vertical, elsewhere in the photo. If they are nearly parallel, that is fine (2-point perspective).',
+      photoStepy1: '5 · Depth Y — 1st line',
+      photoHelpy1:
+        'Trace an edge going into the room (side wall, side of the rug, hallway).',
+      photoStepy2: '6 · Depth Y — 2nd line',
+      photoHelpy2:
+        'A second edge parallel to the first in 3D. The two greens meet at the depth vanishing point.',
+      photoSteporigin: '7 · Place the origin',
       photoHelporigin:
-        'Click on the photo where the corner of the piece sits — typically on the floor, against the back wall.',
-      photoStepaxisX: '2 · Draw X (skirting)',
-      photoHelpaxisX:
-        'Pull the red X axis along the meeting of floor and wall (the skirting). Click when it follows that line.',
-      photoStepaxisZ: '3 · Draw the vertical',
-      photoHelpaxisZ:
-        'Pull the blue Z axis upward (a door edge, a corner…). Click when it matches the photo.',
-      photoStepaxisY0: '4 · Y starting point',
-      photoHelpaxisY0:
-        'Click a point on the red X axis: that is where Y starts, even if it is not the origin — like in SketchUp.',
-      photoStepaxisY: '5 · Draw depth Y',
-      photoHelpaxisY:
-        'Pull the green Y axis from that point along a floor or wall line — it does not have to pass through the origin. Click to lock it.',
-      photoStepscale: '6 · Scale',
+        'Click the corner of the piece — typically on the floor, against the back wall. That is 3D (0,0,0).',
+      photoStepscale: '8 · Scale',
       photoHelpscale:
-        'Scroll to match the real size. Click or press Confirm when it looks right.',
+        'Scroll to match the real size. Parallel edges should now vanish like the photo. Confirm when it looks right.',
+      photoFovReadout: 'Matched lens · {n}°',
       photoStepdone: 'Locked in the photo',
       photoHelpdone:
         'Scroll still resizes. Restart to place again.',
@@ -486,7 +493,7 @@ export const translations = {
       hintOrbit: 'Drag to turn · scroll to zoom',
       hintTouch: 'Drag to turn · pinch to zoom',
       hintPhoto:
-        'Corner · X along the skirting · Z · Y start on X · Y · scroll to scale',
+        'Two lines per axis (X, Z, Y) · origin · scroll to scale',
       hintPhotoDone:
         'Left-click: doors & drawers · right-drag: move X/Y · scroll: zoom',
       hintPick: 'Click a face of the piece to add / remove a panel',
@@ -1098,27 +1105,34 @@ export const translations = {
       scene: 'Scène 3D',
       importPhoto: 'Ajouter la photo',
       importPhotoHint:
-        'Depuis le dossier du PC ou la photothèque du téléphone — JPEG, PNG, HEIC, WebP… Puis pose l’angle, trace X, Z, le départ de Y, Y, et l’échelle.',
+        'Depuis le dossier du PC ou la photothèque du téléphone — JPEG, PNG, HEIC, WebP… Puis Adapter photo : deux fuyantes par axe, origine, échelle.',
       photoLoaded: 'Photo chargée',
       removePhoto: 'Retirer la photo',
-      photoSteporigin: '1 · Pose l’angle',
+      photoStepx1: '1 · Fuite X — 1re ligne',
+      photoHelpx1:
+        'Trace une arête qui fuit en X (plinthe, lame de parquet, haut de mur). Clique le début, puis la fin — ou glisse.',
+      photoStepx2: '2 · Fuite X — 2e ligne',
+      photoHelpx2:
+        'Une deuxième arête parallèle à la première dans la pièce (autre plinthe, plafond, lit). Plus l’angle entre les deux est ouvert, plus c’est juste.',
+      photoStepz1: '3 · Verticale Z — 1re ligne',
+      photoHelpz1:
+        'Trace une verticale (montant de porte, angle de mur, radiateur). Clique le début puis la fin.',
+      photoStepz2: '4 · Verticale Z — 2e ligne',
+      photoHelpz2:
+        'Une deuxième verticale, ailleurs dans la photo. Si elles sont presque parallèles, c’est normal (perspective à 2 points).',
+      photoStepy1: '5 · Profondeur Y — 1re ligne',
+      photoHelpy1:
+        'Trace une arête qui part dans la profondeur (mur latéral, bord du tapis, couloir).',
+      photoStepy2: '6 · Profondeur Y — 2e ligne',
+      photoHelpy2:
+        'Une deuxième arête parallèle à la première dans la pièce. Les deux verts se rejoignent au point de fuite de la profondeur.',
+      photoSteporigin: '7 · Pose l’origine',
       photoHelporigin:
-        'Clique dans la photo où se trouve l’angle du meuble — au sol, contre le mur du fond.',
-      photoStepaxisX: '2 · Trace X (la plinthe)',
-      photoHelpaxisX:
-        'Tire l’axe X (rouge) le long de la rencontre sol / mur — la plinthe. Clique quand il suit cette ligne.',
-      photoStepaxisZ: '3 · Trace la verticale',
-      photoHelpaxisZ:
-        'Tire l’axe Z (bleu) vers le haut — un montant de porte, un angle de mur… Clique quand ça colle.',
-      photoStepaxisY0: '4 · Point de départ Y',
-      photoHelpaxisY0:
-        'Clique un point sur l’axe X (rouge) : c’est le début de l’axe Y, même s’il n’est pas à l’origine — comme dans SketchUp.',
-      photoStepaxisY: '5 · Trace la profondeur Y',
-      photoHelpaxisY:
-        'Tire l’axe Y (vert) depuis ce point, le long d’une ligne du sol ou d’un mur — il n’a pas besoin de passer par l’origine. Clique pour le figer.',
-      photoStepscale: '6 · Échelle',
+        'Clique le coin du meuble — au sol, contre le mur du fond. C’est le (0,0,0) 3D.',
+      photoStepscale: '8 · Échelle',
       photoHelpscale:
-        'Molette pour coller à la taille réelle. Clique ou « C’est bon » quand le meuble est à l’échelle.',
+        'Molette pour coller à la taille réelle. Les arêtes parallèles doivent maintenant fuir comme dans la photo. « C’est bon » pour valider.',
+      photoFovReadout: 'Focale calée · {n}°',
       photoStepdone: 'Calé dans la photo',
       photoHelpdone:
         'La molette ajuste encore l’échelle. Recommencer pour replacer.',
@@ -1160,7 +1174,7 @@ export const translations = {
       hintOrbit: 'Glisser pour tourner · molette pour zoomer',
       hintTouch: 'Glisser pour tourner · pincer pour zoomer',
       hintPhoto:
-        'Angle · X le long de la plinthe · Z · Y0 sur X · Y · molette pour l’échelle',
+        'Deux lignes par axe (X, Z, Y) · origine · molette pour l’échelle',
       hintPhotoDone:
         'Clic gauche : portes et tiroirs · clic droit : déplacer X/Y · molette : zoom',
       hintPick: 'Cliquez une face du meuble pour ajouter / retirer un panneau',

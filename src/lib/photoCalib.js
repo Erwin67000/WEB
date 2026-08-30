@@ -1,17 +1,9 @@
 /**
- * Calage photo : origine → X → Z → Y0 (sur X) → Y → échelle.
- * UV stockées dans l’espace photo (0–1), pas l’écran : les bandes noires
- * ne déforment jamais le cliché.
+ * Calage photo — UV dans l’espace photo (0–1), bandes noires autour.
+ * Le Match Photo (points de fuite) vit dans photoMatch.js.
  */
 
-export const PHOTO_STEPS = [
-  'origin',
-  'axisX',
-  'axisZ',
-  'axisY0',
-  'axisY',
-  'scale',
-]
+export { MATCH_STEPS as PHOTO_STEPS, emptyPhotoCalib } from './photoMatch.js'
 
 /** Curseur perspective : 0° = parallèle (arête arrière figée sur X), 60° = max. */
 export const PHOTO_FOV_DEFAULT = 40
@@ -41,28 +33,6 @@ export function photoDepthK(fovDeg) {
 export function photoCamDistance(zoom = 1, fovDeg = PHOTO_FOV_DEFAULT) {
   const z0 = 1 / Math.max(0.12, photoFovTan(fovDeg))
   return z0 / Math.max(0.4, Math.min(4, Number(zoom) || 1))
-}
-
-export function emptyPhotoCalib(xLine) {
-  const xA = xLine?.a || [0.08, 0.7]
-  const xB = xLine?.b || [0.92, 0.7]
-  return {
-    step: 'origin',
-    xA,
-    xB,
-    originUv: null,
-    xUv: null,
-    zUv: null,
-    y0Uv: null,
-    yUv: null,
-    hoverUv: xA,
-    scale: 1,
-    shiftU: 0,
-    shiftV: 0,
-    zoom: 1,
-    fov: PHOTO_FOV_DEFAULT,
-    photoAspect: 1.5,
-  }
 }
 
 export async function fileToImageDataUrl(file) {
