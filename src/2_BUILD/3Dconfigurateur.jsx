@@ -18,8 +18,17 @@ import {
 } from '../store/ConfigStoreContext.jsx'
 import { useI18n } from '@texte/I18nProvider.jsx'
 import { bindSceneCapture } from '../lib/sceneCapture.js'
-import { containPlane, letterboxRect, photoCamDistance } from '../lib/photoCalib.js'
-import { solvePhotoMatch, cameraBgPlane } from '../lib/photoMatch.js'
+import {
+  containPlane,
+  letterboxRect,
+  photoCamDistance,
+  photoToViewUv,
+} from '../lib/photoCalib.js'
+import {
+  solvePhotoMatch,
+  cameraBgPlane,
+  defaultOriginUv,
+} from '../lib/photoMatch.js'
 import PhotoCalibOverlay from '../components/PhotoCalibOverlay.jsx'
 
 const SCALE = 0.001
@@ -93,9 +102,8 @@ function UnitGroup({
     const g = groupRef.current
     if (!g) return
     if (photoMode) {
-      // Sol Z = 0 figé : pas de lift, l’échelle vient du pose photo.
       g.scale.setScalar(1)
-      g.position.y = 0
+      g.position.set(0, 0, 0)
       return
     }
     const t = Math.min(1, (performance.now() - t0.current) / 520)
@@ -109,12 +117,14 @@ function UnitGroup({
       (unit.positionMm?.z || 0) * SCALE + lift
   })
 
-  const pos = [
-    (unit.positionMm?.x || 0) * SCALE,
-    (unit.positionMm?.z || 0) * SCALE,
-    -(unit.positionMm?.y || 0) * SCALE,
-  ]
-  const rotY = (unit.rotationZ || 0) * (Math.PI / 180)
+  const pos = photoMode
+    ? [0, 0, 0]
+    : [
+        (unit.positionMm?.x || 0) * SCALE,
+        (unit.positionMm?.z || 0) * SCALE,
+        -(unit.positionMm?.y || 0) * SCALE,
+      ]
+  const rotY = photoMode ? 0 : (unit.rotationZ || 0) * (Math.PI / 180)
 
   const body = (
     <>
@@ -453,17 +463,41 @@ function PhotoDoneHandle() {
 function PhotoFurnitureFrame({ children }) {
   const calib = useActiveConfigStore((s) => s.photoCalib)
   const match = useMemo(() => solvePhotoMatch(calib), [calib])
-  const ready = Boolean(match?.ok)
-  const s = Math.min(4, Math.max(0.25, Number(calib?.scale) || 1))
-  if (!ready) return null
-  return (
-    <group
-      position={[Number(calib.shiftX) || 0, 0, Number(calib.shiftZ) || 0]}
-      scale={s}
-    >
-      {children}
-    </group>
-  )
+  const { camera, size } = useThree()
+  const groupRef = useRef()
+  const ray = useMemo(() => new THREE.Raycaster(), [])
+  const floor = useMemo(() => new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), [])
+  const hit = useMemo(() => new THREE.Vector3(), [])
+  const ndc = useMemo(() => new THREE.Vector2(), [])
+
+  useFrame(() => {
+    const g = groupRef.current
+    if (!g) return
+    if (!match?.ok || !calib) {
+      g.visible = false
+      return
+    }
+    g.visible = true
+    const s = Math.min(4, Math.max(0.25, Number(calib.scale) || 1))
+    g.scale.setScalar(s)
+    const uv = defaultOriginUv(calib)
+    const viewAspect = size.width / Math.max(1, size.height)
+    const pa = calib.photoAspect || viewAspect
+    const rect = letterboxRect(viewAspect, pa)
+    const [vx, vy] = photoToViewUv(uv, rect)
+    ndc.set(vx * 2 - 1, 1 - 2 * vy)
+    ray.setFromCamera(ndc, camera)
+    if (ray.ray.intersectPlane(floor, hit) && Number.isFinite(hit.x)) {
+      g.position.set(
+        hit.x + (Number(calib.shiftX) || 0),
+        0,
+        hit.z + (Number(calib.shiftZ) || 0),
+      )
+    }
+  })
+
+  if (!match?.ok) return null
+  return <group ref={groupRef}>{children}</group>
 }
 
 function EnvironmentScene({ env }) {

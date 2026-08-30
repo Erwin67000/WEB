@@ -354,8 +354,9 @@ function solvePhotoMatchUnsafe(calib) {
     dX = [-dX[0], -dX[1], -dX[2]]
   }
 
-  const originUv = defaultOriginUv(calib)
-  const ray = axisDir({ infinite: false, uv: originUv }, aspect, f, pp)
+  /* Caméra figée par les fuyantes (centre image). L’origine ne fait que
+     translater le meuble — elle ne doit pas orbitier la caméra. */
+  const ray = axisDir({ infinite: false, uv: pp }, aspect, f, pp)
   if (!ray) return null
 
   const R_w2c = mat3FromColumns(dX, dUp, dZ)
