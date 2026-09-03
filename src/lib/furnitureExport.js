@@ -1,13 +1,26 @@
 /**
- * Export local de la configuration : Collada (*.dae) + CSV géométrie complète.
- * DAE en millimètres, Z-up (SketchUp). CSV = master_input (ossature, panneaux, modules).
+ * Export local : Collada (*.dae) + CSV géométrie réelle du configurateur.
+ * DAE en millimètres, Z-up (SketchUp).
+ * Panneaux = cases entre tablettes / tiroirs (pas le plein-face).
  */
 import { buildOssature } from '../1_STRUCTURE/01_meuble3D/ossature.js'
 import {
   buildPanneauComplet,
   face_panneau,
   moduleLayout,
+  buildTablette,
+  buildTiroir,
+  faceGroupsForUnit,
+  faceGroupBuildParams,
+  porteGroupsForUnit,
+  porteGroupBuildParams,
+  porteXSplit,
+  SEGMENTED_FACES,
 } from '../1_STRUCTURE/02_agencement/agencement.js'
+import {
+  EPAISSEUR_PANNEAU,
+  EPAISSEUR_PORTE,
+} from '../1_STRUCTURE/00_matrice/matrice_constante.js'
 import {
   buildMasterInput,
   masterInputToCsv,
@@ -38,75 +51,182 @@ function triggerDownload(filename, text, mime) {
   setTimeout(() => URL.revokeObjectURL(a.href), 1500)
 }
 
-function boxMesh(id, center, size) {
-  const [cx, cy, cz] = center
-  const [sx, sy, sz] = size
-  const hx = sx / 2
-  const hy = sy / 2
-  const hz = sz / 2
-  const positions = [
-    cx - hx, cy - hy, cz - hz,
-    cx + hx, cy - hy, cz - hz,
-    cx + hx, cy + hy, cz - hz,
-    cx - hx, cy + hy, cz - hz,
-    cx - hx, cy - hy, cz + hz,
-    cx + hx, cy - hy, cz + hz,
-    cx + hx, cy + hy, cz + hz,
-    cx - hx, cy + hy, cz + hz,
-  ]
-  const indices = [
-    0, 2, 1, 0, 3, 2,
-    4, 5, 6, 4, 6, 7,
-    0, 1, 5, 0, 5, 4,
-    1, 2, 6, 1, 6, 5,
-    2, 3, 7, 2, 7, 6,
-    3, 0, 4, 3, 4, 7,
-  ]
-  return { id, name: id, positions, indices }
+function csvCell(v) {
+  if (v == null) return ''
+  const s = String(v)
+  if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`
+  return s
+}
+
+function toMesh(id, name, positions, indices, points) {
+  const pos = positions
+    ? Array.from(positions)
+    : (points || []).flatMap((p) => [p[0], p[1], p[2]])
+  const idx = indices ? Array.from(indices) : face_panneau.flat()
+  const pts =
+    points ||
+    (() => {
+      const out = []
+      for (let i = 0; i < pos.length; i += 3) {
+        out.push([pos[i], pos[i + 1], pos[i + 2]])
+      }
+      return out
+    })()
+  return { id, name, positions: pos, indices: idx, points: pts }
+}
+
+function panneauToMesh(id, name, panneau) {
+  if (!panneau?.points) return null
+  return toMesh(
+    id,
+    name,
+    panneau.positions,
+    panneau.indices,
+    panneau.points,
+  )
 }
 
 function collectUnitMeshes(unit, state) {
   const meshes = []
-  const oss = buildOssature(unit.dims)
+  const dims = unit.dims
+  const modules = unit.modules || []
+  const epP = Number(state.epaisseurPanneau ?? EPAISSEUR_PANNEAU)
+  const epD = Number(state.epaisseurPorte ?? EPAISSEUR_PORTE)
+
+  const oss = buildOssature(dims)
   for (const m of oss.meshes) {
-    meshes.push({
-      id: `ossature-${m.id}`,
-      name: m.id,
-      positions: Array.from(m.positions),
-      indices: Array.from(m.indices),
-    })
+    meshes.push(
+      toMesh(`ossature-${m.id}`, m.id, m.positions, m.indices),
+    )
   }
 
-  const epP = Number(state.epaisseurPanneau)
-  const epD = Number(state.epaisseurPorte)
   const selected = unit.panneaux || []
   for (const nom of selected) {
+    if (nom === 'porte' || SEGMENTED_FACES.includes(nom)) continue
     try {
-      const { panneau } = buildPanneauComplet(nom, unit.dims, {
+      const { panneau } = buildPanneauComplet(nom, dims, {
         epaisseur: nom === 'porte' ? epD : epP,
       })
-      const pts = panneau.points || []
-      meshes.push({
-        id: `panneau-${nom}`,
-        name: nom,
-        positions: pts.flatMap((p) => [p[0], p[1], p[2]]),
-        indices: face_panneau.flat(),
-      })
+      const mesh = panneauToMesh(`panneau-${nom}`, nom, panneau)
+      if (mesh) meshes.push(mesh)
     } catch {
       /* panneau inconnu */
     }
   }
 
-  const mods = unit.modules || []
-  mods.forEach((mod, i) => {
-    if (mod.kind !== 'shelf') return
-    try {
-      const layout = moduleLayout(mod, unit.dims, mods)
-      meshes.push(
-        boxMesh(`tablette-${i + 1}`, layout.center, layout.size),
-      )
-    } catch {
-      /* ignore */
+  for (const nom of SEGMENTED_FACES) {
+    const groups = faceGroupsForUnit(unit, nom)
+    groups.forEach((g, gi) => {
+      try {
+        const params = faceGroupBuildParams(g, dims, modules)
+        const { panneau } = buildPanneauComplet(nom, dims, {
+          epaisseur: epP,
+          ...params,
+        })
+        const mesh = panneauToMesh(
+          `panneau-${nom}-${g.key || gi}`,
+          `${nom} ${g.key || gi}`,
+          panneau,
+        )
+        if (mesh) meshes.push(mesh)
+      } catch {
+        /* ignore */
+      }
+    })
+  }
+
+  const split = porteXSplit(dims)
+  for (const g of porteGroupsForUnit(unit)) {
+    const hinge = unit.porteHinge?.[g.key] || 'left'
+    const leaves =
+      hinge === 'center'
+        ? [
+            { tag: 'L', extra: { xMax: split.xMid } },
+            { tag: 'R', extra: { xMin: split.xMid } },
+          ]
+        : [{ tag: hinge, extra: {} }]
+    for (const leaf of leaves) {
+      try {
+        const params = porteGroupBuildParams(g, dims, modules, leaf.extra)
+        const { panneau } = buildPanneauComplet('porte', dims, {
+          epaisseur: epD,
+          ...params,
+        })
+        const mesh = panneauToMesh(
+          `porte-${g.key}-${leaf.tag}`,
+          `porte ${g.key} ${leaf.tag}`,
+          panneau,
+        )
+        if (mesh) meshes.push(mesh)
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+
+  modules.forEach((mod, i) => {
+    if (mod.kind === 'shelf') {
+      try {
+        const layout = moduleLayout(mod, dims, modules)
+        const zTop = layout.zTopMm ?? layout.zMm
+        const data = buildTablette(dims, zTop, { epaisseurMm: epP })
+        if (data?.plate) {
+          meshes.push(
+            toMesh(
+              `tablette-${i + 1}`,
+              `tablette ${i + 1}`,
+              data.plate.positions,
+              data.plate.indices,
+              data.plate.points,
+            ),
+          )
+        }
+        ;(data?.traverses || []).forEach((tr, ti) => {
+          meshes.push(
+            toMesh(
+              `tablette-${i + 1}-traverse-${tr.side || ti}`,
+              `traverse tablette ${i + 1} ${tr.side || ti}`,
+              tr.positions,
+              tr.indices,
+              tr.points,
+            ),
+          )
+        })
+      } catch {
+        /* ignore */
+      }
+    }
+
+    if (mod.kind === 'drawer') {
+      try {
+        const layout = moduleLayout(mod, dims, modules)
+        const data = buildTiroir(dims, layout, mod, { epaisseurMm: epP })
+        if (data?.lwkOutOfRange || data?.depthTooSmall) return
+        ;(data.traverses || []).forEach((tr, ti) => {
+          meshes.push(
+            toMesh(
+              `tiroir-${i + 1}-traverse-${tr.side || ti}`,
+              `traverse tiroir ${i + 1} ${tr.side || ti}`,
+              tr.positions,
+              tr.indices,
+              tr.points,
+            ),
+          )
+        })
+        ;(data.box?.panels || []).forEach((p, pi) => {
+          meshes.push(
+            toMesh(
+              `tiroir-${i + 1}-${p.id || pi}`,
+              `tiroir ${i + 1} ${p.id || pi}`,
+              p.positions,
+              p.indices,
+              p.points,
+            ),
+          )
+        })
+      } catch {
+        /* ignore */
+      }
     }
   })
 
@@ -117,8 +237,9 @@ function geometryXml(mesh) {
   const id = safeId(mesh.id)
   const pos = mesh.positions
   const idx = mesh.indices
-  const vcount = pos.length / 3
-  const tcount = idx.length / 3
+  const vcount = Math.floor(pos.length / 3)
+  const tcount = Math.floor(idx.length / 3)
+  if (!vcount || !tcount) return ''
   const floatStr = pos.map((n) => Number(n).toFixed(4)).join(' ')
   const pStr = idx.join(' ')
   return `      <geometry id="${id}" name="${xmlEscape(mesh.name || id)}">
@@ -175,7 +296,7 @@ export function buildFurnitureCollada(state) {
     return meshes
   })
   const now = new Date().toISOString()
-  const geoms = all.map(geometryXml).join('\n')
+  const geoms = all.map(geometryXml).filter(Boolean).join('\n')
   const nodes = units
     .map((u, i) => nodeXml(u, unitMeshes[i], i))
     .join('\n')
@@ -206,19 +327,41 @@ ${nodes}
 `
 }
 
+function appendGeomCsv(csv, state) {
+  const extra = []
+  const push = (row) => extra.push(row.map(csvCell).join(','))
+  ;(state.units || []).forEach((unit, ui) => {
+    collectUnitMeshes(unit, state).forEach((mesh) => {
+      ;(mesh.points || []).forEach((p, pi) => {
+        push([
+          'geom_point',
+          ui,
+          unit.id,
+          mesh.id,
+          '',
+          pi,
+          p[0],
+          p[1],
+          p[2],
+          mesh.name || '',
+        ])
+      })
+    })
+  })
+  if (!extra.length) return csv
+  return `${csv}\n${extra.join('\n')}`
+}
+
 export function downloadFurnitureCad(state) {
   const master = buildMasterInput(state)
-  const csv = masterInputToCsv(master)
+  const csv = appendGeomCsv(masterInputToCsv(master), state)
   const dae = buildFurnitureCollada(state)
-  const slug = String(master.quoteRef || 'meuble')
-    .replace(/[^A-Za-z0-9_\-]+/g, '-')
-    .replace(/^-|-$/g, '') || 'meuble'
+  const slug =
+    String(master.quoteRef || 'meuble')
+      .replace(/[^A-Za-z0-9_\-]+/g, '-')
+      .replace(/^-|-$/g, '') || 'meuble'
   const base = `philae-${slug}`
-  triggerDownload(
-    `${base}.csv`,
-    `\uFEFF${csv}`,
-    'text/csv;charset=utf-8',
-  )
+  triggerDownload(`${base}.csv`, `\uFEFF${csv}`, 'text/csv;charset=utf-8')
   triggerDownload(`${base}.dae`, dae, 'model/vnd.collada+xml')
   return { csv, dae, base }
 }
