@@ -53,6 +53,7 @@ import {
   EPAISSEURS_PANNEAU,
   EPAISSEURS_PORTE,
 } from '../3_INPUT/master_input.js'
+import { downloadFurnitureCad } from '../lib/furnitureExport.js'
 import { clampDims } from '../3_INPUT/matrice_input.js'
 import {
   parseModulesSpec,
@@ -983,6 +984,7 @@ export function createConfigStore(opts = {}) {
 
     downloadMasterCsv: () => downloadMasterInputCsv(get()),
     downloadMasterJson: () => downloadMasterInputJson(get()),
+    downloadCad: () => downloadFurnitureCad(get()),
 
     /**
      * Devis client : résumé HTML (meubles, dims, aménagements, panneaux, prix)
