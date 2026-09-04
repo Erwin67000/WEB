@@ -86,7 +86,7 @@ function panneauToMesh(id, name, panneau) {
   )
 }
 
-function collectUnitMeshes(unit, state) {
+export function collectUnitMeshes(unit, state) {
   const meshes = []
   const dims = unit.dims
   const modules = unit.modules || []
@@ -214,14 +214,15 @@ function collectUnitMeshes(unit, state) {
           )
         })
         ;(data.box?.panels || []).forEach((p, pi) => {
+          const id = `tiroir-${i + 1}-${p.id || p.nom || pi}`
+          const label = `tiroir ${i + 1} ${p.id || p.nom || pi}`
+          if (p.panneau) {
+            const mesh = panneauToMesh(id, label, p.panneau)
+            if (mesh) meshes.push(mesh)
+            return
+          }
           meshes.push(
-            toMesh(
-              `tiroir-${i + 1}-${p.id || pi}`,
-              `tiroir ${i + 1} ${p.id || pi}`,
-              p.positions,
-              p.indices,
-              p.points,
-            ),
+            toMesh(id, label, p.positions, p.indices, p.points),
           )
         })
       } catch {
@@ -350,6 +351,19 @@ function appendGeomCsv(csv, state) {
   })
   if (!extra.length) return csv
   return `${csv}\n${extra.join('\n')}`
+}
+
+/** Console navigateur : `philaeCad()` — export interne, pas exposé au client. */
+export function bindPhilaeCadExport(getState) {
+  if (typeof window === 'undefined') return () => {}
+  window.philaeCad = () => downloadFurnitureCad(getState())
+  return () => {
+    try {
+      delete window.philaeCad
+    } catch {
+      /* ignore */
+    }
+  }
 }
 
 export function downloadFurnitureCad(state) {

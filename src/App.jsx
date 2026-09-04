@@ -16,6 +16,7 @@ import BoutiquePage from './pages/BoutiquePage.jsx'
 import ArticlePage from './pages/ArticlePage.jsx'
 import BoutiqueConfigurePage from './pages/BoutiqueConfigurePage.jsx'
 import ConfigurateurPage from './pages/ConfigurateurPage.jsx'
+import AtelierCadPage from './pages/AtelierCadPage.jsx'
 import ConceptPage from './pages/ConceptPage.jsx'
 import ContactPage from './pages/ContactPage.jsx'
 import CheckoutSuccessPage from './pages/CheckoutSuccessPage.jsx'
@@ -77,7 +78,8 @@ function Shell() {
     location.pathname === '/confidentialite' ||
     location.pathname === '/politique-confidentialite' ||
     location.pathname === '/politique-cookies' ||
-    location.pathname === '/livraison'
+    location.pathname === '/livraison' ||
+    location.pathname === '/atelier-cad'
 
   useEffect(() => {
     trackPageview()
@@ -168,6 +170,7 @@ function Shell() {
               element={<Navigate to="/commande" replace />}
             />
             <Route path="/configurateur" element={<ConfigurateurPage />} />
+            <Route path="/atelier-cad" element={<AtelierCadPage />} />
             <Route path="/concept" element={<ConceptPage />} />
             <Route path="/contact" element={<ContactPage />} />
             <Route path="/atelier" element={<ConceptPage />} />

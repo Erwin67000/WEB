@@ -299,7 +299,6 @@ export default function ControlPanel() {
   const setScenePhoto = useActiveConfigStore((s) => s.setScenePhoto)
   const clearScenePhoto = useActiveConfigStore((s) => s.clearScenePhoto)
   const resetPhotoCalib = useActiveConfigStore((s) => s.resetPhotoCalib)
-  const downloadCad = useActiveConfigStore((s) => s.downloadCad)
   const setSun = useActiveConfigStore((s) => s.setSun)
   const setSunIntensity = useActiveConfigStore((s) => s.setSunIntensity)
   const setWireframe = useActiveConfigStore((s) => s.setWireframe)
@@ -538,17 +537,6 @@ export default function ControlPanel() {
                     )
                   })}
                 </div>
-                <button
-                  type="button"
-                  className="btn scene-photo-btn"
-                  style={{ marginTop: '0.7rem' }}
-                  onClick={() => downloadCad()}
-                >
-                  {t('config.downloadCadBtn')}
-                </button>
-                <p className="muted" style={{ margin: '0.35rem 0 0', fontSize: '0.72rem' }}>
-                  {t('config.downloadCadHint')}
-                </p>
               </div>
             )}
           </section>
@@ -1107,13 +1095,6 @@ export default function ControlPanel() {
                   }}
                 >
                   {t('config.downloadViewBtn')}
-                </button>
-                <button
-                  type="button"
-                  className="btn scene-photo-btn"
-                  onClick={() => downloadCad()}
-                >
-                  {t('config.downloadCadBtn')}
                 </button>
               </div>
               <label className="check-item">

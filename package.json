@@ -8,6 +8,7 @@
   },
   "scripts": {
     "dev": "vite",
+    "cad": "node scripts/cad-export.mjs",
     "dev:api": "wrangler dev --port 8787",
     "sync:catalogue": "node scripts/sync-catalogue.mjs",
     "catalogue:xlsx": "node scripts/csv-to-catalogue-xlsx.mjs",

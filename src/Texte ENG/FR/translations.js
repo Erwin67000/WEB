@@ -743,9 +743,9 @@ export const translations = {
       ctaShop: 'Voir la boutique',
       ctaConfig: 'Configurer une pièce',
       scroll: 'Scroller pour assembler',
-      closeTitle: 'Votre meuble, sous toutes ses faces',
+      closeTitle: 'Votre meuble, sous toutes ses formes',
       closeLead:
-        'Tournez, zoomez, puis ouvrez le configurateur — ou choisissez un modèle en boutique.',
+        'Selectionner votre meuble parmis les modèles préconfigurés et personnalisables — ou commencer votre design d’une page blanche via notre configurateur.',
       pillarDesign: 'Design',
       pillarDesignText:
         'Douze arêtes, un angle. L’ossature est le meuble — la géométrie d’abord, l’identité dans chaque sommet.',
