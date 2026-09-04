@@ -11,7 +11,6 @@ import {
   fetchCurrentConfig,
   readLocalConfig,
 } from '../lib/savedConfig.js'
-import { bindPhilaeCadExport } from '../lib/furnitureExport.js'
 
 const Configurateur3D = lazy(() => import('../2_BUILD/3Dconfigurateur.jsx'))
 
@@ -106,10 +105,6 @@ export default function ConfigurateurPage() {
       window.clearTimeout(timer)
       window.removeEventListener('pagehide', onHide)
     }
-  }, [])
-
-  useEffect(() => {
-    return bindPhilaeCadExport(() => useConfigStore.getState())
   }, [])
 
   return (

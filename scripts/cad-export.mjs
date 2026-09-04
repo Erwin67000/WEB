@@ -1,12 +1,6 @@
 /**
- * Export interne DAE + CSV — pas exposé au client.
- *
- * 1. Configurateur ouvert (npm run dev)
- * 2. npm run cad
- *    → ouvre /atelier-cad  (état courant, ou dernier brouillon local)
- *
- * Console navigateur, sur /configurateur :
- *    philaeCad()
+ * Ouvre la page d’export DAE + CSV du serveur Vite local.
+ * Cette URL n’existe que pendant `npm run dev` (plugin Vite, pas dans dist).
  */
 import { exec } from 'node:child_process'
 import { platform } from 'node:os'
@@ -14,12 +8,12 @@ import { platform } from 'node:os'
 const url = process.env.PHILAE_CAD_URL || 'http://127.0.0.1:3102/atelier-cad'
 
 console.log(`
-  Philae — export DAE + CSV (interne)
-  -----------------------------------
-  Page secrète : ${url}
-  Console      : philaeCad()   (onglet /configurateur)
+  Philae — export DAE + CSV (dev only)
+  ------------------------------------
+  ${url}
 
-  Le bouton client a été retiré. Cette page n’est pas dans le menu.
+  Prérequis : npm run dev
+  En production (Cloudflare Pages) cette route n’existe pas (HTTP 404).
 `)
 
 const cmd =

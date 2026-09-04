@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react'
 import { fileURLToPath, URL } from 'node:url'
 import fs from 'node:fs'
 import path from 'node:path'
+import { cadExportDevPlugin } from './scripts/vite-cad-dev-plugin.js'
 
 const rootDir = fileURLToPath(new URL('.', import.meta.url))
 /** Monorepo philae (frère de sauvegarde/) */
@@ -62,7 +63,7 @@ function structureStaticPlugin() {
 }
 
 export default defineConfig({
-  plugins: [react(), structureStaticPlugin()],
+  plugins: [react(), structureStaticPlugin(), cadExportDevPlugin()],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
@@ -94,6 +95,7 @@ export default defineConfig({
     ],
   },
   server: {
+    // GET /atelier-cad + POST /atelier-cad/download : cadExportDevPlugin (dev only)
     port: 3102,
     host: true,
     strictPort: true,

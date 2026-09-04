@@ -525,9 +525,24 @@ async function handleApi(request, env, _ctx) {
   }
 }
 
+function isDevOnlyCadPath(pathname) {
+  return pathname === '/atelier-cad' || pathname.startsWith('/atelier-cad/')
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url)
+
+    // Route Vite-only : jamais déployée. SPA fallback would otherwise 200 index.html.
+    if (isDevOnlyCadPath(url.pathname)) {
+      return new Response('Not Found', {
+        status: 404,
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8',
+          'Cache-Control': 'no-store',
+        },
+      })
+    }
 
     if (url.pathname.startsWith('/api/')) {
       return handleApi(request, env, ctx)

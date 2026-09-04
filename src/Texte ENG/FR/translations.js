@@ -461,9 +461,6 @@ export const translations = {
       photoPerspectiveReset: '40°',
       downloadView: 'Download PDF',
       downloadViewBtn: 'Download PDF',
-      downloadCadBtn: 'Download DAE + CSV',
-      downloadCadHint:
-        'Collada 3D (*.dae, millimetres, Z-up) and the full geometry table (*.csv).',
       environment: 'Environment',
       sun: 'Sun',
       intensity: 'Intensity {n}',
@@ -1145,9 +1142,6 @@ export const translations = {
       photoPerspectiveReset: '40°',
       downloadView: 'Télécharger le PDF',
       downloadViewBtn: 'Télécharger le PDF',
-      downloadCadBtn: 'Télécharger DAE + CSV',
-      downloadCadHint:
-        'Modèle 3D Collada (*.dae, millimètres, Z-up SketchUp) et le tableau complet de géométrie (*.csv).',
       environment: 'Environnement',
       sun: 'Soleil',
       intensity: 'Intensité {n}',
