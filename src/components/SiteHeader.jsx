@@ -184,7 +184,7 @@ export default function SiteHeader() {
       <div className="site-header-inner">
         <div className="site-header-left">
           <NavLink to="/" className="site-brand" end>
-            <img src="public\logo\PHILAE_white_no bg.png" alt="" className="site-logo-img" />
+            <img src="/logo/PHILAE_white_no bg.png" alt="" className="site-logo-img" />
             <span className="site-logo-word">ATELIER PHILAE</span>
           </NavLink>
         </div>
