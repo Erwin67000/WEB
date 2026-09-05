@@ -13,7 +13,7 @@ export default function HomeManifesto() {
   return (
     <section className="home-manifesto" aria-label={t('home.manifestoAria')}>
       <div className="home-manifesto-bg" aria-hidden>
-        <img src="/accueil/hero-frame.jpg" alt="" />
+        <img src="/accueil/renduv1.png" alt="" />
       </div>
       <div className="home-manifesto-inner">
         <h1 className="home-manifesto-title">
