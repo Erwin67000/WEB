@@ -72,6 +72,11 @@ export const translations = {
       pillarDurability: 'Durability',
       pillarDurabilityText:
         'Solid wood, knock-down assembly, far lighter than a melamine carcass. Built to last, made to move.',
+      pillarAria: 'The three pillars',
+      pillarKicker: 'The three pillars',
+      pillarPrev: 'Previous pillar',
+      pillarNext: 'Next pillar',
+      pillarPhotoSoon: 'Photo coming soon',
       viewerAria: '3D viewer — main configurator',
       viewerHint: 'Orbit · zoom',
       viewerLoading: 'Loading 3D…',
@@ -752,6 +757,11 @@ export const translations = {
       pillarDurability: 'Durabilité',
       pillarDurabilityText:
         'Bois massif, assemblage démontable, bien plus léger qu’un caisson mélaminé. Fait pour durer, fait pour bouger.',
+      pillarAria: 'Les trois piliers',
+      pillarKicker: 'Les trois piliers',
+      pillarPrev: 'Pilier précédent',
+      pillarNext: 'Pilier suivant',
+      pillarPhotoSoon: 'Photo à venir',
       viewerAria: 'Visualiseur 3D — configurateur principal',
       viewerHint: 'Orbit · zoom',
       viewerLoading: 'Chargement 3D…',

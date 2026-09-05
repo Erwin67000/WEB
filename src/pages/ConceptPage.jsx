@@ -30,13 +30,13 @@ export default function ConceptPage() {
 
       <div className="concept-visuals" aria-hidden>
         <figure>
-          <img src="public\accueil\renduv1.png" alt="" style={{ objectPosition: '70% 40%' }} />
+          <img src="/accueil/renduv1.png" alt="" style={{ objectPosition: '70% 40%' }} />
         </figure>
         <figure>
-          <img src="public\accueil\renduv1.png" alt="" style={{ objectPosition: '55% 70%' }} />
+          <img src="/accueil/renduv1.png" alt="" style={{ objectPosition: '55% 70%' }} />
         </figure>
         <figure>
-          <img src="public\accueil\renduv1.png" alt="" style={{ objectPosition: '30% 50%' }} />
+          <img src="/accueil/renduv1.png" alt="" style={{ objectPosition: '30% 50%' }} />
         </figure>
       </div>
 
