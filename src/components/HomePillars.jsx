@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { Fragment, useEffect, useRef } from 'react'
 import { useI18n } from '@texte/I18nProvider.jsx'
 
 const PILLARS = [
@@ -42,7 +42,7 @@ export default function HomePillars() {
           if (entry.isIntersecting) entry.target.classList.add('is-in')
         }
       },
-      { threshold: 0.32, rootMargin: '0px 0px -10% 0px' },
+      { threshold: 0.12, rootMargin: '0px' },
     )
     panels.forEach((el) => io.observe(el))
     return () => io.disconnect()
@@ -54,19 +54,29 @@ export default function HomePillars() {
       className="home-pillars-section"
       aria-label={t('home.pillarAria')}
     >
-      {PILLARS.map((p) => (
-        <article key={p.id} className="home-pillar-panel">
-          <div className="home-pillar-panel-bg" aria-hidden>
-            <img src={p.photo} alt="" style={{ objectPosition: p.objectPosition }} />
-          </div>
-          <div className="home-pillar-panel-copy">
-            <span className="home-pillar-panel-n" aria-hidden>
-              {p.n}
-            </span>
-            <h2 className="home-pillar-panel-title">{t(p.titleKey)}</h2>
-            <p className="home-pillar-panel-text">{t(p.textKey)}</p>
-          </div>
-        </article>
+      <div className="home-photo-gap home-photo-gap--long" aria-hidden />
+      {PILLARS.map((p, i) => (
+        <Fragment key={p.id}>
+          {i > 0 ? (
+            <div className="home-photo-gap home-photo-gap--short" aria-hidden />
+          ) : null}
+          <article className="home-pillar-panel">
+            <div className="home-pillar-panel-bg" aria-hidden>
+              <img
+                src={p.photo}
+                alt=""
+                style={{ objectPosition: p.objectPosition }}
+              />
+            </div>
+            <div className="home-pillar-panel-copy">
+              <span className="home-pillar-panel-n" aria-hidden>
+                {p.n}
+              </span>
+              <h2 className="home-pillar-panel-title">{t(p.titleKey)}</h2>
+              <p className="home-pillar-panel-text">{t(p.textKey)}</p>
+            </div>
+          </article>
+        </Fragment>
       ))}
     </section>
   )

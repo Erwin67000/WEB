@@ -822,7 +822,21 @@ body.story-mode {
   z-index: 16;
   display: block;
   padding: 0;
-  background: #12100c;
+  background: #000;
+}
+
+.home-photo-gap {
+  width: 100%;
+  background: #000;
+  pointer-events: none;
+}
+
+.home-photo-gap--long {
+  height: 10dvh;
+}
+
+.home-photo-gap--short {
+  height: 2.2dvh;
 }
 
 .home-pillar-panel {
@@ -870,11 +884,8 @@ body.story-mode {
 .home-pillar-panel-n,
 .home-pillar-panel-title,
 .home-pillar-panel-text {
-  opacity: 0;
-  transform: translateY(1.15rem);
-  transition:
-    opacity 0.75s cubic-bezier(0.22, 1, 0.36, 1),
-    transform 0.75s cubic-bezier(0.22, 1, 0.36, 1);
+  opacity: 1;
+  transform: none;
 }
 
 .home-pillar-panel-n {
@@ -896,7 +907,6 @@ body.story-mode {
   color: #f5f0e6;
   margin: 0 0 0.85rem;
   text-shadow: 0 2px 24px rgba(0, 0, 0, 0.45);
-  transition-delay: 0.1s;
 }
 
 .home-pillar-panel-text {
@@ -906,23 +916,36 @@ body.story-mode {
   line-height: 1.45;
   color: #efe6d4;
   text-shadow: 0 1px 14px rgba(0, 0, 0, 0.45);
-  transition-delay: 0.2s;
 }
 
-.home-pillar-panel.is-in .home-pillar-panel-n,
-.home-pillar-panel.is-in .home-pillar-panel-title,
+.home-pillar-panel.is-in .home-pillar-panel-n {
+  animation: home-pillar-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.home-pillar-panel.is-in .home-pillar-panel-title {
+  animation: home-pillar-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
+}
+
 .home-pillar-panel.is-in .home-pillar-panel-text {
-  opacity: 1;
-  transform: none;
+  animation: home-pillar-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both;
+}
+
+@keyframes home-pillar-in {
+  from {
+    opacity: 0;
+    transform: translateY(1.15rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .home-pillar-panel-n,
-  .home-pillar-panel-title,
-  .home-pillar-panel-text {
-    transform: none;
-    transition: opacity 0.35s ease;
-    transition-delay: 0s;
+  .home-pillar-panel.is-in .home-pillar-panel-n,
+  .home-pillar-panel.is-in .home-pillar-panel-title,
+  .home-pillar-panel.is-in .home-pillar-panel-text {
+    animation: none;
   }
 }
 
@@ -1011,7 +1034,12 @@ body.story-mode {
 }
 
 .home-manifesto-scroll {
-  margin: 1.75rem 0 0;
+  position: absolute;
+  left: 50%;
+  top: 90%;
+  z-index: 2;
+  margin: 0;
+  transform: translate(-50%, -50%);
   display: inline-flex;
   align-items: center;
   gap: 0.55rem;
