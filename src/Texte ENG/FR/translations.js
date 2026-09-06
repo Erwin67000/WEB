@@ -65,13 +65,13 @@ export const translations = {
         'Turn it, zoom, then open the configurator — or pick a model from the shop.',
       pillarDesign: 'Design',
       pillarDesignText:
-        'Twelve edges, one angle. The frame is the piece — geometry first, identity in every joint.',
-      pillarFunction: 'Functionality',
-      pillarFunctionText:
-        'Shelves, drawers, doors: you compose the interior. Structure first, uses after.',
-      pillarDurability: 'Durability',
-      pillarDurabilityText:
-        'Solid wood, knock-down assembly, far lighter than a melamine carcass. Built to last, made to move.',
+        'Structure as signature',
+      pillarLiberty: 'Liberty',
+      pillarLibertyText:
+        'The frame is set, the rest is up to you',
+      pillarLongevity: 'Longevity',
+      pillarLongevityText:
+        'It evolves, it repairs, it recycles',
       pillarAria: 'The three pillars',
       pillarKicker: 'The three pillars',
       pillarPrev: 'Previous pillar',
@@ -750,13 +750,13 @@ export const translations = {
         'Selectionner votre meuble parmis les modèles préconfigurés et personnalisables — ou commencer votre design d’une page blanche via notre configurateur.',
       pillarDesign: 'Design',
       pillarDesignText:
-        'Douze arêtes, un angle. L’ossature est le meuble — la géométrie d’abord, l’identité dans chaque sommet.',
-      pillarFunction: 'Fonctionnalité',
-      pillarFunctionText:
-        'Tablettes, tiroirs, portes : vous composez l’intérieur. La structure d’abord, les usages ensuite.',
-      pillarDurability: 'Durabilité',
-      pillarDurabilityText:
-        'Bois massif, assemblage démontable, bien plus léger qu’un caisson mélaminé. Fait pour durer, fait pour bouger.',
+        'L’ossature comme signature',
+      pillarLiberty: 'Liberté',
+      pillarLibertyText:
+        'Le cadre existe, votre intention est libre',
+      pillarLongevity: 'Longévité',
+      pillarLongevityText:
+        'Evolue. Se répare. Se recycle.',
       pillarAria: 'Les trois piliers',
       pillarKicker: 'Les trois piliers',
       pillarPrev: 'Pilier précédent',
