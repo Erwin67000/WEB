@@ -6,7 +6,7 @@ export default function HomeManifesto() {
   return (
     <section className="home-manifesto" aria-label={t('home.manifestoAria')}>
       <div className="home-manifesto-bg" aria-hidden>
-        <img src="/accueil/renduv1.png" alt="" />
+        <img src="/accueil/manifesto.png" alt="" />
       </div>
       <div className="home-manifesto-inner">
         <p className="home-manifesto-kicker">{t('home.kicker')}</p>
