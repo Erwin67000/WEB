@@ -1,9 +1,9 @@
-﻿Boutique,"ID",Piece,Room,Nom,Name,L,P,H,Description FR,Description ENG,tags,couleur_ossature,couleur_panneau,porte_charniere,porte,fond,joue1,joue2,socle,dessus,dessus_int,# tiroir,hauteur_tiroir,tiroirs_h,# tablette,tablettes_z,porte_cases,fond_cases,joue1_cases,joue2_cases,MiseEnAvant,Options
+Boutique,ID,Piece,Room,Nom,Name,L,P,H,Description FR,Description ENG,tags,couleur_ossature,couleur_panneau,porte_charniere,porte,fond,joue1,joue2,socle,dessus,dessus_int,# tiroir,hauteur_tiroir,tiroirs_h,# tablette,tablettes_z,porte_cases,fond_cases,joue1_cases,joue2_cases,MiseEnAvant,Options
 O,101,Chambre,Bedroom,Table Chevet,Bedside table,300,300,500,"Chevet 1 tiroir, 1 tablette — EXEMPLE à supprimer","Bedside 1 drawer, 1 shelf — SAMPLE, delete me",chevet chambre,brut,olive,,,,,,O,,,1,84,,1,,,,,,O,EXEMPLE — tablettes_z vide = répartition auto
 O,102,Couloir / entrée,Hall / entry,Bibliothèque,Bookcase,400,400,1800,Colonne 5 tablettes calées — EXEMPLE à supprimer,"Column 5 placed shelves — SAMPLE, delete me",bibliotheque,brut,bleu_poudre,,,O,,,O,O,,0,,,5,400|700|1000|1300|1600,,,,,,EXEMPLE — tablettes_z = haut de chaque octogone (mm)
 O,103,Chambre,Bedroom,Dressing,Wardrobe,800,450,1900,Dressing 2 tiroirs + porte double — EXEMPLE à supprimer,"Wardrobe 2 drawers + double door — SAMPLE, delete me",dressing chambre,vernis_clair,terracotta,center,O,,O,O,,,,2,214,188|214,4,,,,,,,EXEMPLE — L>600 mm ⇒ charnière center obligatoire
-O,201,,,,,,,,,,,brut,olive,,,,,,,,,,,,,,,,,,,
-O,202,,,,,,,,,,,brut,olive,,,,,,,,,,,,,,,,,,,
+O,201,Cuisine,Kitchen,Bar,Bar,400,600,900,Bar  vin,Wine furniture,Kitchen,brut,olive,,,,O,,,O,,,,,2,400|700,,,,,O,EXEMPLE —TEST
+O,202,DANS TON CUL,DTC,DTC,DTGC,2200,200,1685,DANS TON C,IN YOUR A,HELLO,brut,olive,,O,,,O,,O,,2,214,188|214,2,1000|1300,O,O,O,O,,EXEMPLE —TEST V2
 O,203,,,,,,,,,,,brut,olive,,,,,,,,,,,,,,,,,,,
 O,204,,,,,,,,,,,brut,olive,,,,,,,,,,,,,,,,,,,
 O,205,,,,,,,,,,,brut,olive,,,,,,,,,,,,,,,,,,,

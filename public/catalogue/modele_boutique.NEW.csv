@@ -1,0 +1,23 @@
+﻿Boutique,"ID",Piece,Room,Nom,Name,L,P,H,Description FR,Description ENG,tags,couleur_ossature,couleur_panneau,porte_charniere,porte,fond,joue1,joue2,socle,dessus,dessus_int,# tiroir,hauteur_tiroir,tiroirs_h,# tablette,tablettes_z,porte_cases,fond_cases,joue1_cases,joue2_cases,MiseEnAvant,Options
+O,201,Cuisine,Kitchen,Bar,Bar,400,600,900,"Bar 40 × 60 × 90 cm, deux tablettes. Une joue et un dessus.","Bar 40 × 60 × 90 cm, two shelves. One side panel and a top.",bar cuisine,brut,olive,,,,O,,,O,,0,,,2,400|700,,,,,O,"Saisie atelier — joue gauche + dessus, tablettes à 400 et 700 mm"
+O,202,Chambre,Bedroom,Table Chevet,Bedside table,300,300,500,"Chevet 30 × 30 × 50 cm, un tiroir 84 mm et une tablette.","Bedside 30 × 30 × 50 cm, one 84 mm drawer and one shelf.",chevet chambre,brut,olive,,,,,,,O,,1,84,,1,,,,,,O,1re tablette calée sur le tiroir (fermeture)
+O,203,Chambre,Bedroom,Commode,Chest of drawers,600,400,850,"Commode 60 × 40 × 85 cm, deux tiroirs 136 mm, une tablette, socle et dessus.","Chest 60 × 40 × 85 cm, two 136 mm drawers, one shelf, plinth and top.",commode chambre,brut,terracotta,,,,,,O,O,,2,136,,1,,,,,,,"Tiroirs identiques 136 mm, empilement auto"
+O,204,Couloir / entrée,Hall / entry,Bibliothèque,Bookcase,400,400,1800,"Colonne 40 × 40 × 180 cm, cinq tablettes calées, fond, socle et dessus.","Column 40 × 40 × 180 cm, five placed shelves, back, plinth and top.",bibliotheque entree,brut,bleu_poudre,,,O,,,O,O,,0,,,5,400|700|1000|1300|1600,,,,,O,"tablettes_z = haut d’octogone (mm), bas → haut"
+O,205,Chambre,Bedroom,Dressing,Wardrobe,800,450,1900,"Dressing 80 × 45 × 190 cm, deux tiroirs, quatre tablettes, porte double et joues.","Wardrobe 80 × 45 × 190 cm, two drawers, four shelves, double door and sides.",dressing chambre,vernis_clair,terracotta,center,O,,O,O,,,,2,214,188|214,4,,,,,,,L=800 > 600 mm → charnière center ; tiroirs 188 puis 214 mm
+O,206,,,,,,,,,,,brut,olive,,,,,,,,,,,,,,,,,,,
+O,207,,,,,,,,,,,brut,olive,,,,,,,,,,,,,,,,,,,
+O,208,,,,,,,,,,,brut,olive,,,,,,,,,,,,,,,,,,,
+O,209,,,,,,,,,,,brut,olive,,,,,,,,,,,,,,,,,,,
+O,210,,,,,,,,,,,brut,olive,,,,,,,,,,,,,,,,,,,
+O,211,,,,,,,,,,,brut,olive,,,,,,,,,,,,,,,,,,,
+O,212,,,,,,,,,,,brut,olive,,,,,,,,,,,,,,,,,,,
+O,213,,,,,,,,,,,brut,olive,,,,,,,,,,,,,,,,,,,
+O,214,,,,,,,,,,,brut,olive,,,,,,,,,,,,,,,,,,,
+O,215,,,,,,,,,,,brut,olive,,,,,,,,,,,,,,,,,,,
+O,216,,,,,,,,,,,brut,olive,,,,,,,,,,,,,,,,,,,
+O,217,,,,,,,,,,,brut,olive,,,,,,,,,,,,,,,,,,,
+O,218,,,,,,,,,,,brut,olive,,,,,,,,,,,,,,,,,,,
+O,219,,,,,,,,,,,brut,olive,,,,,,,,,,,,,,,,,,,
+O,220,,,,,,,,,,,brut,olive,,,,,,,,,,,,,,,,,,,
+O,221,,,,,,,,,,,brut,olive,,,,,,,,,,,,,,,,,,,
+O,222,,,,,,,,,,,brut,olive,,,,,,,,,,,,,,,,,,,
