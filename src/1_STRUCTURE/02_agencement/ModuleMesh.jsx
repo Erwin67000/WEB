@@ -37,6 +37,10 @@ import {
 } from '../00_matrice/matrice_constante.js'
 
 import { useActiveConfigStore } from '../../store/ConfigStoreContext.jsx'
+import { applyBoxUvs } from '../../lib/boxUvs.js'
+import WoodStandardMaterial, {
+  usesWoodMaps,
+} from '../../components/WoodStandardMaterial.jsx'
 
 extend({ LineSegments2, LineSegmentsGeometry, LineMaterial })
 
@@ -544,6 +548,7 @@ function SolidWireMesh({
   wireWidth,
   roughness = 0.55,
   metalness = 0.04,
+  wood = false,
   onClick,
   onPointerDown,
   onPointerOver,
@@ -568,6 +573,7 @@ function SolidWireMesh({
     geo.setAttribute('position', new THREE.BufferAttribute(pos, 3))
     geo.setIndex(new THREE.BufferAttribute(indices.slice(), 1))
     geo.computeVertexNormals()
+    applyBoxUvs(geo, positions, indices)
 
     const wCount = wire.length / 6
     const wPos = new Float32Array(wCount * 6)
@@ -620,15 +626,26 @@ function SolidWireMesh({
         onPointerOver={onPointerOver}
         onPointerOut={onPointerOut}
       >
-        <meshStandardMaterial
-          color={color}
-          roughness={roughness}
-          metalness={metalness}
-          side={THREE.DoubleSide}
-          polygonOffset
-          polygonOffsetFactor={2}
-          polygonOffsetUnits={2}
-        />
+        {wood ? (
+          <WoodStandardMaterial
+            roughness={roughness}
+            metalness={metalness}
+            side={THREE.DoubleSide}
+            polygonOffset
+            polygonOffsetFactor={2}
+            polygonOffsetUnits={2}
+          />
+        ) : (
+          <meshStandardMaterial
+            color={color}
+            roughness={roughness}
+            metalness={metalness}
+            side={THREE.DoubleSide}
+            polygonOffset
+            polygonOffsetFactor={2}
+            polygonOffsetUnits={2}
+          />
+        )}
       </mesh>
       <lineSegments geometry={edgeBasic} renderOrder={2} raycast={() => {}}>
         <lineBasicMaterial
@@ -658,7 +675,14 @@ function SolidWireMesh({
 }
 
 /** Tablette : plateau octogone (extrusion −Z) + paire de traverses (+Z). */
-function TabletteMesh({ dims, zTopMm, plateColor, woodColor, woodRoughness }) {
+function TabletteMesh({
+  dims,
+  zTopMm,
+  plateColor,
+  woodColor,
+  woodRoughness,
+  wood = false,
+}) {
   const data = useMemo(() => {
     try {
       return buildTablette(dims, zTopMm, { epaisseurMm: EPAISSEUR_PANNEAU })
@@ -691,6 +715,7 @@ function TabletteMesh({ dims, zTopMm, plateColor, woodColor, woodRoughness }) {
           wireWidth={ARETE_EDGE_WIDTH}
           roughness={woodRoughness ?? 0.55}
           metalness={0.05}
+          wood={wood}
         />
       ))}
     </group>
@@ -781,7 +806,15 @@ function RailMesh({ mount }) {
 }
 
 /** Tiroir Würth type B : traverses + rails fixes + panels animés Y+. */
-function TiroirMesh({ dims, layout, mod, woodColor, woodRoughness, plateColor }) {
+function TiroirMesh({
+  dims,
+  layout,
+  mod,
+  woodColor,
+  woodRoughness,
+  plateColor,
+  wood = false,
+}) {
   const setModuleOpen = useActiveConfigStore((s) => s.setModuleOpen)
   const panneauPickMode = useActiveConfigStore((s) => s.panneauPickMode)
   const panelGroupRef = useRef()
@@ -891,6 +924,7 @@ function TiroirMesh({ dims, layout, mod, woodColor, woodRoughness, plateColor })
           wireWidth={ARETE_EDGE_WIDTH}
           roughness={woodRoughness ?? 0.55}
           metalness={0.05}
+          wood={wood}
         />
       ))}
       {data.rails.map((r) => (
@@ -910,6 +944,7 @@ function TiroirMesh({ dims, layout, mod, woodColor, woodRoughness, plateColor })
               wireWidth={isFacade ? PANNEAU_EDGE_WIDTH : ARETE_EDGE_WIDTH}
               roughness={woodRoughness ?? 0.55}
               metalness={0.05}
+              wood={wood && !isFacade}
               onClick={handleToggle}
               onPointerDown={handlePointerDown}
               onPointerOver={handleOver}
@@ -935,6 +970,7 @@ export function ModulesMesh({
     FINITIONS_OSSATURE[ossatureFinish] ||
     FINITIONS_OSSATURE[DEFAULT_FINITION_OSSATURE]
   const woodColor = ossatureWoodColor(woodFinish, ossatureFinish)
+  const wood = usesWoodMaps(ossatureFinish)
   const shelfColor =
     resolvePanneauColor(panneauCouleur, panneauCouleurHex).color || finish.color
 
@@ -951,6 +987,7 @@ export function ModulesMesh({
               plateColor={shelfColor}
               woodColor={woodColor}
               woodRoughness={surf.roughness ?? 0.55}
+              wood={wood}
             />
           )
         }
@@ -964,6 +1001,7 @@ export function ModulesMesh({
               woodColor={woodColor}
               woodRoughness={surf.roughness ?? 0.55}
               plateColor={shelfColor}
+              wood={wood}
             />
           )
         }
@@ -991,11 +1029,19 @@ export function ModulesMesh({
                     layout.size[1] * SCALE,
                   ]}
                 />
-                <meshStandardMaterial
-                  color={woodColor}
-                  roughness={surf.roughness ?? 0.55}
-                  side={THREE.DoubleSide}
-                />
+                {wood ? (
+                  <WoodStandardMaterial
+                    roughness={surf.roughness ?? 1}
+                    metalness={surf.metalness ?? 0.02}
+                    side={THREE.DoubleSide}
+                  />
+                ) : (
+                  <meshStandardMaterial
+                    color={woodColor}
+                    roughness={surf.roughness ?? 0.55}
+                    side={THREE.DoubleSide}
+                  />
+                )}
               </mesh>
             </group>
           )

@@ -207,10 +207,16 @@ export const FINITIONS_OSSATURE = {
   brut: {
     id: 'brut',
     label: 'Brut',
-    roughness: 0.88,
+    roughness: 1,
     metalness: 0.02,
     shade: 1,
     previewColor: '#c4a574',
+    previewMap: '/textures/wood/oak/preview.jpg',
+    maps: {
+      color: '/textures/wood/oak/color.jpg',
+      roughness: '/textures/wood/oak/roughness.jpg',
+      normal: '/textures/wood/oak/normal.png',
+    },
   },
   vernis_clair: {
     id: 'vernis_clair',

@@ -19,6 +19,8 @@ import * as THREE from 'three'
 import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js'
 import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeometry.js'
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js'
+import { applyBoxUvs } from '../lib/boxUvs.js'
+import WoodStandardMaterial from './WoodStandardMaterial.jsx'
 import {
   buildOssature,
   areteToBuffers,
@@ -179,6 +181,7 @@ function AreteSolid({ meshData, color }) {
     )
     g.setIndex(new THREE.BufferAttribute(meshData.indices.slice(), 1))
     g.computeVertexNormals()
+    applyBoxUvs(g, meshData.positions, meshData.indices)
     return g
   }, [meshData])
 
@@ -222,10 +225,9 @@ function AreteSolid({ meshData, color }) {
   return (
     <group>
       <mesh geometry={solidGeo} renderOrder={0}>
-        <meshStandardMaterial
-          color={color}
-          roughness={0.5}
-          metalness={0.06}
+        <WoodStandardMaterial
+          roughness={1}
+          metalness={0.02}
           side={THREE.DoubleSide}
           transparent
           opacity={1}
@@ -644,6 +646,7 @@ function TabletteSolid({ dims, zTopMm, plateColor, woodColor }) {
       )
       geo.setIndex(new THREE.BufferAttribute(part.indices.slice(), 1))
       geo.computeVertexNormals()
+      applyBoxUvs(geo, part.positions, part.indices)
       const edgeGeo = new THREE.BufferGeometry()
       edgeGeo.setAttribute(
         'position',
@@ -670,17 +673,30 @@ function TabletteSolid({ dims, zTopMm, plateColor, woodColor }) {
       {parts.map((p) => (
         <group key={p.id}>
           <mesh geometry={p.geo}>
-            <meshStandardMaterial
-              color={p.color}
-              roughness={0.55}
-              metalness={0.04}
-              side={THREE.DoubleSide}
-              transparent
-              opacity={1}
-              polygonOffset
-              polygonOffsetFactor={1}
-              polygonOffsetUnits={1}
-            />
+            {p.color === woodColor ? (
+              <WoodStandardMaterial
+                roughness={1}
+                metalness={0.02}
+                side={THREE.DoubleSide}
+                transparent
+                opacity={1}
+                polygonOffset
+                polygonOffsetFactor={1}
+                polygonOffsetUnits={1}
+              />
+            ) : (
+              <meshStandardMaterial
+                color={p.color}
+                roughness={0.55}
+                metalness={0.04}
+                side={THREE.DoubleSide}
+                transparent
+                opacity={1}
+                polygonOffset
+                polygonOffsetFactor={1}
+                polygonOffsetUnits={1}
+              />
+            )}
           </mesh>
           <lineSegments geometry={p.edgeGeo} renderOrder={2}>
             <lineBasicMaterial

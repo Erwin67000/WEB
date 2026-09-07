@@ -530,7 +530,11 @@ export default function ControlPanel() {
                         </span>
                         <span
                           className="finish-choice-swatch"
-                          style={{ background: f.previewColor }}
+                          style={{
+                            background: f.previewMap
+                              ? `url(${f.previewMap}) center / cover`
+                              : f.previewColor,
+                          }}
                           title={tId('finish', id, f.label)}
                         />
                       </button>

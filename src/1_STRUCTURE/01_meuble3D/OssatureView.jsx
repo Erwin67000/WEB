@@ -12,6 +12,10 @@ import {
   ARETE_EDGE_COLOR,
   ARETE_EDGE_WIDTH,
 } from '../00_matrice/matrice_constante.js'
+import { applyBoxUvs } from '../../lib/boxUvs.js'
+import WoodStandardMaterial, {
+  usesWoodMaps,
+} from '../../components/WoodStandardMaterial.jsx'
 
 extend({ LineSegments2, LineSegmentsGeometry, LineMaterial })
 
@@ -27,7 +31,7 @@ function shadeHex(hex, factor) {
   return `#${c.getHexString()}`
 }
 
-function AreteMesh({ mesh, color, wireframe, roughness, metalness }) {
+function AreteMesh({ mesh, color, wireframe, roughness, metalness, wood }) {
   const { size, gl } = useThree()
   const lineMatRef = useRef(null)
 
@@ -36,6 +40,7 @@ function AreteMesh({ mesh, color, wireframe, roughness, metalness }) {
     geo.setAttribute('position', new THREE.BufferAttribute(mesh.positions, 3))
     geo.setIndex(new THREE.BufferAttribute(mesh.indices, 1))
     geo.computeVertexNormals()
+    applyBoxUvs(geo, mesh.positions, mesh.indices)
     return geo
   }, [mesh])
 
@@ -75,16 +80,28 @@ function AreteMesh({ mesh, color, wireframe, roughness, metalness }) {
     <group>
       {/* Solide : légèrement repoussé dans le Z-buffer (invisible) */}
       <mesh geometry={geometry} castShadow receiveShadow renderOrder={0}>
-        <meshStandardMaterial
-          color={color}
-          roughness={roughness ?? 0.55}
-          metalness={metalness ?? 0.05}
-          side={THREE.DoubleSide}
-          wireframe={wireframe}
-          polygonOffset
-          polygonOffsetFactor={2}
-          polygonOffsetUnits={2}
-        />
+        {wood ? (
+          <WoodStandardMaterial
+            roughness={roughness ?? 1}
+            metalness={metalness ?? 0.02}
+            side={THREE.DoubleSide}
+            wireframe={wireframe}
+            polygonOffset
+            polygonOffsetFactor={2}
+            polygonOffsetUnits={2}
+          />
+        ) : (
+          <meshStandardMaterial
+            color={color}
+            roughness={roughness ?? 0.55}
+            metalness={metalness ?? 0.05}
+            side={THREE.DoubleSide}
+            wireframe={wireframe}
+            polygonOffset
+            polygonOffsetFactor={2}
+            polygonOffsetUnits={2}
+          />
+        )}
       </mesh>
       {/* Lignes à la position exacte — depth bias vers la caméra */}
       <lineSegments geometry={edgeBasic} renderOrder={2}>
@@ -152,7 +169,12 @@ export default function OssatureView({
             color={color}
             wireframe={wireframe}
             roughness={surf.roughness}
-            metalness={Math.max(surf.metalness ?? 0.05, 0.12)}
+            metalness={
+              usesWoodMaps(ossatureFinish)
+                ? surf.metalness ?? 0.02
+                : Math.max(surf.metalness ?? 0.05, 0.12)
+            }
+            wood={usesWoodMaps(ossatureFinish)}
           />
         ))}
         {(selected || showAxes) && (

@@ -412,10 +412,14 @@ export default function ArticlePage() {
                   {t('article.highlights.finish')}
                 </span>
                 <strong className="article-highlight-finish">
-                  {specs.fin.previewColor && (
+                  {(specs.fin.previewMap || specs.fin.previewColor) && (
                     <span
                       className="spec-swatch"
-                      style={{ background: specs.fin.previewColor }}
+                      style={{
+                        background: specs.fin.previewMap
+                          ? `url(${specs.fin.previewMap}) center / cover`
+                          : specs.fin.previewColor,
+                      }}
                       aria-hidden
                     />
                   )}
