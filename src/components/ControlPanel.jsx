@@ -1201,22 +1201,27 @@ export default function ControlPanel() {
             className="drawer-alert"
             onClick={(e) => e.stopPropagation()}
           >
-            <p>
-              {drawerWidthAlert
-                ? t('config.drawerWidthRange', {
-                    min: DYNAMOOV_LWK_MIN_MM,
-                    max: DYNAMOOV_LWK_MAX_MM,
-                    lwk: drawerInnerWidthMm(unit.dims),
-                  })
-                : t(
-                    doorAlert === 'tooWide'
-                      ? 'config.doorTooWide'
-                      : doorAlert === 'mustDouble'
-                        ? 'config.doorMustDouble'
-                        : 'config.doorNoDouble',
-                    { l: formatMmAsCm(unit.dims.L) },
-                  )}
-            </p>
+            {drawerWidthAlert ? (
+              <p>
+                {t('config.drawerWidthRange', {
+                  min: DYNAMOOV_LWK_MIN_MM,
+                  max: DYNAMOOV_LWK_MAX_MM,
+                  lwk: drawerInnerWidthMm(unit.dims),
+                })}
+              </p>
+            ) : null}
+            {doorAlert ? (
+              <p>
+                {t(
+                  doorAlert === 'tooWide'
+                    ? 'config.doorTooWide'
+                    : doorAlert === 'mustDouble'
+                      ? 'config.doorMustDouble'
+                      : 'config.doorNoDouble',
+                  { l: formatMmAsCm(unit.dims.L) },
+                )}
+              </p>
+            ) : null}
             <button
               type="button"
               className="btn"
