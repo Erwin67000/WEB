@@ -4664,7 +4664,8 @@ body.config-lock {
 }
 
 .config-fab:hover .config-fab-tip,
-.config-fab:focus-visible .config-fab-tip {
+.config-fab:focus-visible .config-fab-tip,
+.config-fab-bar.is-intro .config-fab-tip {
   opacity: 1;
 }
 
@@ -4863,5 +4864,68 @@ body.config-lock {
 
   .configurator-app .viewport-hint {
     display: none;
+  }
+}
+
+@media (max-width: 1024px) and (orientation: landscape) {
+  .configurator-app.config-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
+  }
+
+  .configurator-app .control-panel {
+    display: block;
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    height: 100% !important;
+    max-height: none;
+  }
+
+  .config-fab-bar {
+    flex-direction: column;
+    position: absolute;
+    top: 50%;
+    left: max(0.55rem, env(safe-area-inset-left, 0px));
+    transform: translateY(-50%);
+    grid-row: auto;
+    grid-column: auto;
+    justify-self: auto;
+    align-self: auto;
+    max-width: none;
+    overflow: visible;
+    padding: 0;
+  }
+
+  .config-fab-tip {
+    left: calc(100% + 0.5rem);
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  .configurator-app .control-panel .panel-scroll {
+    grid-row: auto;
+    grid-column: auto;
+    position: absolute;
+    left: calc(3.5rem + env(safe-area-inset-left, 0px));
+    top: 0.75rem;
+    width: max-content;
+    min-width: 15.5rem;
+    max-width: min(22rem, calc(100vw - 5.2rem));
+    max-height: calc(100% - 5.2rem);
+    margin: 0;
+  }
+
+  .config-buy-float {
+    grid-row: auto;
+    grid-column: auto;
+    position: absolute;
+    left: auto;
+    right: max(0.75rem, env(safe-area-inset-right, 0px));
+    bottom: max(0.55rem, env(safe-area-inset-bottom, 0px));
+    align-self: auto;
+    justify-self: auto;
+    margin: 0;
   }
 }

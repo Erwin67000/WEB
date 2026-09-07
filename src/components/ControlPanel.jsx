@@ -304,6 +304,7 @@ export default function ControlPanel() {
     scene: false,
     devis: false,
   }))
+  const [fabIntro, setFabIntro] = useState(false)
 
   useEffect(() => {
     if (editingUnitId && renameInputRef.current) {
@@ -322,6 +323,18 @@ export default function ControlPanel() {
       setDrawerWidthAlert(false)
     }
   }, [drawerWidthAlert, unit?.dims])
+
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem('philae-fab-tips')) return undefined
+      sessionStorage.setItem('philae-fab-tips', '1')
+    } catch {
+      /* private mode */
+    }
+    setFabIntro(true)
+    const timer = window.setTimeout(() => setFabIntro(false), 3000)
+    return () => window.clearTimeout(timer)
+  }, [])
 
   if (!unit) return null
 
@@ -364,7 +377,11 @@ export default function ControlPanel() {
         sheetOpen ? ' is-sheet-open' : ''
       }`}
     >
-      <div className="config-fab-bar" role="toolbar" aria-label={t('config.options')}>
+      <div
+        className={`config-fab-bar${fabIntro ? ' is-intro' : ''}`}
+        role="toolbar"
+        aria-label={t('config.options')}
+      >
         {fabItems.map((item) => (
           <button
             key={item.id}
