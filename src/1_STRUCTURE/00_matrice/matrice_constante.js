@@ -275,7 +275,7 @@ export const PANNEAU_COULEURS = {
   noir_mat: {
     id: 'noir_mat',
     label: 'Noir mat',
-    color: '#232222',
+    color: '#595757',
     edge: PANNEAU_EDGE_HEX,
   },
 }

@@ -13,7 +13,7 @@ import { buildGeometrie } from '../1_STRUCTURE/00_matrice/matrice_geometrie.js'
 import {
   PANNEAU_DEFS,
   computeQuatreRectangles,
-} from '../1_STRUCTURE/00_matrice/matrice_panneau_grok.js'
+} from '../1_STRUCTURE/00_matrice/matrice_panneau.js'
 import {
   EPAISSEUR_PANNEAU,
   EPAISSEUR_PORTE,

@@ -4,20 +4,20 @@
 
 | Fichier | Rôle |
 |---------|------|
-| `src/1_STRUCTURE/00_matrice/matrice_panneau_grok.js` | **SEULE** logique panneau (4 fonctions + defs) |
-| `src/1_STRUCTURE/00_matrice/matrice_panneau.js` | Shim : `export * from './matrice_panneau_grok.js'` |
+| `src/1_STRUCTURE/00_matrice/matrice_panneau.js` | **SEULE** logique panneau (4 fonctions + defs) |
+| `src/1_STRUCTURE/00_matrice/matrice_panneau.js` | Shim : `export * from './matrice_panneau.js'` |
 
 ## Quand VS Code demande « Comparer / Écraser »
 
 1. **Toujours cliquer « Comparer »** (ou Annuler), jamais Écraser à l’aveugle.
-2. Si le fichier est `matrice_panneau_grok.js` → **protéger** ta version avec `ligne_rectangle`, `makeRectangle*`, `computeQuatreRectangles`.
+2. Si le fichier est `matrice_panneau.js` → **protéger** ta version avec `ligne_rectangle`, `makeRectangle*`, `computeQuatreRectangles`.
 3. Si le fichier est `matrice_panneau.js` et qu’il a du pseudo-code `point1` → **remplacer tout le fichier** par le shim de 20 lignes (voir ci-dessous).
 
 ### Shim `matrice_panneau.js` (à coller si écrasé)
 
 ```js
-export * from './matrice_panneau_grok.js'
-export { default } from './matrice_panneau_grok.js'
+export * from './matrice_panneau.js'
+export { default } from './matrice_panneau.js'
 ```
 
 ## Workflow recommandé
@@ -34,7 +34,7 @@ git commit -m "stable: panneau_grok source de verite"
 3. Si ça casse :
 
 ```powershell
-git checkout -- src/1_STRUCTURE/00_matrice/matrice_panneau_grok.js
+git checkout -- src/1_STRUCTURE/00_matrice/matrice_panneau.js
 git checkout -- src/1_STRUCTURE/00_matrice/matrice_panneau.js
 ```
 
