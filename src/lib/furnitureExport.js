@@ -58,7 +58,7 @@ function csvCell(v) {
   return s
 }
 
-function toMesh(id, name, positions, indices, points, extra = {}) {
+function toMesh(id, name, positions, indices, points) {
   const pos = positions
     ? Array.from(positions)
     : (points || []).flatMap((p) => [p[0], p[1], p[2]])
@@ -72,10 +72,10 @@ function toMesh(id, name, positions, indices, points, extra = {}) {
       }
       return out
     })()
-  return { id, name, positions: pos, indices: idx, points: pts, ...extra }
+  return { id, name, positions: pos, indices: idx, points: pts }
 }
 
-function panneauToMesh(id, name, panneau, extra = {}) {
+function panneauToMesh(id, name, panneau) {
   if (!panneau?.points) return null
   return toMesh(
     id,
@@ -83,11 +83,10 @@ function panneauToMesh(id, name, panneau, extra = {}) {
     panneau.positions,
     panneau.indices,
     panneau.points,
-    extra,
   )
 }
 
-export function collectUnitMeshes(unit, state) {
+function collectUnitMeshes(unit, state) {
   const meshes = []
   const dims = unit.dims
   const modules = unit.modules || []
@@ -97,9 +96,7 @@ export function collectUnitMeshes(unit, state) {
   const oss = buildOssature(dims)
   for (const m of oss.meshes) {
     meshes.push(
-      toMesh(`ossature-${m.id}`, m.id, m.positions, m.indices, null, {
-        folder: 'ossature',
-      }),
+      toMesh(`ossature-${m.id}`, m.id, m.positions, m.indices),
     )
   }
 
@@ -110,9 +107,7 @@ export function collectUnitMeshes(unit, state) {
       const { panneau } = buildPanneauComplet(nom, dims, {
         epaisseur: nom === 'porte' ? epD : epP,
       })
-      const mesh = panneauToMesh(`panneau-${nom}`, nom, panneau, {
-        folder: 'panneaux',
-      })
+      const mesh = panneauToMesh(`panneau-${nom}`, nom, panneau)
       if (mesh) meshes.push(mesh)
     } catch {
       /* panneau inconnu */
@@ -132,7 +127,6 @@ export function collectUnitMeshes(unit, state) {
           `panneau-${nom}-${g.key || gi}`,
           `${nom} ${g.key || gi}`,
           panneau,
-          { folder: 'panneaux' },
         )
         if (mesh) meshes.push(mesh)
       } catch {
@@ -162,7 +156,6 @@ export function collectUnitMeshes(unit, state) {
           `porte-${g.key}-${leaf.tag}`,
           `porte ${g.key} ${leaf.tag}`,
           panneau,
-          { folder: 'panneaux' },
         )
         if (mesh) meshes.push(mesh)
       } catch {
@@ -171,12 +164,8 @@ export function collectUnitMeshes(unit, state) {
     }
   }
 
-  let shelfN = 0
-  let drawerN = 0
-  modules.forEach((mod) => {
+  modules.forEach((mod, i) => {
     if (mod.kind === 'shelf') {
-      shelfN += 1
-      const n = shelfN
       try {
         const layout = moduleLayout(mod, dims, modules)
         const zTop = layout.zTopMm ?? layout.zMm
@@ -184,24 +173,22 @@ export function collectUnitMeshes(unit, state) {
         if (data?.plate) {
           meshes.push(
             toMesh(
-              `tablette-${n}`,
-              `tablette${n}`,
+              `tablette-${i + 1}`,
+              `tablette ${i + 1}`,
               data.plate.positions,
               data.plate.indices,
               data.plate.points,
-              { folder: 'panneaux', group: `tablette${n}` },
             ),
           )
         }
         ;(data?.traverses || []).forEach((tr, ti) => {
           meshes.push(
             toMesh(
-              `tablette-${n}-traverse-${tr.side || ti}`,
-              `traverse tablette${n} ${tr.side || ti}`,
+              `tablette-${i + 1}-traverse-${tr.side || ti}`,
+              `traverse tablette ${i + 1} ${tr.side || ti}`,
               tr.positions,
               tr.indices,
               tr.points,
-              { folder: 'traverses' },
             ),
           )
         })
@@ -211,8 +198,6 @@ export function collectUnitMeshes(unit, state) {
     }
 
     if (mod.kind === 'drawer') {
-      drawerN += 1
-      const n = drawerN
       try {
         const layout = moduleLayout(mod, dims, modules)
         const data = buildTiroir(dims, layout, mod, { epaisseurMm: epP })
@@ -220,27 +205,23 @@ export function collectUnitMeshes(unit, state) {
         ;(data.traverses || []).forEach((tr, ti) => {
           meshes.push(
             toMesh(
-              `tiroir-${n}-traverse-${tr.side || ti}`,
-              `traverse tiroir${n} ${tr.side || ti}`,
+              `tiroir-${i + 1}-traverse-${tr.side || ti}`,
+              `traverse tiroir ${i + 1} ${tr.side || ti}`,
               tr.positions,
               tr.indices,
               tr.points,
-              { folder: 'traverses' },
             ),
           )
         })
         ;(data.box?.panels || []).forEach((p, pi) => {
-          const part = p.id || p.nom || pi
-          const id = `tiroir-${n}-${part}`
-          const label = String(part)
-          const extra = { folder: 'panneaux', group: `tiroir${n}` }
-          if (p.panneau) {
-            const mesh = panneauToMesh(id, label, p.panneau, extra)
-            if (mesh) meshes.push(mesh)
-            return
-          }
           meshes.push(
-            toMesh(id, label, p.positions, p.indices, p.points, extra),
+            toMesh(
+              `tiroir-${i + 1}-${p.id || pi}`,
+              `tiroir ${i + 1} ${p.id || pi}`,
+              p.positions,
+              p.indices,
+              p.points,
+            ),
           )
         })
       } catch {
@@ -284,54 +265,17 @@ function geometryXml(mesh) {
       </geometry>`
 }
 
-function instanceNode(nid, mesh, indent) {
-  const pad = ' '.repeat(indent)
-  const gid = safeId(mesh.id)
-  return `${pad}<node id="${nid}-${gid}" name="${xmlEscape(mesh.name || gid)}">
-${pad}  <instance_geometry url="#${gid}"/>
-${pad}</node>`
-}
-
-function wrapFolder(nid, name, inner, indent) {
-  const pad = ' '.repeat(indent)
-  if (!inner) return ''
-  return `${pad}<node id="${nid}-${safeId(name)}" name="${xmlEscape(name)}">
-${inner}
-${pad}</node>`
-}
-
 function nodeXml(unit, meshes, index) {
   const nid = safeId(`unit-${index + 1}-${unit.id}`)
   const pos = unit.positionMm || { x: 0, y: 0, z: 0 }
   const rot = Number(unit.rotationZ) || 0
-  const oss = meshes.filter((m) => m.folder === 'ossature')
-  const trav = meshes.filter((m) => m.folder === 'traverses')
-  const pan = meshes.filter((m) => m.folder === 'panneaux')
-  const ossInner = oss.map((m) => instanceNode(nid, m, 10)).join('\n')
-  const travInner = trav.map((m) => instanceNode(nid, m, 10)).join('\n')
-  const groups = new Map()
-  const loose = []
-  for (const m of pan) {
-    if (m.group) {
-      if (!groups.has(m.group)) groups.set(m.group, [])
-      groups.get(m.group).push(m)
-    } else {
-      loose.push(m)
-    }
-  }
-  const panParts = []
-  for (const [gname, list] of groups) {
-    const inner = list.map((m) => instanceNode(nid, m, 12)).join('\n')
-    panParts.push(wrapFolder(nid, gname, inner, 10))
-  }
-  panParts.push(...loose.map((m) => instanceNode(nid, m, 10)))
-  const panInner = panParts.filter(Boolean).join('\n')
-  const kids = [
-    wrapFolder(nid, 'ossature', ossInner, 8),
-    wrapFolder(nid, 'traverses', travInner, 8),
-    wrapFolder(nid, 'panneaux', panInner, 8),
-  ]
-    .filter(Boolean)
+  const kids = meshes
+    .map((m) => {
+      const gid = safeId(m.id)
+      return `        <node id="${nid}-${gid}" name="${xmlEscape(m.name || gid)}">
+          <instance_geometry url="#${gid}"/>
+        </node>`
+    })
     .join('\n')
   return `      <node id="${nid}" name="${xmlEscape(unit.label || `Meuble ${index + 1}`)}">
         <translate>${Number(pos.x) || 0} ${Number(pos.y) || 0} ${Number(pos.z) || 0}</translate>
@@ -408,8 +352,7 @@ function appendGeomCsv(csv, state) {
   return `${csv}\n${extra.join('\n')}`
 }
 
-/** DAE + CSV (sans téléchargement navigateur) — utilisable en SSR Vite. */
-export function buildFurnitureCadFiles(state) {
+export function downloadFurnitureCad(state) {
   const master = buildMasterInput(state)
   const csv = appendGeomCsv(masterInputToCsv(master), state)
   const dae = buildFurnitureCollada(state)
@@ -418,11 +361,6 @@ export function buildFurnitureCadFiles(state) {
       .replace(/[^A-Za-z0-9_\-]+/g, '-')
       .replace(/^-|-$/g, '') || 'meuble'
   const base = `philae-${slug}`
-  return { csv, dae, base }
-}
-
-export function downloadFurnitureCad(state) {
-  const { csv, dae, base } = buildFurnitureCadFiles(state)
   triggerDownload(`${base}.csv`, `\uFEFF${csv}`, 'text/csv;charset=utf-8')
   triggerDownload(`${base}.dae`, dae, 'model/vnd.collada+xml')
   return { csv, dae, base }

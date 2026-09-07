@@ -280,8 +280,8 @@ export const PANNEAU_COULEURS = {
   },
 }
 
-export const DEFAULT_PANNEAU_COULEUR = 'gris_cendre'
-export const DEFAULT_PANNEAU_HEX = '#c9a227'
+export const DEFAULT_PANNEAU_COULEUR = 'bleu_poudre'
+export const DEFAULT_PANNEAU_HEX = '#a8c4d4'
 
 /** Résout la couleur de panneau (id catalogue). */
 export function resolvePanneauColor(panneauCouleur, panneauCouleurHex) {

@@ -23,7 +23,7 @@ const PLANE_THICK = 4
  * — fond / porte / joue1 / joue2 / dessous / dessus_exterieur
  */
 /**
- * Aligné sur PANNEAU_DEFS (matrice_panneau_grok) :
+ * Aligné sur PANNEAU_DEFS (matrice_panneau) :
  * — fond  : face Y ≈ 0
  * — porte : face Y = W (opposée)
  * (était inversé dans le pick → corrigé)

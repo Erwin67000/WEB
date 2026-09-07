@@ -67,7 +67,6 @@ function ossatureWoodColor(woodFinish, ossatureFinish) {
 /**
  * Solide panneau 8 points.
  * Indices / winding : ceux de face_panneau (matrice) — pas de correction auto.
- * Vous redéfinirez la suite de triangles dans matrice_panneau_grok si besoin.
  */
 function PanneauSolidMesh({ panneau, color, edgeColor, pickable = true }) {
   const { size, gl } = useThree()
