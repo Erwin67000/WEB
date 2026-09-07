@@ -20,6 +20,7 @@ import {
   faceGroupsForUnit,
   faceGroupBuildParams,
   SEGMENTED_FACES,
+  PORTE_L_FORBIDDEN_MM,
 } from './agencement.js'
 import {
   FINITIONS,
@@ -461,6 +462,7 @@ export function DoorLeaves({
   )
   const split = useMemo(() => porteXSplit(dims), [dims.L, dims.W, dims.H])
   const palette = resolvePanneauColor(panneauCouleur, panneauCouleurHex)
+  if (Number(dims.L) > PORTE_L_FORBIDDEN_MM) return null
   if (!groups.length) return null
   return (
     <group>

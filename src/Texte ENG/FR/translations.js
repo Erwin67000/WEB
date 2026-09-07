@@ -511,6 +511,12 @@ export const translations = {
         'Depth below the limit for a drawer: {min} cm',
       drawerWidthRange:
         'The inner distance between the drawer rails must be between {min} and {max} mm to fit a drawer. Current value: {lwk} mm. Drawers are hidden.',
+      doorTooWide:
+        'A piece longer than 120 cm cannot have a door. Current length: {l} cm. Doors are hidden.',
+      doorMustDouble:
+        'Above 60 cm, the door must be double (centre hinge). Current length: {l} cm.',
+      doorNoDouble:
+        'Under 40 cm, the door cannot be double (centre hinge). Current length: {l} cm.',
       ok: 'OK',
       orbitZoom: 'Orbit · zoom',
       dragZoom: 'Drag to orbit · scroll to zoom',
@@ -1202,6 +1208,12 @@ export const translations = {
         'Profondeur inférieure à la limite pour ajout de tiroir : {min} cm',
       drawerWidthRange:
         'La distance intérieure entre les traverses doit être comprise entre {min} et {max} mm pour un tiroir. Valeur actuelle : {lwk} mm. Les tiroirs ne sont pas affichés.',
+      doorTooWide:
+        'Un meuble de plus de 120 cm de long ne peut pas recevoir de porte. Longueur actuelle : {l} cm. Les portes ne sont pas affichées.',
+      doorMustDouble:
+        'Au-delà de 60 cm de long, la porte doit être double (milieu). Longueur actuelle : {l} cm.',
+      doorNoDouble:
+        'En dessous de 40 cm de long, la porte ne peut pas être double (milieu). Longueur actuelle : {l} cm.',
       ok: 'OK',
       orbitZoom: 'Orbit · zoom',
       dragZoom: 'Glisser pour tourner · molette zoom',

@@ -371,6 +371,58 @@ export function porteXSplit(dims) {
   return { xLo, xHi, xMid: (xLo + xHi) / 2 }
 }
 
+/** L < 40 cm : pas de porte double. L > 60 cm : double obligatoire. L > 120 cm : pas de porte. */
+export const PORTE_L_NO_DOUBLE_MM = 400
+export const PORTE_L_MUST_DOUBLE_MM = 600
+export const PORTE_L_FORBIDDEN_MM = 1200
+
+export function unitHasDoor(unit) {
+  if ((unit?.panneaux || []).includes('porte')) return true
+  return Array.isArray(unit?.porteBays) && unit.porteBays.length > 0
+}
+
+export function defaultHingeForLength(L) {
+  return Number(L) > PORTE_L_MUST_DOUBLE_MM ? 'center' : 'left'
+}
+
+export function hingeAllowedForLength(L, mode) {
+  const l = Number(L) || 0
+  if (l > PORTE_L_FORBIDDEN_MM) return false
+  if (mode === 'center' && l < PORTE_L_NO_DOUBLE_MM) return false
+  if ((mode === 'left' || mode === 'right') && l > PORTE_L_MUST_DOUBLE_MM) {
+    return false
+  }
+  return true
+}
+
+export function constrainPorteHinges(unit, L = unit?.dims?.L) {
+  const l = Number(L) || 0
+  const groups = porteGroupsForUnit(unit)
+  const next = { ...(unit?.porteHinge || {}) }
+  for (const g of groups) {
+    const cur = next[g.key] || 'left'
+    if (l > PORTE_L_MUST_DOUBLE_MM) next[g.key] = 'center'
+    else if (l < PORTE_L_NO_DOUBLE_MM && cur === 'center') next[g.key] = 'left'
+  }
+  return next
+}
+
+/** 'tooWide' | 'mustDouble' | 'noDouble' | null */
+export function doorLengthAlertFor(unit, nextL = unit?.dims?.L) {
+  const L = Number(nextL) || 0
+  if (!unitHasDoor(unit)) return null
+  if (L > PORTE_L_FORBIDDEN_MM) return 'tooWide'
+  const groups = porteGroupsForUnit(unit)
+  const modes = groups.map((g) => unit.porteHinge?.[g.key] || 'left')
+  if (L > PORTE_L_MUST_DOUBLE_MM && modes.some((m) => m !== 'center')) {
+    return 'mustDouble'
+  }
+  if (L < PORTE_L_NO_DOUBLE_MM && modes.some((m) => m === 'center')) {
+    return 'noDouble'
+  }
+  return null
+}
+
 export function inheritPorteHinge(oldGroups = [], newGroups = [], oldHinge = {}) {
   const next = {}
   for (const g of newGroups) {

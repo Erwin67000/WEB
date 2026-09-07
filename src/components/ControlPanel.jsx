@@ -27,6 +27,10 @@ import {
   lockedJoueBaySet,
   groupHasUnlockedBays,
   SEGMENTED_FACES,
+  hingeAllowedForLength,
+  PORTE_L_NO_DOUBLE_MM,
+  PORTE_L_MUST_DOUBLE_MM,
+  PORTE_L_FORBIDDEN_MM,
 } from '../1_STRUCTURE/02_agencement/agencement.js'
 import { DIM_LIMITS, formatMmAsCm, parseCmInputToMm } from '../3_INPUT/matrice_input.js'
 
@@ -238,6 +242,8 @@ export default function ControlPanel() {
 
   const panneauPickMode = useActiveConfigStore((s) => s.panneauPickMode)
   const dimsLocked = useActiveConfigStore((s) => s.dimsLocked)
+  const doorAlert = useActiveConfigStore((s) => s.doorAlert)
+  const clearDoorAlert = useActiveConfigStore((s) => s.clearDoorAlert)
 
   const setActiveUnit = useActiveConfigStore((s) => s.setActiveUnit)
   const addUnit = useActiveConfigStore((s) => s.addUnit)
@@ -325,16 +331,38 @@ export default function ControlPanel() {
   }, [drawerWidthAlert, unit?.dims])
 
   useEffect(() => {
+    let show = true
     try {
-      if (sessionStorage.getItem('philae-fab-tips')) return undefined
-      sessionStorage.setItem('philae-fab-tips', '1')
+      show = !sessionStorage.getItem('philae-fab-tips')
     } catch {
-      /* private mode */
+      show = true
     }
+    if (!show) return undefined
     setFabIntro(true)
-    const timer = window.setTimeout(() => setFabIntro(false), 3000)
+    const timer = window.setTimeout(() => {
+      setFabIntro(false)
+      try {
+        sessionStorage.setItem('philae-fab-tips', '1')
+      } catch {
+        /* private mode */
+      }
+    }, 3000)
     return () => window.clearTimeout(timer)
   }, [])
+
+  useEffect(() => {
+    if (!doorAlert || !unit) return
+    const L = Number(unit.dims?.L) || 0
+    if (doorAlert === 'tooWide' && L <= PORTE_L_FORBIDDEN_MM) {
+      clearDoorAlert()
+    }
+    if (doorAlert === 'mustDouble' && L <= PORTE_L_MUST_DOUBLE_MM) {
+      clearDoorAlert()
+    }
+    if (doorAlert === 'noDouble' && L >= PORTE_L_NO_DOUBLE_MM) {
+      clearDoorAlert()
+    }
+  }, [doorAlert, unit, clearDoorAlert])
 
   if (!unit) return null
 
@@ -909,6 +937,9 @@ export default function ControlPanel() {
                                   className={`porte-hinge-btn${
                                     hinge === mode ? ' active' : ''
                                   }`}
+                                  disabled={
+                                    !hingeAllowedForLength(unit.dims.L, mode)
+                                  }
                                   onClick={() => setPorteHinge(g.key, mode)}
                                 >
                                   {label}
@@ -1156,28 +1187,43 @@ export default function ControlPanel() {
         </PayButton>
       </div>
       {flash && <div className="panel-flash">{flash}</div>}
-      {drawerWidthAlert && (
+      {(drawerWidthAlert || doorAlert) && (
         <div
           className="drawer-alert-overlay"
           role="dialog"
           aria-modal="true"
-          onClick={() => setDrawerWidthAlert(false)}
+          onClick={() => {
+            setDrawerWidthAlert(false)
+            clearDoorAlert()
+          }}
         >
           <div
             className="drawer-alert"
             onClick={(e) => e.stopPropagation()}
           >
             <p>
-              {t('config.drawerWidthRange', {
-                min: DYNAMOOV_LWK_MIN_MM,
-                max: DYNAMOOV_LWK_MAX_MM,
-                lwk: drawerInnerWidthMm(unit.dims),
-              })}
+              {drawerWidthAlert
+                ? t('config.drawerWidthRange', {
+                    min: DYNAMOOV_LWK_MIN_MM,
+                    max: DYNAMOOV_LWK_MAX_MM,
+                    lwk: drawerInnerWidthMm(unit.dims),
+                  })
+                : t(
+                    doorAlert === 'tooWide'
+                      ? 'config.doorTooWide'
+                      : doorAlert === 'mustDouble'
+                        ? 'config.doorMustDouble'
+                        : 'config.doorNoDouble',
+                    { l: formatMmAsCm(unit.dims.L) },
+                  )}
             </p>
             <button
               type="button"
               className="btn"
-              onClick={() => setDrawerWidthAlert(false)}
+              onClick={() => {
+                setDrawerWidthAlert(false)
+                clearDoorAlert()
+              }}
             >
               {t('config.ok')}
             </button>

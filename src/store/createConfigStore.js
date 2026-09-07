@@ -15,6 +15,11 @@ import {
   resolvePorteBays,
   porteGroupsForUnit,
   inheritPorteHinge,
+  constrainPorteHinges,
+  doorLengthAlertFor,
+  unitHasDoor,
+  hingeAllowedForLength,
+  PORTE_L_FORBIDDEN_MM,
   panelBaysFromModules,
   resolveFaceBays,
   faceGroupsForUnit,
@@ -256,6 +261,8 @@ export function createConfigStore(opts = {}) {
      */
     dimsLocked: false,
     dirty: false,
+    /** 'tooWide' | 'mustDouble' | 'noDouble' | null */
+    doorAlert: null,
     /** true après restore cloud / snapshot — évite d’écraser un travail en cours */
     configHydrated: false,
 
@@ -334,17 +341,25 @@ export function createConfigStore(opts = {}) {
         dirty: true,
       })),
 
+    clearDoorAlert: () => set({ doorAlert: null }),
+
     updateDims: (id, dims) =>
       set((s) => {
         if (s.dimsLocked) return s
-        return {
-          units: s.units.map((u) =>
-            u.id === id
-              ? { ...u, dims: { ...u.dims, ...clampDims(dims) } }
-              : u,
-          ),
-          dirty: true,
-        }
+        let doorAlert = s.doorAlert
+        const units = s.units.map((u) => {
+          if (u.id !== id) return u
+          const nextDims = { ...u.dims, ...clampDims(dims) }
+          if (!unitHasDoor(u)) return { ...u, dims: nextDims }
+          const alert = doorLengthAlertFor(u, nextDims.L)
+          if (alert) doorAlert = alert
+          return {
+            ...u,
+            dims: nextDims,
+            porteHinge: constrainPorteHinges(u, nextDims.L),
+          }
+        })
+        return { units, dirty: true, doorAlert }
       }),
 
     updatePosition: (id, positionMm) =>
@@ -512,6 +527,19 @@ export function createConfigStore(opts = {}) {
       const id = get().activeUnitId
       const n = Number(index)
       if (!Number.isInteger(n)) return
+      const active = get().units.find((u) => u.id === id)
+      const currentBays = active
+        ? resolvePorteBays(active, doorBaysFromModules(active.dims, active.modules))
+        : []
+      const adding = !currentBays.includes(n)
+      if (
+        adding &&
+        active &&
+        Number(active.dims?.L) > PORTE_L_FORBIDDEN_MM
+      ) {
+        set({ doorAlert: 'tooWide' })
+        return
+      }
       set((s) => ({
         units: s.units.map((u) => {
           if (u.id !== id) return u
@@ -560,10 +588,16 @@ export function createConfigStore(opts = {}) {
           const newGroups = porteGroupsForUnit(nextUnit)
           return {
             ...nextUnit,
-            porteHinge: inheritPorteHinge(
-              oldGroups,
-              newGroups,
-              u.porteHinge || {},
+            porteHinge: constrainPorteHinges(
+              {
+                ...nextUnit,
+                porteHinge: inheritPorteHinge(
+                  oldGroups,
+                  newGroups,
+                  u.porteHinge || {},
+                ),
+              },
+              u.dims.L,
             ),
             porteOpen: porteBays.length ? u.porteOpen || {} : {},
           }
@@ -593,10 +627,16 @@ export function createConfigStore(opts = {}) {
           const newGroups = porteGroupsForUnit(nextUnit)
           return {
             ...nextUnit,
-            porteHinge: inheritPorteHinge(
-              oldGroups,
-              newGroups,
-              u.porteHinge || {},
+            porteHinge: constrainPorteHinges(
+              {
+                ...nextUnit,
+                porteHinge: inheritPorteHinge(
+                  oldGroups,
+                  newGroups,
+                  u.porteHinge || {},
+                ),
+              },
+              u.dims.L,
             ),
             porteOpen: porteBays.length ? u.porteOpen || {} : {},
           }
@@ -673,6 +713,18 @@ export function createConfigStore(opts = {}) {
         ? hinge
         : 'left'
       const id = get().activeUnitId
+      const active = get().units.find((u) => u.id === id)
+      const L = active?.dims?.L
+      if (!hingeAllowedForLength(L, mode)) {
+        const alert =
+          Number(L) > PORTE_L_FORBIDDEN_MM
+            ? 'tooWide'
+            : mode === 'center'
+              ? 'noDouble'
+              : 'mustDouble'
+        set({ doorAlert: alert })
+        return
+      }
       set((s) => ({
         units: s.units.map((u) => {
           if (u.id !== id) return u
