@@ -181,7 +181,7 @@ function AreteSolid({ meshData, color }) {
     )
     g.setIndex(new THREE.BufferAttribute(meshData.indices.slice(), 1))
     g.computeVertexNormals()
-    applyBoxUvs(g, meshData.positions, meshData.indices)
+    applyBoxUvs(g, meshData.positions, meshData.indices, undefined, meshData.axis)
     return g
   }, [meshData])
 

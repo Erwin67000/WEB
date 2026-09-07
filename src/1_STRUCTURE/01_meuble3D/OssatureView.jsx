@@ -40,7 +40,7 @@ function AreteMesh({ mesh, color, wireframe, roughness, metalness, wood }) {
     geo.setAttribute('position', new THREE.BufferAttribute(mesh.positions, 3))
     geo.setIndex(new THREE.BufferAttribute(mesh.indices, 1))
     geo.computeVertexNormals()
-    applyBoxUvs(geo, mesh.positions, mesh.indices)
+    applyBoxUvs(geo, mesh.positions, mesh.indices, undefined, mesh.axis)
     return geo
   }, [mesh])
 
