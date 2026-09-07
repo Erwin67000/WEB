@@ -1,0 +1,9 @@
+﻿ligne,schema,quoteRef,date,meuble_index,meuble_id,label,catalog_id,L_mm,P_mm,H_mm,arete_mm,epaisseur_panneau_mm,epaisseur_porte_mm,couleur_ossature,couleur_panneau,couleur_porte,panneaux,piece_id,piece_index,face,couverture,charniere,battant,case_from,case_to,z_bas_mm,z_haut_mm,h_mm,L_utile_mm,P_utile_mm,epaisseur_mm,usinage_L_mm,usinage_H_mm,usinage_ep_mm,wurth_type,wurth_h_mm,lwk_mm,lic_mm,profondeur_mm,decroche_mm,rail_lat_mm,alerte,notes
+meta,philae-atelier-v1,PHL-EXEMPLE,2026-09-07,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Exemple chevet. Remplacer par l’export /atelier-cad.
+meuble,philae-atelier-v1,PHL-EXEMPLE,,0,u1,Table Chevet,,300,300,500,30×30,15,15,brut,olive,olive,dessus_exterieur,,,,,,,,,,,,,,,,,,,,,,,,,,tablettes_z=auto · tiroirs_h=84
+tablette,,PHL-EXEMPLE,,0,u1,Table Chevet,,300,300,500,,,,,,,,tablette-1,1,tablette,plein,,,,,168,183,15,256,256,15,256,256,15,,,,,,,,,z_haut = face sup. octogone. 1re tablette calée sur le tiroir.
+tiroir,,PHL-EXEMPLE,,0,u1,Table Chevet,,300,300,500,,,,,,,,tiroir-1,1,tiroir,plein,,,,,78,162,84,,,,,,,B,84,240,220,250,13,21,,Würth ASTUCIO B + Dynamoov. z_bas = dessus rails.
+panneau,,PHL-EXEMPLE,,0,u1,Table Chevet,,300,300,500,,,,,olive,,,panneau-dessus_exterieur,1,dessus_exterieur,plein,,,,,,,,,,15,270,270,15,,,,,,,,,Dessus extérieur — pièce pleine.
+panneau,,PHL-EXEMPLE,,0,u1,Table Chevet,,300,300,500,,,,,olive,,,panneau-fond-1-1,2,fond,intermediaire,,,1,1,183,500,317,,,15,256,317,15,,,,,,,,,"Exemple de panneau intermédiaire (une case, pas toute la face)."
+porte,,PHL-EXEMPLE,,0,u1,Table Chevet,,300,300,500,,,,,,olive,,porte-0-0-unique,1,porte,intermediaire,left,unique,0,0,,,,,,15,,,,,,,,,,,,Exemple porte. L>600 mm → charniere=center et deux battants L/R.
+case,,PHL-EXEMPLE,,0,u1,Table Chevet,,300,300,500,,,,,,,,case-0,0,drawer,occupe,,,0,0,0,183,183,,,,,,,,,,,,,,,Occupée : zone tiroir
