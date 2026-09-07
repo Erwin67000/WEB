@@ -226,40 +226,10 @@ export const FINITIONS_OSSATURE = {
     shade: 1.06,
     previewColor: '#d4b896',
   },
-  vernis_fonce: {
-    id: 'vernis_fonce',
-    label: 'Vernis foncé',
-    roughness: 0.28,
-    metalness: 0.1,
-    shade: 0.72,
-    previewColor: '#8a6a42',
-  },
-  huile: {
-    id: 'huile',
-    label: 'Huile naturelle',
-    roughness: 0.48,
-    metalness: 0.03,
-    shade: 0.95,
-    previewColor: '#b8956a',
-  },
+  }
+
   // Conservées pour rétrocompat exports / anciennes configs (non proposées au client)
-  grave: {
-    id: 'grave',
-    label: 'Gravé',
-    roughness: 0.78,
-    metalness: 0.04,
-    shade: 0.9,
-    previewColor: '#a88860',
-  },
-  cire: {
-    id: 'cire',
-    label: 'Cire',
-    roughness: 0.42,
-    metalness: 0.05,
-    shade: 1.02,
-    previewColor: '#c9b48a',
-  },
-}
+
 
 /** Finitions proposées au client dans le control panel. */
 export const FINITIONS_OSSATURE_CLIENT = ['brut', 'vernis_clair']
@@ -305,7 +275,7 @@ export const PANNEAU_COULEURS = {
   noir_mat: {
     id: 'noir_mat',
     label: 'Noir mat',
-    color: '#1c1c1c',
+    color: '#232222',
     edge: PANNEAU_EDGE_HEX,
   },
 }
