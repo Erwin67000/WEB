@@ -357,6 +357,12 @@ export default function ControlPanel() {
     return () => setSceneSheetOpen(false)
   }, [openSections.scene, setSceneSheetOpen])
 
+  useEffect(() => {
+    if (drawerWidthAlert && isDrawerWidthAllowed(unit?.dims)) {
+      setDrawerWidthAlert(false)
+    }
+  }, [drawerWidthAlert, unit?.dims])
+
   if (!unit) return null
 
   const CORE_SECTIONS = ['meuble', 'dims', 'modules', 'panneaux', 'scene']
@@ -375,11 +381,11 @@ export default function ControlPanel() {
     })
   const sheetOpen = CORE_SECTIONS.some((k) => openSections[k])
   const fabItems = [
-    { id: 'meuble', label: t('config.furniture'), icon: 'meuble' },
-    { id: 'dims', label: t('config.dims'), icon: 'dims' },
-    { id: 'modules', label: t('config.layout'), icon: 'modules' },
-    { id: 'panneaux', label: t('config.panels'), icon: 'panneaux' },
-    { id: 'scene', label: t('config.scene'), icon: 'scene' },
+    { id: 'meuble', label: t('config.fabMeuble'), icon: 'meuble' },
+    { id: 'dims', label: t('config.fabDims'), icon: 'dims' },
+    { id: 'modules', label: t('config.fabLayout'), icon: 'modules' },
+    { id: 'panneaux', label: t('config.fabPanels'), icon: 'panneaux' },
+    { id: 'scene', label: t('config.fabScene'), icon: 'scene' },
   ]
 
   const notify = (msg) => {
@@ -406,10 +412,10 @@ export default function ControlPanel() {
             className={`config-fab${openSections[item.id] ? ' is-active' : ''}`}
             onClick={() => toggleExclusive(item.id)}
             aria-pressed={Boolean(openSections[item.id])}
-            title={item.label}
             aria-label={item.label}
           >
             <FabIcon name={item.icon} />
+            <span className="config-fab-tip">{item.label}</span>
           </button>
         ))}
       </div>

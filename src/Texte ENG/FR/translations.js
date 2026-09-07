@@ -374,6 +374,11 @@ export const translations = {
       options: 'Options & quote',
       hideOptions: 'Hide options',
       furniture: 'Pieces',
+      fabMeuble: 'Pieces',
+      fabDims: 'Dimensions',
+      fabLayout: 'Fittings',
+      fabPanels: 'Panels',
+      fabScene: '3D scene',
       renameHint: 'Click to rename',
       selectHint: 'Select',
       addPiece: '+ Piece',
@@ -505,7 +510,7 @@ export const translations = {
       drawerTooShallow:
         'Depth below the limit for a drawer: {min} cm',
       drawerWidthRange:
-        'The inner distance between the drawer rails (including the ±11.75 mm offset) must be between {min} and {max} mm to fit a drawer. Current value: {lwk} mm. Drawers are hidden.',
+        'The inner distance between the drawer rails must be between {min} and {max} mm to fit a drawer. Current value: {lwk} mm. Drawers are hidden.',
       ok: 'OK',
       orbitZoom: 'Orbit · zoom',
       dragZoom: 'Drag to orbit · scroll to zoom',
@@ -1060,6 +1065,11 @@ export const translations = {
       options: 'Options & devis',
       hideOptions: 'Masquer les options',
       furniture: 'Meubles',
+      fabMeuble: 'Meubles',
+      fabDims: 'Dimensions',
+      fabLayout: 'Agencement',
+      fabPanels: 'Panneaux',
+      fabScene: 'Scène 3D',
       renameHint: 'Cliquer pour renommer',
       selectHint: 'Sélectionner',
       addPiece: '+ Meuble',
@@ -1191,7 +1201,7 @@ export const translations = {
       drawerTooShallow:
         'Profondeur inférieure à la limite pour ajout de tiroir : {min} cm',
       drawerWidthRange:
-        'La distance intérieure entre les traverses (y compris le décalage de ±11,75 mm) doit être comprise entre {min} et {max} mm pour un tiroir. Valeur actuelle : {lwk} mm. Les tiroirs ne sont pas affichés.',
+        'La distance intérieure entre les traverses doit être comprise entre {min} et {max} mm pour un tiroir. Valeur actuelle : {lwk} mm. Les tiroirs ne sont pas affichés.',
       ok: 'OK',
       orbitZoom: 'Orbit · zoom',
       dragZoom: 'Glisser pour tourner · molette zoom',

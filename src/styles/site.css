@@ -4622,6 +4622,7 @@ body.config-lock {
 
 .config-fab {
   appearance: none;
+  position: relative;
   width: 2.75rem;
   height: 2.75rem;
   display: inline-flex;
@@ -4633,6 +4634,31 @@ body.config-lock {
   border-radius: 10px;
   cursor: pointer;
   box-shadow: 0 4px 16px rgba(20, 16, 10, 0.08);
+}
+
+.config-fab-tip {
+  position: absolute;
+  left: calc(100% + 0.5rem);
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 0.28rem 0.5rem;
+  background: #1a1610;
+  color: #f5f0e6;
+  font-family: var(--philae-font);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  border-radius: 4px;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 9;
+}
+
+.config-fab:hover .config-fab-tip,
+.config-fab:focus-visible .config-fab-tip {
+  opacity: 1;
 }
 
 .config-fab.is-active {
@@ -4773,6 +4799,12 @@ body.config-lock {
     overflow-x: auto;
     padding: 0.2rem;
     z-index: 8;
+  }
+
+  .config-fab-tip {
+    left: 50%;
+    top: calc(100% + 0.35rem);
+    transform: translateX(-50%);
   }
 
   .config-buy-float {

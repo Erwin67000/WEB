@@ -815,6 +815,7 @@ a.btn.primary:hover {
   justify-content: center;
   padding: 1.25rem;
   background: rgba(18, 16, 12, 0.42);
+  pointer-events: auto;
 }
 
 .drawer-alert {
