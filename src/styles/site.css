@@ -4643,7 +4643,7 @@ body.config-lock {
   transform: translateY(-50%);
   padding: 0.28rem 0.5rem;
   background: #1a1610;
-  color: #f5f0e6;
+  color: #ffffff !important;
   font-family: var(--philae-font);
   font-size: 0.68rem;
   font-weight: 600;
@@ -4654,6 +4654,13 @@ body.config-lock {
   opacity: 0;
   pointer-events: none;
   z-index: 9;
+}
+
+.config-fab-icon {
+  display: block;
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
 }
 
 .config-fab:hover .config-fab-tip,
@@ -4669,6 +4676,10 @@ body.config-lock {
 
 .config-fab svg {
   display: block;
+}
+
+.config-fab.is-active .config-fab-icon {
+  filter: invert(1);
 }
 
 .configurator-app .panel-mobile-toggle {

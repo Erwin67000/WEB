@@ -210,57 +210,17 @@ function NumFieldInline({ label, value, onChange, min, max, unit = '°' }) {
   )
 }
 
+const FAB_ICONS = {
+  meuble: '/icons/fab/meuble.png',
+  dims: '/icons/fab/dims.png',
+  modules: '/icons/fab/modules.png',
+  panneaux: '/icons/fab/panneaux.png',
+  scene: '/icons/fab/scene.png',
+}
+
 function FabIcon({ name }) {
-  const common = {
-    viewBox: '0 0 24 24',
-    width: '22',
-    height: '22',
-    fill: 'none',
-    stroke: 'currentColor',
-    strokeWidth: '1.8',
-    strokeLinecap: 'round',
-    strokeLinejoin: 'round',
-    'aria-hidden': true,
-  }
-  if (name === 'meuble') {
-    return (
-      <svg {...common}>
-        <rect x="3.5" y="9" width="17" height="11.5" rx="1.4" />
-        <path d="M6.5 9V5.8A1.8 1.8 0 0 1 8.3 4h7.4A1.8 1.8 0 0 1 17.5 5.8V9" />
-      </svg>
-    )
-  }
-  if (name === 'dims') {
-    return (
-      <svg {...common}>
-        <path d="M4 20V7.5M4 20h12.5" />
-        <path d="M4 7.5h4.5M16.5 20v-4.5" />
-        <rect x="9.5" y="4" width="10.5" height="10.5" rx="1.2" />
-      </svg>
-    )
-  }
-  if (name === 'modules') {
-    return (
-      <svg {...common}>
-        <rect x="3.5" y="3.5" width="17" height="17" rx="1.4" />
-        <path d="M3.5 10h17M3.5 16.5h17M10 3.5v17" />
-      </svg>
-    )
-  }
-  if (name === 'panneaux') {
-    return (
-      <svg {...common}>
-        <rect x="4" y="5.5" width="13" height="13" rx="1.2" />
-        <path d="M8.5 3.5h11v13" />
-      </svg>
-    )
-  }
-  return (
-    <svg {...common}>
-      <circle cx="12" cy="12" r="3.2" />
-      <path d="M12 5.2V3.4M12 20.6v-1.8M5.2 12H3.4M20.6 12h-1.8M7.1 7.1 5.8 5.8M18.2 18.2l-1.3-1.3M7.1 16.9 5.8 18.2M18.2 5.8l-1.3 1.3" />
-    </svg>
-  )
+  const src = FAB_ICONS[name] || FAB_ICONS.scene
+  return <img src={src} alt="" className="config-fab-icon" aria-hidden />
 }
 
 export default function ControlPanel() {
