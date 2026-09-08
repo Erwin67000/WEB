@@ -3,6 +3,7 @@
  * Une feuille par meuble + feuille « atelier » (détail usinage / Würth).
  */
 import * as XLSX from 'xlsx'
+import PizZip from 'pizzip'
 import {
   ATELIER_COLUMNS,
   buildAtelierRows,
@@ -300,7 +301,65 @@ export function buildProductIdBase64(state, templateBuf) {
   wsAtelier['!views'] = [{ state: 'frozen', ySplit: 1, topLeftCell: 'A2' }]
   XLSX.utils.book_append_sheet(wb, wsAtelier, 'atelier')
 
-  return XLSX.write(wb, { type: 'base64', bookType: 'xlsx' })
+  const filledB64 = XLSX.write(wb, { type: 'base64', bookType: 'xlsx' })
+  return restoreTemplateLogo(templateBuf, filledB64)
+}
+
+/**
+ * SheetJS retire les images. On recopie logo + drawing du modèle
+ * dans le xlsx rempli (media, drawings, rels, Content_Types).
+ */
+function restoreTemplateLogo(templateBuf, filledB64) {
+  const src = new PizZip(templateBuf)
+  const dst = new PizZip(Buffer.from(filledB64, 'base64'))
+
+  for (const name of Object.keys(src.files)) {
+    if (name.endsWith('/')) continue
+    if (name.startsWith('xl/media/') || name.startsWith('xl/drawings/')) {
+      dst.file(name, src.file(name).asUint8Array())
+    }
+  }
+
+  let ctypes = dst.file('[Content_Types].xml')?.asText() || ''
+  if (ctypes && !/Extension="png"/.test(ctypes)) {
+    ctypes = ctypes.replace(
+      '</Types>',
+      '<Default ContentType="image/png" Extension="png"/></Types>',
+    )
+  }
+  if (ctypes && !/drawings\/drawing1\.xml/.test(ctypes)) {
+    ctypes = ctypes.replace(
+      '</Types>',
+      '<Override ContentType="application/vnd.openxmlformats-officedocument.drawing+xml" PartName="/xl/drawings/drawing1.xml"/></Types>',
+    )
+  }
+  if (ctypes) dst.file('[Content_Types].xml', ctypes)
+
+  const relsPath = 'xl/worksheets/_rels/sheet1.xml.rels'
+  const srcRels = src.file(relsPath)
+  if (srcRels) dst.file(relsPath, srcRels.asText())
+
+  const sheetPath = 'xl/worksheets/sheet1.xml'
+  const sheetFile = dst.file(sheetPath)
+  if (sheetFile) {
+    let sheet = sheetFile.asText()
+    if (!/<drawing[\s>]/.test(sheet)) {
+      if (!/xmlns:r=/.test(sheet)) {
+        sheet = sheet.replace(
+          /<worksheet\b/,
+          '<worksheet xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"',
+        )
+      }
+      sheet = sheet.replace(
+        '</worksheet>',
+        '<drawing r:id="rId1"/></worksheet>',
+      )
+      dst.file(sheetPath, sheet)
+    }
+  }
+
+  const out = dst.generate({ type: 'uint8array', compression: 'DEFLATE' })
+  return Buffer.from(out).toString('base64')
 }
 
 export default { buildProductIdBase64 }
