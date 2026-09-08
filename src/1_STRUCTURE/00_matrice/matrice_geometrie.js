@@ -231,6 +231,18 @@ export function buildGeometrie({ L, W, H }) {
 }
 
 /**
+ * Export les dimensions extérieures du meuble.
+ */
+export function outsideDimensions({ L, W, H }) {
+  const { largeur, hauteur } = resolveAreteSection({ L, W, H })
+  return {
+    Lreel: Number(L) + largeur * Math.sqrt(2)/2,
+    Wreel: Number(W) + largeur * Math.sqrt(2)/2,
+    Hreel: Number(H) + largeur * Math.sqrt(2)/2,
+  }
+}
+
+/**
  * Export JSON ossature (compatible formats précédents).
  */
 export function toOssatureJson({ L, W, H }) {

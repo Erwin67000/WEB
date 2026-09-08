@@ -658,6 +658,9 @@ export default function ControlPanel() {
                 />
               )}
             </div>
+            <p Lreel={unit.dims.L} Wreel={unit.dims.W} Hreel={unit.dims.H} className="muted dims-reel">
+              {t('config.dimsExt')}
+            </p>
           )}
         </section>
 
