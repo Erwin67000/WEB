@@ -272,5 +272,6 @@ export default {
   symetrie,
   Arete,
   buildGeometrie,
+  outsideDimensions,
   toOssatureJson,
 }

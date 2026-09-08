@@ -387,6 +387,7 @@ export const translations = {
       dimsModel: 'Model dimensions',
       dimsLocked: 'Shop model dimensions (locked)',
       lwh: '(L × D × H)',
+      dimsExt: 'Outside: {Lreel} × {Wreel} × {Hreel} mm',
       dimsLockedHint:
         'To change L, D, H: use the free configurator.',
       length: 'Length (L)',
@@ -1084,6 +1085,7 @@ export const translations = {
       dimsModel: 'Dimensions du modèle',
       dimsLocked: 'Dimensions du modèle boutique (figées)',
       lwh: '(L × P × H)',
+      dimsExt: 'Extérieur : {Lreel} × {Wreel} × {Hreel} mm',
       dimsLockedHint:
         'Pour modifier L, P, H : utilisez le configurateur libre.',
       length: 'Longueur (L)',

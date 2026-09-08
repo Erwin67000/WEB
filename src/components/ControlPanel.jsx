@@ -33,6 +33,7 @@ import {
   PORTE_L_FORBIDDEN_MM,
 } from '../1_STRUCTURE/02_agencement/agencement.js'
 import { DIM_LIMITS, formatMmAsCm, parseCmInputToMm } from '../3_INPUT/matrice_input.js'
+import { outsideDimensions } from '../1_STRUCTURE/00_matrice/matrice_geometrie.js'
 
 import { FACE_PICK_DEFS } from '../1_STRUCTURE/02_agencement/FacePickPlanes.jsx'
 import { useNavigate } from 'react-router-dom'
@@ -277,6 +278,17 @@ export default function ControlPanel() {
     () => units.find((u) => u.id === activeUnitId) || units[0],
     [units, activeUnitId],
   )
+
+  const dimsExt = useMemo(() => {
+    if (!unit?.dims) return null
+    const { Lreel, Wreel, Hreel } = outsideDimensions(unit.dims)
+    const fmt = (n) => {
+      const v = Math.round(Number(n) * 10) / 10
+      if (!Number.isFinite(v)) return '—'
+      return Number.isInteger(v) ? String(v) : v.toFixed(1)
+    }
+    return { Lreel: fmt(Lreel), Wreel: fmt(Wreel), Hreel: fmt(Hreel) }
+  }, [unit])
 
   const porteGroups = useMemo(
     () => (unit ? porteGroupsForUnit(unit) : []),
@@ -657,10 +669,10 @@ export default function ControlPanel() {
                   }
                 />
               )}
+              {dimsExt && (
+                <p className="dims-ext">{t('config.dimsExt', dimsExt)}</p>
+              )}
             </div>
-            <p Lreel={unit.dims.L} Wreel={unit.dims.W} Hreel={unit.dims.H} className="muted dims-reel">
-              {t('config.dimsExt')}
-            </p>
           )}
         </section>
 

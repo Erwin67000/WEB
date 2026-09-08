@@ -511,6 +511,13 @@ a.site-brand {
   font-variant-numeric: tabular-nums;
 }
 
+.dims-ext {
+  margin: 0.55rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--muted, #6b645c);
+  font-variant-numeric: tabular-nums;
+}
+
 /* ——— Chips meubles + renommage inline ——— */
 .unit-chip-input {
   background: var(--bg-elevated, #1a1610);
