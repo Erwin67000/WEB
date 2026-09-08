@@ -1,10 +1,19 @@
 /**
- * Route interne DAE + CSV — uniquement `vite` (configureServer).
+ * Route interne DAE + fiche produit — uniquement `vite` (configureServer).
  * Absente du build et de Cloudflare Pages : en production ces URLs n’existent pas.
  */
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
 const PAGE_PATH = '/atelier-cad'
 const DOWNLOAD_PATH = '/atelier-cad/download'
 const LOCAL_KEY = 'philae-saved-config'
+const PLUGIN_DIR = path.dirname(fileURLToPath(import.meta.url))
+const PRODUCTID_TEMPLATE = [
+  path.resolve(PLUGIN_DIR, '../src/2_BUILD/document/ProductID.xlsx'),
+  path.resolve(PLUGIN_DIR, '../public/document/ProductID.xlsx'),
+].find((p) => fs.existsSync(p))
 
 function pathnameOf(req) {
   const raw = (req.originalUrl || req.url || '').split('?')[0]
@@ -63,16 +72,15 @@ function cadPageHtml() {
 <body>
   <main>
     <p class="kicker">USAGE INTERNE · PHILAE · DEV ONLY</p>
-    <h1>Export DAE + CSV atelier</h1>
+    <h1>Export DAE + fiche produit</h1>
     <p>
       Cette page n’existe que sur le serveur Vite local.
       Elle exporte la configuration actuelle : maillage Collada (SketchUp, mm, Z-up)
-      et CSV partenaires (positions exactes tablettes / tiroirs Würth,
-      panneaux plein ou intermédiaire, couleur, cotes d’usinage).
+      et fiche produit Excel (ProductID) pour l’atelier, Würth et le devis.
     </p>
     <p class="muted" id="ref">Réf. —</p>
     <ul id="parts"></ul>
-    <button type="button" id="dl" disabled>Télécharger DAE + CSV</button>
+    <button type="button" id="dl" disabled>Télécharger DAE + fiche produit</button>
     <p class="err" id="err" hidden></p>
   </main>
   <script>
@@ -101,8 +109,7 @@ function cadPageHtml() {
       errEl.textContent = msg || ''
     }
 
-    function trigger(name, text, mime) {
-      const blob = new Blob([text], { type: mime })
+    function trigger(name, blob) {
       const a = document.createElement('a')
       a.href = URL.createObjectURL(blob)
       a.download = name
@@ -111,6 +118,13 @@ function cadPageHtml() {
       a.click()
       a.remove()
       setTimeout(() => URL.revokeObjectURL(a.href), 1500)
+    }
+
+    function b64ToBlob(b64, mime) {
+      const bin = atob(b64)
+      const bytes = new Uint8Array(bin.length)
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i)
+      return new Blob([bytes], { type: mime })
     }
 
     const state = readState()
@@ -152,8 +166,29 @@ function cadPageHtml() {
           return
         }
         const base = data.base || 'philae-meuble'
-        trigger(base + '.csv', '\\uFEFF' + data.csv, 'text/csv;charset=utf-8')
-        trigger(base + '.dae', data.dae, 'model/vnd.collada+xml')
+        if (data.xlsx) {
+          trigger(
+            base + '.xlsx',
+            b64ToBlob(
+              data.xlsx,
+              'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            ),
+          )
+        } else if (data.csv) {
+          trigger(
+            base + '.csv',
+            new Blob(['\\uFEFF' + data.csv], { type: 'text/csv;charset=utf-8' }),
+          )
+        }
+        if (data.dae) {
+          trigger(base + '.dae', new Blob([data.dae], { type: 'model/vnd.collada+xml' }))
+        }
+        if (data.xlsxError && !data.xlsx) {
+          showError('Fiche produit : ' + data.xlsxError)
+        }
+        if (!data.xlsx && !data.csv && !data.dae) {
+          showError('Aucun fichier généré.')
+        }
       } catch (e) {
         showError(e.message || 'Téléchargement impossible')
       } finally {
@@ -252,6 +287,20 @@ export function cadExportDevPlugin() {
                 dae: collada(state),
                 base: `philae-${slug}`,
                 schema: 'philae-atelier-v1',
+              }
+            }
+            if (PRODUCTID_TEMPLATE) {
+              try {
+                const prod = await server.ssrLoadModule('/src/lib/productIdExport.js')
+                const fill =
+                  prod.buildProductIdBase64 ||
+                  prod.default?.buildProductIdBase64
+                if (typeof fill === 'function') {
+                  const buf = fs.readFileSync(PRODUCTID_TEMPLATE)
+                  files.xlsx = fill(state, buf)
+                }
+              } catch (err) {
+                files.xlsxError = err?.message || String(err)
               }
             }
             send(res, 200, JSON.stringify(files), {
