@@ -9,20 +9,18 @@ import {
 } from './atelierExport.js'
 import { computePricing } from '../store/createConfigStore.js'
 import { outsideDimensions } from '../1_STRUCTURE/00_matrice/matrice_geometrie.js'
-import { TVA } from '../1_STRUCTURE/00_matrice/matrice_constante.js'
+import {
+  TVA,
+  EPAISSEUR_PANNEAU,
+  DRAWER_FACADE_DOWN_EXTEND_MM,
+} from '../1_STRUCTURE/00_matrice/matrice_constante.js'
+import {
+  moduleLayout,
+  buildTiroir,
+  resolveTabletteOctogone,
+} from '../1_STRUCTURE/02_agencement/agencement.js'
 
-const DRAWER_H_ROWS = {
-  58: 24,
-  84: 25,
-  110: 26,
-  136: 27,
-  188: 28,
-  214: 29,
-  240: 30,
-  266: 31,
-}
-
-/** face atelier → colonnes Length/Width (1-indexed Excel col) */
+/** face atelier → colonnes Length/Width (1-indexed Excel col) — Panel1 = ligne 34 */
 const FACE_COLS = {
   porte: [2, 3],
   fond: [4, 5],
@@ -32,6 +30,10 @@ const FACE_COLS = {
   dessus: [10, 11],
   dessous: [12, 13],
 }
+
+const PANEL_FIRST_ROW = 34
+const DRAWER_FIRST_ROW = 23
+const DRAWER_MAX = 6
 
 function mm(n) {
   const v = Number(n)
@@ -75,6 +77,67 @@ function cloneSheet(ws) {
   return JSON.parse(JSON.stringify(ws))
 }
 
+function aabb(points) {
+  if (!points?.length) return null
+  let minX = Infinity
+  let maxX = -Infinity
+  let minY = Infinity
+  let maxY = -Infinity
+  let minZ = Infinity
+  let maxZ = -Infinity
+  for (const p of points) {
+    const x = Number(p[0])
+    const y = Number(p[1])
+    const z = Number(p[2])
+    if (x < minX) minX = x
+    if (x > maxX) maxX = x
+    if (y < minY) minY = y
+    if (y > maxY) maxY = y
+    if (z < minZ) minZ = z
+    if (z > maxZ) maxZ = z
+  }
+  return { dx: maxX - minX, dy: maxY - minY, dz: maxZ - minZ }
+}
+
+/** Plateau octogone : emprise complète (pas L−2×inset). */
+function shelfFootprint(dims) {
+  try {
+    const pts = resolveTabletteOctogone(dims, 0)
+    const box = aabb(pts)
+    if (box) return { length: mm(box.dx), width: mm(box.dy) }
+  } catch {
+    /* fallback L × P */
+  }
+  return { length: mm(dims.L), width: mm(dims.W ?? dims.P) }
+}
+
+/** Façade tiroir réelle (largeur × hauteur), depuis le solide. */
+function drawerFacadeSize(unit, mod, modules) {
+  const dims = unit.dims
+  const layout = moduleLayout(mod, dims, modules)
+  const h = Number(layout.hMm) || 0
+  const fallbackH =
+    layout.facadeBas ? h : h + (Number(DRAWER_FACADE_DOWN_EXTEND_MM) || 15)
+  try {
+    const data = buildTiroir(dims, layout, mod, {
+      epaisseurMm: EPAISSEUR_PANNEAU,
+    })
+    if (data?.lwkOutOfRange || data?.depthTooSmall) {
+      return { width: mm(dims.L), height: mm(fallbackH) }
+    }
+    const facade = (data.box?.panels || []).find(
+      (p) => p.id === 'facade' || p.nom === 'facade',
+    )
+    const box = aabb(facade?.points || facade?.panneau?.points)
+    if (box && box.dx > 0 && box.dz > 0) {
+      return { width: mm(box.dx), height: mm(box.dz) }
+    }
+  } catch {
+    /* fallback */
+  }
+  return { width: mm(dims.L), height: mm(fallbackH) }
+}
+
 function fillUnitSheet(ws, state, unit, unitIndex, atelierRows, pricing) {
   const contact = state.contact || {}
   const dims = unit.dims || {}
@@ -85,6 +148,9 @@ function fillUnitSheet(ws, state, unit, unitIndex, atelierRows, pricing) {
   const quoteRef = state.quoteRef || ''
   const sku = state.catalogProductId || `PHL-${quoteRef || unit.id || unitIndex + 1}`
   const phone = splitPhone(contact.phone)
+  const modules = unit.modules || []
+  const drawerMods = modules.filter((m) => m.kind === 'drawer')
+  const shelfMods = modules.filter((m) => m.kind === 'shelf')
 
   const ofUnit = atelierRows.filter(
     (r) => r.ligne !== 'meta' && String(r.meuble_index) === String(unitIndex),
@@ -95,89 +161,57 @@ function fillUnitSheet(ws, state, unit, unitIndex, atelierRows, pricing) {
     (r) => r.ligne === 'panneau' || r.ligne === 'porte',
   )
 
-  setCell(ws, 'B4', sku)
-  setCell(ws, 'B5', unit.label || unit.id || `Meuble ${unitIndex + 1}`)
+  setCell(ws, 'C3', sku)
+  setCell(ws, 'C4', unit.label || unit.id || `Meuble ${unitIndex + 1}`)
 
-  setCell(ws, 'B8', contact.firstName || '')
-  setCell(ws, 'D8', contact.lastName || '')
-  setCell(ws, 'B9', contact.email || '')
-  setCell(ws, 'D9', phone.indicatif)
-  setCell(ws, 'F9', phone.number)
+  setCell(ws, 'B7', contact.firstName || '')
+  setCell(ws, 'D7', contact.lastName || '')
+  setCell(ws, 'B8', contact.email || '')
+  setCell(ws, 'D8', phone.indicatif)
+  setCell(ws, 'F8', phone.number)
   setCell(
     ws,
-    'B10',
+    'B9',
     [contact.addressLine1, contact.addressLine2].filter(Boolean).join(' '),
   )
-  setCell(ws, 'D10', contact.postalCode || '')
-  setCell(ws, 'F10', contact.city || '')
-  setCell(ws, 'H10', contact.country || '')
-  setCell(ws, 'B11', contact.siret || '')
-  setCell(ws, 'D11', contact.tva || '')
+  setCell(ws, 'D9', contact.postalCode || '')
+  setCell(ws, 'F9', contact.city || '')
+  setCell(ws, 'H9', contact.country || '')
+  setCell(ws, 'B10', contact.siret || '')
+  setCell(ws, 'D10', contact.tva || '')
 
   setCell(ws, 'B14', mm(L))
+  setCell(ws, 'C14', mm(ext.Lreel))
   setCell(ws, 'B15', mm(P))
+  setCell(ws, 'C15', mm(ext.Wreel))
   setCell(ws, 'B16', mm(H))
-  setCell(ws, 'E14', mm(ext.Lreel))
-  setCell(ws, 'F14', 'hors-tout')
-  setCell(ws, 'E15', mm(ext.Wreel))
-  setCell(ws, 'F15', 'hors-tout')
-  setCell(ws, 'E16', mm(ext.Hreel))
-  setCell(ws, 'F16', 'hors-tout')
+  setCell(ws, 'C16', mm(ext.Hreel))
 
   const firstDrawer = drawers[0]
   if (firstDrawer) {
-    setCell(ws, 'D21', firstDrawer.lwk_mm)
-    setCell(ws, 'B22', firstDrawer.lic_mm)
-    setCell(ws, 'F21', mm(L))
-    setCell(ws, 'F22', firstDrawer.h_mm)
-    if (firstDrawer.notes && /premier|floor|bas/i.test(String(firstDrawer.notes))) {
-      setCell(ws, 'H23', 'O')
-    }
+    setCell(ws, 'B20', firstDrawer.lwk_mm)
+    setCell(ws, 'B21', firstDrawer.lic_mm)
   }
 
-  const heightCounts = {}
-  for (const d of drawers) {
-    const h = Math.round(Number(d.wurth_h_mm || d.h_mm) || 0)
-    heightCounts[h] = (heightCounts[h] || 0) + 1
-  }
-  for (const [h, row] of Object.entries(DRAWER_H_ROWS)) {
-    const n = heightCounts[Number(h)] || 0
-    if (n) {
-      setCell(ws, colRow(2, row), n)
-      setCell(ws, colRow(6, row), n)
-    } else {
-      setCell(ws, colRow(2, row), '')
-    }
-  }
-  const otherH = Object.entries(heightCounts).filter(
-    ([h]) => DRAWER_H_ROWS[Number(h)] == null,
-  )
-  if (otherH.length) {
-    setCell(
-      ws,
-      'F23',
-      otherH.map(([h, n]) => `${h}×${n}`).join(' | '),
-    )
-  }
+  drawerMods.slice(0, DRAWER_MAX).forEach((mod, i) => {
+    const row = DRAWER_FIRST_ROW + i
+    const layout = moduleLayout(mod, dims, modules)
+    const info = drawers[i]
+    const h = mm(info?.wurth_h_mm || info?.h_mm || layout.hMm)
+    const facade = drawerFacadeSize(unit, mod, modules)
+    setCell(ws, colRow(2, row), h)
+    setCell(ws, colRow(3, row), facade.height)
+    setCell(ws, colRow(4, row), facade.width)
+  })
 
-  setCell(ws, 'B33', shelves.length || '')
-  if (shelves[0]) {
-    setCell(ws, 'B34', shelves[0].L_utile_mm)
-    setCell(ws, 'B35', shelves[0].P_utile_mm)
-  }
+  const shelfSize = shelfFootprint({ L, W: P, H })
+  setCell(ws, 'H19', shelfMods.length)
+  setCell(ws, 'H20', shelfSize.length)
+  setCell(ws, 'H21', shelfSize.width)
   if (shelves.length) {
-    setCell(ws, 'A36', 'Z tablettes')
-    setCell(ws, 'B36', shelves.map((s) => s.z_haut_mm).join(' | '))
-    setCell(ws, 'C36', 'mm')
-  }
-  if (drawers.length) {
-    setCell(ws, 'A37', 'Z tiroirs')
-    setCell(
-      ws,
-      'B37',
-      drawers.map((d) => `${d.z_bas_mm}–${d.z_haut_mm}`).join(' | '),
-    )
-    setCell(ws, 'C37', 'mm')
+    setCell(ws, 'G22', 'Z')
+    setCell(ws, 'H22', shelves.map((s) => s.z_haut_mm).join(' | '))
+    setCell(ws, 'I22', 'mm')
   }
 
   const byFace = new Map()
@@ -190,7 +224,7 @@ function fillUnitSheet(ws, state, unit, unitIndex, atelierRows, pricing) {
   for (const [face, list] of byFace) {
     const [cL, cW] = FACE_COLS[face]
     list.slice(0, 10).forEach((p, i) => {
-      const row = 41 + i
+      const row = PANEL_FIRST_ROW + i
       const len = p.usinage_L_mm || p.L_utile_mm
       const wid = p.usinage_H_mm || p.h_mm
       setCell(ws, colRow(cL, row), len)
@@ -215,17 +249,18 @@ function fillUnitSheet(ws, state, unit, unitIndex, atelierRows, pricing) {
   ]
     .filter(Boolean)
     .join(' · ')
-  setCell(ws, 'B54', options)
+  setCell(ws, 'B47', options)
 
   const line = pricing?.lines?.[unitIndex]
   const ht = line?.ht ?? pricing?.ht
   const tvaAmt = ht != null ? ht * TVA : pricing?.tva
   const ttc = ht != null ? ht * (1 + TVA) : pricing?.ttc
-  setCell(ws, 'B58', euro(ttc))
-  setCell(ws, 'C58', '€ TTC')
-  setCell(ws, 'B59', euro(tvaAmt))
-  setCell(ws, 'C59', `€ (${Math.round(TVA * 100)} %)`)
-  setCell(ws, 'B60', '')
+  setCell(ws, 'B50', euro(ht))
+  setCell(ws, 'C50', '€ HT')
+  setCell(ws, 'B51', euro(ttc))
+  setCell(ws, 'C51', '€ TTC')
+  setCell(ws, 'B52', euro(tvaAmt))
+  setCell(ws, 'C52', `€ (${Math.round(TVA * 100)} %)`)
 }
 
 /**
