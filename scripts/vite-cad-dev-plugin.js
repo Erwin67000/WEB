@@ -63,11 +63,12 @@ function cadPageHtml() {
 <body>
   <main>
     <p class="kicker">USAGE INTERNE · PHILAE · DEV ONLY</p>
-    <h1>Export DAE + CSV</h1>
+    <h1>Export DAE + CSV atelier</h1>
     <p>
       Cette page n’existe que sur le serveur Vite local.
-      Elle exporte la configuration actuelle (ossature, panneaux découpés,
-      tablettes, traverses, tiroirs et façades).
+      Elle exporte la configuration actuelle : maillage Collada (SketchUp, mm, Z-up)
+      et CSV partenaires (positions exactes tablettes / tiroirs Würth,
+      panneaux plein ou intermédiaire, couleur, cotes d’usinage).
     </p>
     <p class="muted" id="ref">Réf. —</p>
     <ul id="parts"></ul>
@@ -216,8 +217,43 @@ export function cadExportDevPlugin() {
               })
               return
             }
-            const mod = await server.ssrLoadModule('/src/lib/furnitureExport.js')
-            const files = mod.buildFurnitureCadFiles(state)
+            const pickFn = (mod, name) => {
+              if (!mod) return null
+              if (typeof mod[name] === 'function') return mod[name]
+              if (typeof mod.default?.[name] === 'function') return mod.default[name]
+              return null
+            }
+            const cad = await server.ssrLoadModule('/src/lib/furnitureExport.js')
+            let files
+            const build = pickFn(cad, 'buildFurnitureCadFiles')
+            if (typeof build === 'function') {
+              files = build(state)
+            } else {
+              const collada = pickFn(cad, 'buildFurnitureCollada')
+              let csvFn = null
+              try {
+                const atelier = await server.ssrLoadModule('/src/lib/atelierExport.js')
+                csvFn = pickFn(atelier, 'buildAtelierCsv')
+              } catch {
+                csvFn = null
+              }
+              if (typeof collada !== 'function') {
+                const keys = Object.keys(cad || {}).join(', ')
+                throw new Error(
+                  `Export CAD introuvable (clés: ${keys || 'aucune'}). Relance npm run dev.`,
+                )
+              }
+              const slug =
+                String(state.quoteRef || 'meuble')
+                  .replace(/[^A-Za-z0-9_\-]+/g, '-')
+                  .replace(/^-|-$/g, '') || 'meuble'
+              files = {
+                csv: typeof csvFn === 'function' ? csvFn(state) : '',
+                dae: collada(state),
+                base: `philae-${slug}`,
+                schema: 'philae-atelier-v1',
+              }
+            }
             send(res, 200, JSON.stringify(files), {
               'Content-Type': 'application/json; charset=utf-8',
               'Cache-Control': 'no-store',

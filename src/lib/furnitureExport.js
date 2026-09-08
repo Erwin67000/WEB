@@ -1,7 +1,7 @@
 /**
- * Export local : Collada (*.dae) + CSV géométrie réelle du configurateur.
+ * Export atelier : Collada (*.dae) + CSV partenaires (philae-atelier-v1).
  * DAE en millimètres, Z-up (SketchUp).
- * Panneaux = cases entre tablettes / tiroirs (pas le plein-face).
+ * CSV : positions exactes tablettes / tiroirs Würth, panneaux plein ou intermédiaire.
  */
 import { buildOssature } from '../1_STRUCTURE/01_meuble3D/ossature.js'
 import {
@@ -21,10 +21,7 @@ import {
   EPAISSEUR_PANNEAU,
   EPAISSEUR_PORTE,
 } from '../1_STRUCTURE/00_matrice/matrice_constante.js'
-import {
-  buildMasterInput,
-  masterInputToCsv,
-} from '../3_INPUT/master_input.js'
+import { buildAtelierCsv } from './atelierExport.js'
 
 function xmlEscape(s) {
   return String(s)
@@ -49,13 +46,6 @@ function triggerDownload(filename, text, mime) {
   a.click()
   a.remove()
   setTimeout(() => URL.revokeObjectURL(a.href), 1500)
-}
-
-function csvCell(v) {
-  if (v == null) return ''
-  const s = String(v)
-  if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`
-  return s
 }
 
 function toMesh(id, name, positions, indices, points) {
@@ -327,41 +317,33 @@ ${nodes}
 `
 }
 
-function appendGeomCsv(csv, state) {
-  const extra = []
-  const push = (row) => extra.push(row.map(csvCell).join(','))
-  ;(state.units || []).forEach((unit, ui) => {
-    collectUnitMeshes(unit, state).forEach((mesh) => {
-      ;(mesh.points || []).forEach((p, pi) => {
-        push([
-          'geom_point',
-          ui,
-          unit.id,
-          mesh.id,
-          '',
-          pi,
-          p[0],
-          p[1],
-          p[2],
-          mesh.name || '',
-        ])
-      })
-    })
-  })
-  if (!extra.length) return csv
-  return `${csv}\n${extra.join('\n')}`
-}
-
-export function downloadFurnitureCad(state) {
-  const master = buildMasterInput(state)
-  const csv = appendGeomCsv(masterInputToCsv(master), state)
+/**
+ * Fichiers atelier (SSR + navigateur) : DAE SketchUp + CSV partenaires.
+ * Sans effet de bord DOM — appelé par /atelier-cad/download.
+ */
+export function buildFurnitureCadFiles(state) {
+  if (!state || !Array.isArray(state.units) || !state.units.length) {
+    throw new Error('Aucune configuration (units vide)')
+  }
+  const csv = buildAtelierCsv(state)
   const dae = buildFurnitureCollada(state)
   const slug =
-    String(master.quoteRef || 'meuble')
+    String(state.quoteRef || 'meuble')
       .replace(/[^A-Za-z0-9_\-]+/g, '-')
       .replace(/^-|-$/g, '') || 'meuble'
   const base = `philae-${slug}`
-  triggerDownload(`${base}.csv`, `\uFEFF${csv}`, 'text/csv;charset=utf-8')
-  triggerDownload(`${base}.dae`, dae, 'model/vnd.collada+xml')
-  return { csv, dae, base }
+  return { csv, dae, base, schema: 'philae-atelier-v1' }
+}
+
+export function downloadFurnitureCad(state) {
+  const files = buildFurnitureCadFiles(state)
+  triggerDownload(`${files.base}.csv`, `\uFEFF${files.csv}`, 'text/csv;charset=utf-8')
+  triggerDownload(`${files.base}.dae`, files.dae, 'model/vnd.collada+xml')
+  return files
+}
+
+export default {
+  buildFurnitureCadFiles,
+  downloadFurnitureCad,
+  buildFurnitureCollada,
 }

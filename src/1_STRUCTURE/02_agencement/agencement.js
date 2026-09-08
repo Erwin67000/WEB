@@ -589,7 +589,7 @@ export function shelfZBounds(dims = {}, moduleList = []) {
   const drawerTop = drawersTopZMm(dims, moduleList)
   const zMin =
     drawerTop > 0
-      ? Math.max(zMinFloor, drawerTop + EPAISSEUR_PANNEAU)
+      ? Math.max(zMinFloor, drawerTop - EPAISSEUR_PANNEAU)
       : zMinFloor
   const zMax = Math.max(zMin, (Number(H) || 0) - inset - extrusion)
   return { zMin, zMax, drawerTop }
