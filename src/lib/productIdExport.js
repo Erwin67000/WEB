@@ -118,7 +118,8 @@ function drawerFacadeSize(unit, mod, modules) {
   const layout = moduleLayout(mod, dims, modules)
   const h = Number(layout.hMm) || 0
   const fallbackH =
-    layout.facadeBas ? h : h + (Number(DRAWER_FACADE_DOWN_EXTEND_MM) || 15)
+    (layout.facadeBas ? h : h + (Number(DRAWER_FACADE_DOWN_EXTEND_MM) || 15)) +
+    (layout.isLastDrawer ? Number(EPAISSEUR_PANNEAU) || 15 : 0)
   try {
     const data = buildTiroir(dims, layout, mod, {
       epaisseurMm: EPAISSEUR_PANNEAU,

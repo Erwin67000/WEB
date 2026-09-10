@@ -385,7 +385,10 @@ export function buildAtelierRows(state) {
             ]
           : [{ tag: 'unique', extra: {} }]
       leaves.forEach((leaf, li) => {
-        const params = porteGroupBuildParams(g, dims, modules, leaf.extra)
+        const params = porteGroupBuildParams(g, dims, modules, {
+          ...leaf.extra,
+          coverShelfTop: true,
+        })
         const pts = panneauPoints('porte', dims, { epaisseur: epD, ...params })
         const box = aabb(pts)
         rows.push(

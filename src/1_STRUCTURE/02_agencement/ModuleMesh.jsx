@@ -260,7 +260,10 @@ function DoorLeaf({
     const extra = {}
     if (Number.isFinite(Number(xMin))) extra.xMin = Number(xMin)
     if (Number.isFinite(Number(xMax))) extra.xMax = Number(xMax)
-    const params = porteGroupBuildParams(group, dims, modules, extra)
+    const params = porteGroupBuildParams(group, dims, modules, {
+      ...extra,
+      coverShelfTop: true,
+    })
     return buildPanneauComplet('porte', dims, {
       epaisseur: epaisseurPorte,
       ...params,
@@ -842,6 +845,7 @@ function TiroirMesh({
     layout?.wurth?.hMm,
     layout?.wurth?.depthMm,
     layout?.facadeBas,
+    layout?.isLastDrawer,
     layout?.drawerIndex,
     mod?.hMm,
     mod?.id,

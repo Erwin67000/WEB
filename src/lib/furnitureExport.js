@@ -137,7 +137,10 @@ function collectUnitMeshes(unit, state) {
         : [{ tag: hinge, extra: {} }]
     for (const leaf of leaves) {
       try {
-        const params = porteGroupBuildParams(g, dims, modules, leaf.extra)
+        const params = porteGroupBuildParams(g, dims, modules, {
+          ...leaf.extra,
+          coverShelfTop: true,
+        })
         const { panneau } = buildPanneauComplet('porte', dims, {
           epaisseur: epD,
           ...params,

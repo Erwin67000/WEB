@@ -348,7 +348,10 @@ export function buildTiroir(dims, layout, mod = {}, opts = {}) {
     zMin: layout.facadeBas
       ? originZ
       : originZ - (Number(DRAWER_FACADE_DOWN_EXTEND_MM) || 20),
-    zMax: originZ + wurth.hMm,
+    zMax:
+      originZ +
+      wurth.hMm +
+      (layout.isLastDrawer ? Number(EPAISSEUR_PANNEAU) || 15 : 0),
     epaisseur: EPAISSEUR_PANNEAU,
   }
   const facade = layout.facadeBas

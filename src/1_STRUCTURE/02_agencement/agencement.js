@@ -348,9 +348,14 @@ export function groupPorteBays(bays, selectedIndices = []) {
   }))
 }
 
-/** Params zMin/zMax pour buildPorte / buildPanneauComplet. */
+/**
+ * Params zMin/zMax pour buildPorte / buildPanneauComplet.
+ * extra.coverShelfTop : porte intermédiaire — le haut recouvre la tablette
+ * (points du dessus + EPAISSEUR_PANNEAU). Ne pas passer pour joue / fond.
+ */
 export function porteGroupBuildParams(group, dims, modules, extra = {}) {
-  const params = { ...extra }
+  const { coverShelfTop, ...rest } = extra
+  const params = { ...rest }
   if (group.isBottom) {
     const z = porteZMinFromModules(dims, modules)
     if (z > 0) params.zMin = z
@@ -359,7 +364,10 @@ export function porteGroupBuildParams(group, dims, modules, extra = {}) {
     params.zMin = group.zMin
   }
   if (!group.isTop && Number.isFinite(group.zMax)) {
-    params.zMax = group.zMax
+    params.zMax = Number(group.zMax)
+    if (coverShelfTop) {
+      params.zMax += Number(EPAISSEUR_PANNEAU) || 15
+    }
   }
   return params
 }
@@ -545,7 +553,7 @@ export function faceGroupBuildParams(group, dims, modules, nom) {
   } else {
     params = porteGroupBuildParams(group, dims, modules)
   }
-  if (nom === 'joue1' || nom === 'joue2') {
+  if (SEGMENTED_FACES.includes(nom)) {
     Object.assign(params, resolveTypeBiseau(params))
   }
   return params
@@ -747,6 +755,8 @@ export function moduleLayout(mod, { L, W, H }, moduleList = []) {
       atFloor,
       /** 1er tiroir + curseur au plancher → façade « bas » */
       facadeBas: i === 0 && atFloor,
+      /** Dernier tiroir (ou le seul) : façade recouvre la tablette du dessus. */
+      isLastDrawer: i === count - 1,
       hMm: drawerH,
       licMm: wurth.licMm,
       lwkMm: wurth.lwkMm,

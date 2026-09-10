@@ -14,9 +14,9 @@
  * Types de contour (face arrière décalée) :
  *   rectangle-4biseaux — biseau 45° sur les 4 côtés (défaut, panneau plein)
  *   rectangle-3biseaux — biseau 45° sur 3 côtés, 1 côté droit (plan Z)
- *                        joue partielle haut ou bas ; façade 1er tiroir au sol
+ *                        joue / fond partiel haut ou bas ; façade 1er tiroir au sol
  *   rectangle-2biseaux — biseau 45° sur 2 côtés (Y / X), 2 côtés droits (plan Z)
- *                        joue partielle milieu ; façades de tiroirs suivantes
+ *                        joue / fond partiel milieu ; façades de tiroirs suivantes
  */
 import {
   EPAISSEUR_PANNEAU,
