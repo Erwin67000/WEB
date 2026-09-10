@@ -12,7 +12,7 @@ import OssatureView from '../1_STRUCTURE/01_meuble3D/OssatureView.jsx'
 import AgencementView from '../1_STRUCTURE/02_agencement/ModuleMesh.jsx'
 import FacePickPlanes from '../1_STRUCTURE/02_agencement/FacePickPlanes.jsx'
 import { ENVIRONMENTS } from '../1_STRUCTURE/00_matrice/matrice_configuration.js'
-import { unitSocleMm } from '../1_STRUCTURE/00_matrice/matrice_constante.js'
+import { unitLiftMm } from '../1_STRUCTURE/00_matrice/matrice_constante.js'
 import {
   useActiveConfigStore,
   useActiveConfigStoreApi,
@@ -115,15 +115,15 @@ function UnitGroup({
     // petite montée (mm → m via pos déjà en m côté parent)
     const lift = (1 - e) * 0.06
     g.position.y =
-      ((unit.positionMm?.z || 0) + unitSocleMm(unit)) * SCALE + lift
+      ((unit.positionMm?.z || 0) + unitLiftMm(unit)) * SCALE + lift
   })
 
-  const socleMm = unitSocleMm(unit)
+  const liftMm = photoMode ? 0 : unitLiftMm(unit)
   const pos = photoMode
     ? [0, 0, 0]
     : [
         (unit.positionMm?.x || 0) * SCALE,
-        ((unit.positionMm?.z || 0) + socleMm) * SCALE,
+        ((unit.positionMm?.z || 0) + liftMm) * SCALE,
         -(unit.positionMm?.y || 0) * SCALE,
       ]
   const rotY = photoMode ? 0 : (unit.rotationZ || 0) * (Math.PI / 180)
@@ -138,6 +138,7 @@ function UnitGroup({
         rotationZ={rotY}
         selected={selected && !photoMode}
         showAxes={false}
+        axesZMm={-liftMm}
       />
       <group rotation={[0, rotY, 0]}>
         <AgencementView
@@ -607,7 +608,7 @@ function SceneContent({ orbitOnly = false, ivory = false }) {
     ? [
         ((active.positionMm?.x || 0) + active.dims.L / 2) * SCALE,
         ((active.positionMm?.z || 0) +
-          unitSocleMm(active) +
+          unitLiftMm(active) +
           active.dims.H / 2) *
           SCALE,
         -((active.positionMm?.y || 0) + active.dims.W / 2) * SCALE,

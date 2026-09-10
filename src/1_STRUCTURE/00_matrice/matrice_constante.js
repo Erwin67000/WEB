@@ -177,6 +177,20 @@ export function unitSocleMm(unit) {
   return Number.isFinite(n) && n > 0 ? n : 0
 }
 
+/**
+ * Assise ossature sans socle : le bas des arêtes est à −largeur×√2/4.
+ * On relève de cette valeur pour poser le meuble sur Z = 0.
+ */
+export function unitEdgeSeatMm(dims = {}) {
+  const { largeur } = resolveAreteSection(dims)
+  return (largeur * Math.SQRT2) / 4
+}
+
+/** Relèvement Z total (mm) : assise arête + socle éventuel. */
+export function unitLiftMm(unit) {
+  return unitEdgeSeatMm(unit?.dims) + unitSocleMm(unit)
+}
+
 
 
 /** @deprecated utiliser PRIX.ossatureParMetre */

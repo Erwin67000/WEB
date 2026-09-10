@@ -61,6 +61,18 @@ const PANNEAU_CHIP_LABELS = Object.fromEntries(
 
 const CM_DRAFT_RE = /^-?[0-9]*[.,]?[0-9]*$/
 
+/** Liste UI : tablettes (Z haut → bas), puis tiroirs (dernier ajouté en haut du groupe). */
+function modulesForUi(modules, dims) {
+  const list = modules || []
+  const shelves = list.filter((m) => m.kind === 'shelf')
+  const drawers = list.filter((m) => m.kind === 'drawer')
+  const rest = list.filter((m) => m.kind !== 'shelf' && m.kind !== 'drawer')
+  const shelvesTopFirst = [...shelves].sort(
+    (a, b) => shelfZMm(b, dims, list) - shelfZMm(a, dims, list),
+  )
+  return [...shelvesTopFirst, ...[...rest].reverse(), ...[...drawers].reverse()]
+}
+
 function selectInputText(el) {
   if (!el || typeof el.select !== 'function') return
   requestAnimationFrame(() => {
@@ -289,20 +301,21 @@ export default function ControlPanel() {
   )
 
   const socleMm = unit ? unitSocleMm(unit) : 0
+  const extDims = useMemo(
+    () => (unit?.dims ? outsideDimensions(unit.dims) : null),
+    [unit?.dims],
+  )
   const dimsExt = useMemo(() => {
-    if (!unit?.dims) return null
-    const { Lreel, Wreel, Hreel } = outsideDimensions(unit.dims)
+    if (!extDims) return null
+    const { Lreel, Wreel, Hreel } = extDims
     const fmt = (n) => {
       const v = Math.round(Number(n) * 10) / 10
       if (!Number.isFinite(v)) return '—'
       return Number.isInteger(v) ? String(v) : v.toFixed(1)
     }
-    return {
-      Lreel: fmt(Lreel),
-      Wreel: fmt(Wreel),
-      Hreel: fmt(Hreel + socleMm),
-    }
-  }, [unit, socleMm])
+    return { Lreel: fmt(Lreel), Wreel: fmt(Wreel), Hreel: fmt(Hreel) }
+  }, [extDims])
+  const hTotalMm = extDims ? extDims.Hreel + socleMm : 0
 
   const porteGroups = useMemo(
     () => (unit ? porteGroupsForUnit(unit) : []),
@@ -716,12 +729,17 @@ export default function ControlPanel() {
               {dimsExt && (
                 <p className="dims-ext">{t('config.dimsExt', dimsExt)}</p>
               )}
-              {socleMm > 0 && (
+              {hTotalMm > 0 && (
                 <p className="dims-ext">
-                  {t('config.heightTotal', {
-                    h: formatMmAsCm(unit.dims.H + socleMm),
-                    socle: formatMmAsCm(socleMm),
-                  })}
+                  {t(
+                    socleMm > 0
+                      ? 'config.heightTotal'
+                      : 'config.heightTotalNoSocle',
+                    {
+                      h: formatMmAsCm(hTotalMm),
+                      socle: formatMmAsCm(socleMm),
+                    },
+                  )}
                 </p>
               )}
             </div>
@@ -770,7 +788,7 @@ export default function ControlPanel() {
                 </p>
               )}
               <ul className="mod-list">
-                {[...unit.modules].reverse().map((m) => {
+                {modulesForUi(unit.modules, unit.dims).map((m) => {
                   const shelfZ =
                     m.kind === 'shelf'
                       ? shelfZMm(m, unit.dims, unit.modules)
@@ -1060,14 +1078,17 @@ export default function ControlPanel() {
                               </button>
                             ))}
                           </div>
-                          {socleMm > 0 ? (
-                            <p className="muted drawer-dims-hint">
-                              {t('config.heightTotal', {
-                                h: formatMmAsCm(unit.dims.H + socleMm),
+                          <p className="muted drawer-dims-hint">
+                            {t(
+                              socleMm > 0
+                                ? 'config.heightTotal'
+                                : 'config.heightTotalNoSocle',
+                              {
+                                h: formatMmAsCm(hTotalMm),
                                 socle: formatMmAsCm(socleMm),
-                              })}
-                            </p>
-                          ) : null}
+                              },
+                            )}
+                          </p>
                         </div>,
                       ]
                     }

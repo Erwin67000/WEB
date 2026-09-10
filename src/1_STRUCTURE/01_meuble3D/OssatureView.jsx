@@ -141,6 +141,7 @@ export default function OssatureView({
   rotationZ = 0,
   selected = false,
   showAxes = false,
+  axesZMm = 0,
 }) {
   const ossature = useMemo(
     () => buildOssature(dims),
@@ -179,6 +180,7 @@ export default function OssatureView({
         ))}
         {(selected || showAxes) && (
           <axesHelper
+            position={[0, 0, Number(axesZMm) || 0]}
             args={[Math.max(dims.L, dims.W, dims.H) * (showAxes ? 0.55 : 0.35)]}
           />
         )}

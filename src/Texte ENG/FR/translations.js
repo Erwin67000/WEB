@@ -514,7 +514,8 @@ export const translations = {
         'The inner distance between the drawer rails must be between {min} and {max} mm to fit a drawer. Current value: {lwk} mm. Drawers are hidden.',
       shelfTooLarge:
         'Shelves are limited to {maxL} cm in length and {maxP} cm in depth. Current size: {l} × {p} cm. Shelves are hidden.',
-      heightTotal: 'Overall height: {h} cm (including a {socle} cm plinth)',
+      heightTotal: 'Overall height: {h} cm (Hreel + plinth {socle} cm)',
+      heightTotalNoSocle: 'Overall height: {h} cm',
       socle_petit: 'Small (5 cm)',
       socle_moyen: 'Medium (20 cm)',
       socle_grand: 'Tall (50 cm)',
@@ -1218,7 +1219,8 @@ export const translations = {
         'La distance intérieure entre les traverses doit être comprise entre {min} et {max} mm pour un tiroir. Valeur actuelle : {lwk} mm. Les tiroirs ne sont pas affichés.',
       shelfTooLarge:
         'Les tablettes sont limitées à {maxL} cm de long et {maxP} cm de profondeur. Dimensions actuelles : {l} × {p} cm. Les tablettes ne sont pas affichées.',
-      heightTotal: 'Hauteur totale : {h} cm (meuble + socle {socle} cm)',
+      heightTotal: 'Hauteur totale : {h} cm (Hreel + socle {socle} cm)',
+      heightTotalNoSocle: 'Hauteur totale : {h} cm',
       socle_petit: 'Petit (5 cm)',
       socle_moyen: 'Moyen (20 cm)',
       socle_grand: 'Grand (50 cm)',
