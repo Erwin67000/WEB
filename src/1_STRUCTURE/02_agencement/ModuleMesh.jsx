@@ -21,6 +21,7 @@ import {
   faceGroupBuildParams,
   SEGMENTED_FACES,
   PORTE_L_FORBIDDEN_MM,
+  buildPieds,
 } from './agencement.js'
 import {
   FINITIONS,
@@ -264,6 +265,7 @@ function DoorLeaf({
     const params = porteGroupBuildParams(group, dims, modules, {
       ...extra,
       coverShelfTop: true,
+      forDoor: true,
     })
     return buildPanneauComplet('porte', dims, {
       epaisseur: epaisseurPorte,
@@ -1067,6 +1069,60 @@ export function ModulesMesh({
   )
 }
 
+function PiedsMesh({
+  dims,
+  panneaux = [],
+  socleMm = 0,
+  woodFinish = 'chene',
+  ossatureFinish = DEFAULT_FINITION_OSSATURE,
+}) {
+  const data = useMemo(() => {
+    if (!(panneaux || []).includes('dessous') || !(Number(socleMm) > 0)) {
+      return null
+    }
+    try {
+      return buildPieds(dims, { socleMm })
+    } catch (e) {
+      console.error('[PiedsMesh]', e)
+      return null
+    }
+  }, [dims.L, dims.W, dims.H, panneaux, socleMm])
+
+  const woodColor = ossatureWoodColor(woodFinish, ossatureFinish)
+  const wood = usesWoodMaps(ossatureFinish)
+  const surf =
+    FINITIONS_OSSATURE[ossatureFinish] ||
+    FINITIONS_OSSATURE[DEFAULT_FINITION_OSSATURE]
+
+  if (!data?.solids?.length) return null
+  return (
+    <group>
+      {data.solids.map((s) => (
+        <SolidWireMesh
+          key={s.id}
+          positions={s.positions}
+          indices={s.indices}
+          wire={s.wire}
+          color={s.material === 'wood' ? woodColor : s.color || '#444'}
+          edgeColor={
+            s.material === 'wood' ? ARETE_EDGE_COLOR : PANNEAU_EDGE_COLOR
+          }
+          wireWidth={
+            s.material === 'wood' ? ARETE_EDGE_WIDTH : PANNEAU_EDGE_WIDTH
+          }
+          wood={s.material === 'wood' && wood}
+          roughness={
+            s.material === 'rubber' ? 0.92 : surf.roughness ?? 0.55
+          }
+          metalness={
+            s.material === 'metal' ? 0.45 : s.material === 'plastic' ? 0.12 : 0.04
+          }
+        />
+      ))}
+    </group>
+  )
+}
+
 export default function AgencementView({
   dims,
   modules = [],
@@ -1081,6 +1137,7 @@ export default function AgencementView({
   ossatureFinish = DEFAULT_FINITION_OSSATURE,
   panneauCouleur = DEFAULT_PANNEAU_COULEUR,
   panneauCouleurHex,
+  socleMm = 0,
 }) {
   return (
     <>
@@ -1142,6 +1199,13 @@ export default function AgencementView({
           ossatureFinish={ossatureFinish}
           panneauCouleur={panneauCouleur}
           panneauCouleurHex={panneauCouleurHex}
+        />
+        <PiedsMesh
+          dims={dims}
+          panneaux={panneaux}
+          socleMm={socleMm}
+          woodFinish={woodFinish}
+          ossatureFinish={ossatureFinish}
         />
       </group>
     </>

@@ -16,6 +16,7 @@ import {
   porteGroupBuildParams,
   porteXSplit,
   SEGMENTED_FACES,
+  buildPieds,
 } from '../1_STRUCTURE/02_agencement/agencement.js'
 import {
   EPAISSEUR_PANNEAU,
@@ -140,6 +141,7 @@ function collectUnitMeshes(unit, state) {
         const params = porteGroupBuildParams(g, dims, modules, {
           ...leaf.extra,
           coverShelfTop: true,
+          forDoor: true,
         })
         const { panneau } = buildPanneauComplet('porte', dims, {
           epaisseur: epD,
@@ -222,6 +224,19 @@ function collectUnitMeshes(unit, state) {
       }
     }
   })
+
+  if ((unit.panneaux || []).includes('dessous') && Number(unit.socleMm) > 0) {
+    try {
+      const { solids } = buildPieds(dims, { socleMm: unit.socleMm })
+      ;(solids || []).forEach((s) => {
+        meshes.push(
+          toMesh(`pied-${s.id}`, s.id, s.positions, s.indices, s.points),
+        )
+      })
+    } catch {
+      /* ignore */
+    }
+  }
 
   return meshes
 }

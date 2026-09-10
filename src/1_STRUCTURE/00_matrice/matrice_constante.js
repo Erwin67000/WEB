@@ -63,6 +63,8 @@ export const DRAWER_FACADE_DOWN_EXTEND_MM = 15
 /**
  * Le bas de la porte descend jusqu’au dessus du dernier tiroir
  * (drawersTopZMm est trop haut : traverse + H, pas le haut de façade).
+ * Si la porte est au-dessus d’un tiroir, on relève encore le bas
+ * de EPAISSEUR_PANNEAU (évite le recouvrement de la façade).
  */
 export const PORTE_TO_DRAWER_DROP_MM = 34
 /** Ouverture porte : 90° autour de Z, 600 ms, ease-in-out. */

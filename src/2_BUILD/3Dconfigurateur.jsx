@@ -155,6 +155,7 @@ function UnitGroup({
           ossatureFinish={unit.ossatureFinish}
           panneauCouleur={unit.panneauCouleur}
           panneauCouleurHex={unit.panneauCouleurHex}
+          socleMm={unit.socleMm}
         />
       </group>
       {pickMode && selected && (

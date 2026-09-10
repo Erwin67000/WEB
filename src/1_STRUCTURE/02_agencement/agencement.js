@@ -174,6 +174,12 @@ export {
 } from './tiroir/tiroir.js'
 
 export { isShelfSizeAllowed } from '../00_matrice/matrice_constante.js'
+export {
+  buildPieds,
+  resolvePiedKind,
+  PIED_INSET_MM,
+  PIED_REGLABLE,
+} from './Z.socle/pieds.js'
 
 export function createModule(kind, bayIndex = 0, extras = {}) {
   const base = {
@@ -362,12 +368,16 @@ export function zMaxCoveringShelf(zMax) {
  * recouvre la tablette (points du dessus + EPAISSEUR_PANNEAU).
  */
 export function porteGroupBuildParams(group, dims, modules, extra = {}) {
-  const { coverShelfTop = true, ...rest } = extra
+  const { coverShelfTop = true, forDoor = false, ...rest } = extra
   const params = { ...rest }
   if (group.isBottom) {
     const z = porteZMinFromModules(dims, modules)
-    if (z > 0) params.zMin = z
-    else if (group.zMin > 0.5) params.zMin = group.zMin
+    if (z > 0) {
+      params.zMin =
+        z + (forDoor ? Number(EPAISSEUR_PANNEAU) || 15 : 0)
+    } else if (group.zMin > 0.5) {
+      params.zMin = group.zMin
+    }
   } else if (group.zMin > 0.5) {
     params.zMin = group.zMin
   }

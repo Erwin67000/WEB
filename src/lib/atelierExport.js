@@ -388,6 +388,7 @@ export function buildAtelierRows(state) {
         const params = porteGroupBuildParams(g, dims, modules, {
           ...leaf.extra,
           coverShelfTop: true,
+          forDoor: true,
         })
         const pts = panneauPoints('porte', dims, { epaisseur: epD, ...params })
         const box = aabb(pts)
