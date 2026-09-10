@@ -344,14 +344,17 @@ export function buildTiroir(dims, layout, mod = {}, opts = {}) {
     zTraverseTop,
   )
 
+  const boxTop = originZ + wurth.hMm
+  const facadeZMax = Number.isFinite(Number(layout.facadeZMax))
+    ? Number(layout.facadeZMax)
+    : layout.isLastDrawer
+      ? boxTop + (Number(EPAISSEUR_PANNEAU) || 15)
+      : boxTop
   const facadeOpts = {
     zMin: layout.facadeBas
       ? originZ
       : originZ - (Number(DRAWER_FACADE_DOWN_EXTEND_MM) || 20),
-    zMax:
-      originZ +
-      wurth.hMm +
-      (layout.isLastDrawer ? Number(EPAISSEUR_PANNEAU) || 15 : 0),
+    zMax: Math.max(boxTop, facadeZMax),
     epaisseur: EPAISSEUR_PANNEAU,
   }
   const facade = layout.facadeBas

@@ -348,13 +348,19 @@ export function groupPorteBays(bays, selectedIndices = []) {
   }))
 }
 
+/** Relève un zMax de coupe jusqu’au dessus de la tablette. */
+export function zMaxCoveringShelf(zMax) {
+  if (!Number.isFinite(Number(zMax))) return zMax
+  return Number(zMax) + (Number(EPAISSEUR_PANNEAU) || 15)
+}
+
 /**
  * Params zMin/zMax pour buildPorte / buildPanneauComplet.
- * extra.coverShelfTop : porte intermédiaire — le haut recouvre la tablette
- * (points du dessus + EPAISSEUR_PANNEAU). Ne pas passer pour joue / fond.
+ * extra.coverShelfTop (défaut true) : panneau intermédiaire — le haut
+ * recouvre la tablette (points du dessus + EPAISSEUR_PANNEAU).
  */
 export function porteGroupBuildParams(group, dims, modules, extra = {}) {
-  const { coverShelfTop, ...rest } = extra
+  const { coverShelfTop = true, ...rest } = extra
   const params = { ...rest }
   if (group.isBottom) {
     const z = porteZMinFromModules(dims, modules)
@@ -364,10 +370,9 @@ export function porteGroupBuildParams(group, dims, modules, extra = {}) {
     params.zMin = group.zMin
   }
   if (!group.isTop && Number.isFinite(group.zMax)) {
-    params.zMax = Number(group.zMax)
-    if (coverShelfTop) {
-      params.zMax += Number(EPAISSEUR_PANNEAU) || 15
-    }
+    params.zMax = coverShelfTop
+      ? zMaxCoveringShelf(group.zMax)
+      : Number(group.zMax)
   }
   return params
 }
@@ -549,7 +554,9 @@ export function faceGroupBuildParams(group, dims, modules, nom) {
   let params
   if (group?.kind === 'drawer') {
     params = {}
-    if (!group.isTop && Number.isFinite(group.zMax)) params.zMax = group.zMax
+    if (!group.isTop && Number.isFinite(group.zMax)) {
+      params.zMax = zMaxCoveringShelf(group.zMax)
+    }
   } else {
     params = porteGroupBuildParams(group, dims, modules)
   }
@@ -736,6 +743,18 @@ export function moduleLayout(mod, { L, W, H }, moduleList = []) {
     const zSideBottom = zMin
     const zCenter = zSideBottom + drawerH / 2
     const atFloor = Math.abs(zSideBottom - zMin) < 1
+    const isLastDrawer = i === count - 1
+    let facadeZMax = null
+    if (isLastDrawer) {
+      const shelves = moduleList.filter((m) => m.kind === 'shelf')
+      if (shelves.length) {
+        const zTop = shelfZMm(shelves[0], dims, moduleList)
+        if (Number.isFinite(zTop)) facadeZMax = zTop
+      } else {
+        const bounds = shelfZBounds(dims, moduleList)
+        if (bounds.drawerTop > 0) facadeZMax = bounds.zMin
+      }
+    }
     return {
       center: [
         L / 2,
@@ -755,8 +774,10 @@ export function moduleLayout(mod, { L, W, H }, moduleList = []) {
       atFloor,
       /** 1er tiroir + curseur au plancher → façade « bas » */
       facadeBas: i === 0 && atFloor,
-      /** Dernier tiroir (ou le seul) : façade recouvre la tablette du dessus. */
-      isLastDrawer: i === count - 1,
+      /** Dernier tiroir (ou le seul) : façade jusqu’au dessus de la 1re tablette. */
+      isLastDrawer,
+      /** Z haut de façade si dernier tiroir (dessus tablette), sinon null. */
+      facadeZMax,
       hMm: drawerH,
       licMm: wurth.licMm,
       lwkMm: wurth.lwkMm,

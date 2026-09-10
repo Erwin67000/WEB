@@ -846,6 +846,7 @@ function TiroirMesh({
     layout?.wurth?.depthMm,
     layout?.facadeBas,
     layout?.isLastDrawer,
+    layout?.facadeZMax,
     layout?.drawerIndex,
     mod?.hMm,
     mod?.id,
