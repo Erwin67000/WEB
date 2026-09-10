@@ -35,6 +35,7 @@ import {
   EPAISSEUR_PANNEAU,
   PORTE_OPEN_DURATION_MS,
   PORTE_OPEN_ANGLE_RAD,
+  isShelfSizeAllowed,
 } from '../00_matrice/matrice_constante.js'
 
 import { useActiveConfigStore } from '../../store/ConfigStoreContext.jsx'
@@ -985,6 +986,7 @@ export function ModulesMesh({
       {modules.map((mod) => {
         const layout = moduleLayout(mod, dims, modules)
         if (mod.kind === 'shelf') {
+          if (!isShelfSizeAllowed(dims)) return null
           return (
             <TabletteMesh
               key={mod.id}

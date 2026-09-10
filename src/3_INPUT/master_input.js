@@ -125,6 +125,7 @@ export function buildMasterInput(state) {
       ossatureFinitionNote: unit.ossatureFinitionNote || '',
       panneauCouleur: unit.panneauCouleur || 'gris_cendre',
       panneaux: toggles,
+      socleMm: unit.socleMm ?? 0,
       modules,
       ossature_vertices: vertices,
       ossature_by_arete: ossature,

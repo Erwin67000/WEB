@@ -6,6 +6,13 @@ import {
   PANNEAU_COULEURS,
   EPAISSEUR_PANNEAU,
   areteExtrusionMm,
+  SHELF_L_MAX_MM,
+  SHELF_W_MAX_MM,
+  isShelfSizeAllowed,
+  SOCLE_OPTIONS_MM,
+  DESSUS_VARIANTS,
+  resolveDessusVariant,
+  unitSocleMm,
 } from '../1_STRUCTURE/00_matrice/matrice_constante.js'
 import {
   MODULE_KINDS,
@@ -258,6 +265,8 @@ export default function ControlPanel() {
   const setModuleZ = useActiveConfigStore((s) => s.setModuleZ)
   const setModuleH = useActiveConfigStore((s) => s.setModuleH)
   const togglePanneau = useActiveConfigStore((s) => s.togglePanneau)
+  const setDessusVariant = useActiveConfigStore((s) => s.setDessusVariant)
+  const setSocleMm = useActiveConfigStore((s) => s.setSocleMm)
   const removePorteGroup = useActiveConfigStore((s) => s.removePorteGroup)
   const removeFaceGroup = useActiveConfigStore((s) => s.removeFaceGroup)
   const setPorteHinge = useActiveConfigStore((s) => s.setPorteHinge)
@@ -279,6 +288,7 @@ export default function ControlPanel() {
     [units, activeUnitId],
   )
 
+  const socleMm = unit ? unitSocleMm(unit) : 0
   const dimsExt = useMemo(() => {
     if (!unit?.dims) return null
     const { Lreel, Wreel, Hreel } = outsideDimensions(unit.dims)
@@ -287,8 +297,12 @@ export default function ControlPanel() {
       if (!Number.isFinite(v)) return '—'
       return Number.isInteger(v) ? String(v) : v.toFixed(1)
     }
-    return { Lreel: fmt(Lreel), Wreel: fmt(Wreel), Hreel: fmt(Hreel) }
-  }, [unit])
+    return {
+      Lreel: fmt(Lreel),
+      Wreel: fmt(Wreel),
+      Hreel: fmt(Hreel + socleMm),
+    }
+  }, [unit, socleMm])
 
   const porteGroups = useMemo(
     () => (unit ? porteGroupsForUnit(unit) : []),
@@ -310,6 +324,7 @@ export default function ControlPanel() {
   const [flash, setFlash] = useState('')
   const [mobileOpen, setMobileOpen] = useState(false)
   const [drawerWidthAlert, setDrawerWidthAlert] = useState(false)
+  const [shelfSizeAlert, setShelfSizeAlert] = useState(false)
   /** Chip en cours de renommage (id meuble) */
   const [editingUnitId, setEditingUnitId] = useState(null)
   const renameInputRef = useRef(null)
@@ -341,6 +356,12 @@ export default function ControlPanel() {
       setDrawerWidthAlert(false)
     }
   }, [drawerWidthAlert, unit?.dims])
+
+  useEffect(() => {
+    if (shelfSizeAlert && isShelfSizeAllowed(unit?.dims)) {
+      setShelfSizeAlert(false)
+    }
+  }, [shelfSizeAlert, unit?.dims])
 
   useEffect(() => {
     let show = true
@@ -608,12 +629,22 @@ export default function ControlPanel() {
                       const hasDrawers = unit.modules.some(
                         (m) => m.kind === 'drawer',
                       )
+                      const hasShelves = unit.modules.some(
+                        (m) => m.kind === 'shelf',
+                      )
                       if (
                         hasDrawers &&
                         isDrawerWidthAllowed(unit.dims) &&
                         !isDrawerWidthAllowed(next)
                       ) {
                         setDrawerWidthAlert(true)
+                      }
+                      if (
+                        hasShelves &&
+                        isShelfSizeAllowed(unit.dims) &&
+                        !isShelfSizeAllowed(next)
+                      ) {
+                        setShelfSizeAlert(true)
                       }
                       updateDims(unit.id, { L })
                     }}
@@ -624,7 +655,20 @@ export default function ControlPanel() {
                     min={DIM_LIMITS.W.min}
                     max={DIM_LIMITS.W.max}
                     step={DIM_LIMITS.W.step}
-                    onChange={(W) => updateDims(unit.id, { W })}
+                    onChange={(W) => {
+                      const next = { ...unit.dims, W }
+                      const hasShelves = unit.modules.some(
+                        (m) => m.kind === 'shelf',
+                      )
+                      if (
+                        hasShelves &&
+                        isShelfSizeAllowed(unit.dims) &&
+                        !isShelfSizeAllowed(next)
+                      ) {
+                        setShelfSizeAlert(true)
+                      }
+                      updateDims(unit.id, { W })
+                    }}
                   />
                   <SliderDim
                     label={t('config.height')}
@@ -672,6 +716,14 @@ export default function ControlPanel() {
               {dimsExt && (
                 <p className="dims-ext">{t('config.dimsExt', dimsExt)}</p>
               )}
+              {socleMm > 0 && (
+                <p className="dims-ext">
+                  {t('config.heightTotal', {
+                    h: formatMmAsCm(unit.dims.H + socleMm),
+                    socle: formatMmAsCm(socleMm),
+                  })}
+                </p>
+              )}
             </div>
           )}
         </section>
@@ -698,6 +750,13 @@ export default function ControlPanel() {
                         setDrawerWidthAlert(true)
                         return
                       }
+                      if (
+                        k.id === 'shelf' &&
+                        !isShelfSizeAllowed(unit.dims)
+                      ) {
+                        setShelfSizeAlert(true)
+                        return
+                      }
                       addModule(k.id)
                     }}
                   >
@@ -711,7 +770,7 @@ export default function ControlPanel() {
                 </p>
               )}
               <ul className="mod-list">
-                {unit.modules.map((m) => {
+                {[...unit.modules].reverse().map((m) => {
                   const shelfZ =
                     m.kind === 'shelf'
                       ? shelfZMm(m, unit.dims, unit.modules)
@@ -757,14 +816,27 @@ export default function ControlPanel() {
                         </button>
                       </div>
                       {m.kind === 'shelf' && (
-                        <SliderDim
-                          label={t('config.posZ')}
-                          value={Math.round(shelfZ)}
-                          min={Math.round(shelfZMin)}
-                          max={Math.round(shelfZMax)}
-                          step={1}
-                          onChange={(z) => setModuleZ(m.id, z)}
-                        />
+                        <>
+                          {!isShelfSizeAllowed(unit.dims) ? (
+                            <p className="drawer-warn" role="alert">
+                              {t('config.shelfTooLarge', {
+                                maxL: formatMmAsCm(SHELF_L_MAX_MM),
+                                maxP: formatMmAsCm(SHELF_W_MAX_MM),
+                                l: formatMmAsCm(unit.dims.L),
+                                p: formatMmAsCm(unit.dims.W),
+                              })}
+                            </p>
+                          ) : (
+                            <SliderDim
+                              label={t('config.posZ')}
+                              value={Math.round(shelfZ)}
+                              min={Math.round(shelfZMin)}
+                              max={Math.round(shelfZMax)}
+                              step={1}
+                              onChange={(z) => setModuleZ(m.id, z)}
+                            />
+                          )}
+                        </>
                       )}
                       {m.kind === 'drawer' && (
                         <>
@@ -917,6 +989,87 @@ export default function ControlPanel() {
                         </div>
                         )
                       })
+                    }
+                    if (DESSUS_VARIANTS.includes(id)) {
+                      const variant = resolveDessusVariant(unit.panneaux)
+                      if (id !== variant) return []
+                      return [
+                        <div key="dessus" className="panneau-row">
+                          <div className="panneau-row-head">
+                            <span className="panneau-row-name">
+                              {tId('panel', 'dessus', t('panel.dessus'))}
+                            </span>
+                            <button
+                              type="button"
+                              className="btn-icon"
+                              title={t('config.removePanel')}
+                              aria-label={t('config.removePanel')}
+                              onClick={() => setDessusVariant(null)}
+                            >
+                              ×
+                            </button>
+                          </div>
+                          <div className="porte-hinge-row" role="group">
+                            {[
+                              ['dessus_exterieur', t('panel.dessus_exterieur')],
+                              ['dessus_interieur', t('panel.dessus_interieur')],
+                            ].map(([mode, label]) => (
+                              <button
+                                key={mode}
+                                type="button"
+                                className={`porte-hinge-btn${
+                                  variant === mode ? ' active' : ''
+                                }`}
+                                onClick={() => setDessusVariant(mode)}
+                              >
+                                {label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>,
+                      ]
+                    }
+                    if (id === 'dessous') {
+                      return [
+                        <div key="dessous" className="panneau-row">
+                          <div className="panneau-row-head">
+                            <span className="panneau-row-name">
+                              {tId('panel', 'dessous', t('panel.dessous'))}
+                            </span>
+                            <button
+                              type="button"
+                              className="btn-icon"
+                              title={t('config.removePanel')}
+                              aria-label={t('config.removePanel')}
+                              onClick={() => togglePanneau('dessous')}
+                            >
+                              ×
+                            </button>
+                          </div>
+                          <div className="porte-hinge-row" role="group">
+                            {SOCLE_OPTIONS_MM.map((opt) => (
+                              <button
+                                key={opt.id}
+                                type="button"
+                                className={`porte-hinge-btn${
+                                  socleMm === opt.mm ? ' active' : ''
+                                }`}
+                                onClick={() => setSocleMm(opt.mm)}
+                              >
+                                {t(`config.socle_${opt.id}`)}
+                              </button>
+                            ))}
+                          </div>
+                          {socleMm > 0 ? (
+                            <p className="muted drawer-dims-hint">
+                              {t('config.heightTotal', {
+                                h: formatMmAsCm(unit.dims.H + socleMm),
+                                socle: formatMmAsCm(socleMm),
+                              })}
+                            </p>
+                          ) : null}
+                        </div>,
+                      ]
                     }
                     if (id === 'porte') {
                       if (!porteGroups.length) return []
@@ -1202,13 +1355,14 @@ export default function ControlPanel() {
         </PayButton>
       </div>
       {flash && <div className="panel-flash">{flash}</div>}
-      {(drawerWidthAlert || doorAlert) && (
+      {(drawerWidthAlert || shelfSizeAlert || doorAlert) && (
         <div
           className="drawer-alert-overlay"
           role="dialog"
           aria-modal="true"
           onClick={() => {
             setDrawerWidthAlert(false)
+            setShelfSizeAlert(false)
             clearDoorAlert()
           }}
         >
@@ -1222,6 +1376,16 @@ export default function ControlPanel() {
                   min: DYNAMOOV_LWK_MIN_MM,
                   max: DYNAMOOV_LWK_MAX_MM,
                   lwk: drawerInnerWidthMm(unit.dims),
+                })}
+              </p>
+            ) : null}
+            {shelfSizeAlert ? (
+              <p>
+                {t('config.shelfTooLarge', {
+                  maxL: formatMmAsCm(SHELF_L_MAX_MM),
+                  maxP: formatMmAsCm(SHELF_W_MAX_MM),
+                  l: formatMmAsCm(unit.dims.L),
+                  p: formatMmAsCm(unit.dims.W),
                 })}
               </p>
             ) : null}
@@ -1242,6 +1406,7 @@ export default function ControlPanel() {
               className="btn"
               onClick={() => {
                 setDrawerWidthAlert(false)
+                setShelfSizeAlert(false)
                 clearDoorAlert()
               }}
             >

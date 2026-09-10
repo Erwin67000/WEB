@@ -12,6 +12,7 @@ import {
   resolveFaceBays,
   SEGMENTED_FACES,
 } from './agencement.js'
+import { unitHasDessus } from '../00_matrice/matrice_constante.js'
 
 const SCALE = 0.001
 const PAD = 10 // mm — devant la porte pour pouvoir (dé)sélectionner les cases
@@ -20,7 +21,7 @@ const PLANE_THICK = 4
 
 /**
  * Faces sélectionnables.
- * — fond / porte / joue1 / joue2 / dessous / dessus_exterieur
+ * — fond / porte / joue1 / joue2 / dessous / dessus
  */
 /**
  * Aligné sur PANNEAU_DEFS (matrice_panneau) :
@@ -62,7 +63,7 @@ export const FACE_PICK_DEFS = [
     size: (L, W, H) => [L * 0.9, W * 0.9, PLANE_THICK],
   },
   {
-    id: 'dessus_exterieur',
+    id: 'dessus',
     label: 'Dessus',
     center: (L, W, H) => [L / 2, W / 2, H + PAD],
     size: (L, W, H) => [L * 0.9, W * 0.9, PLANE_THICK],
@@ -256,7 +257,11 @@ export default function FacePickPlanes({
           key={face.id}
           face={face}
           dims={dims}
-          active={panneaux.includes(face.id)}
+          active={
+            face.id === 'dessus'
+              ? unitHasDessus(panneaux)
+              : panneaux.includes(face.id)
+          }
           onPick={onPick}
         />
       ))}

@@ -137,6 +137,46 @@ export const LARGEUR_MAX = 2200
 export const HAUTEUR_MIN = 200
 export const HAUTEUR_MAX = 2200
 
+/** Tablettes : L et P max (mm). Au-delà → alerte, tablettes masquées. */
+export const SHELF_L_MAX_MM = 1400
+export const SHELF_W_MAX_MM = 1400
+
+export function isShelfSizeAllowed(dims = {}) {
+  return (
+    (Number(dims.L) || 0) <= SHELF_L_MAX_MM &&
+    (Number(dims.W) || 0) <= SHELF_W_MAX_MM
+  )
+}
+
+/** Variantes mutuellement exclusives du panneau du dessus. */
+export const DESSUS_VARIANTS = ['dessus_interieur', 'dessus_exterieur']
+
+export function resolveDessusVariant(panneaux = []) {
+  return (panneaux || []).find((p) => DESSUS_VARIANTS.includes(p)) || null
+}
+
+export function unitHasDessus(panneaux = []) {
+  return Boolean(resolveDessusVariant(panneaux))
+}
+
+/**
+ * Hauteurs de socle (panneau dessous), mm.
+ * Le meuble est relevé de cette valeur (Z+).
+ */
+export const SOCLE_OPTIONS_MM = [
+  { id: 'petit', mm: 50 },
+  { id: 'moyen', mm: 200 },
+  { id: 'grand', mm: 500 },
+]
+export const SOCLE_DEFAULT_MM = 50
+
+/** Relèvement Z (mm) si le panneau dessous est posé. */
+export function unitSocleMm(unit) {
+  if (!(unit?.panneaux || []).includes('dessous')) return 0
+  const n = Number(unit?.socleMm)
+  return Number.isFinite(n) && n > 0 ? n : 0
+}
+
 
 
 /** @deprecated utiliser PRIX.ossatureParMetre */

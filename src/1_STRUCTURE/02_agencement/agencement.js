@@ -173,6 +173,8 @@ export {
   isDrawerWidthAllowed,
 } from './tiroir/tiroir.js'
 
+export { isShelfSizeAllowed } from '../00_matrice/matrice_constante.js'
+
 export function createModule(kind, bayIndex = 0, extras = {}) {
   const base = {
     id: uid(kind),

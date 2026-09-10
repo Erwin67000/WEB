@@ -43,6 +43,9 @@ import {
   BOIS_ATELIER_ID,
   resolveOssatureFinish,
   PANNEAU_LABELS,
+  isShelfSizeAllowed,
+  SOCLE_DEFAULT_MM,
+  DESSUS_VARIANTS,
 } from '../1_STRUCTURE/00_matrice/matrice_constante.js'
 import {
   captureViewportScreenshot,
@@ -390,6 +393,7 @@ export function createConfigStore(opts = {}) {
       set((s) => ({
         units: s.units.map((u) => {
           if (u.id !== id) return u
+          if (kind === 'shelf' && !isShelfSizeAllowed(u.dims)) return u
           const bayIndex = u.modules.filter((m) => m.kind === kind).length
           const modules = [...u.modules, createModule(kind, bayIndex)]
           return {
@@ -492,6 +496,14 @@ export function createConfigStore(opts = {}) {
       set((s) => ({
         units: s.units.map((u) => {
           if (u.id !== id) return u
+          if (nom === 'dessus') {
+            const has = DESSUS_VARIANTS.some((v) => u.panneaux.includes(v))
+            const without = u.panneaux.filter((p) => !DESSUS_VARIANTS.includes(p))
+            return {
+              ...u,
+              panneaux: has ? without : [...without, 'dessus_exterieur'],
+            }
+          }
           const has = u.panneaux.includes(nom)
           if (has) {
             const clearSeg = SEGMENTED_FACES.includes(nom)
@@ -500,6 +512,7 @@ export function createConfigStore(opts = {}) {
             return {
               ...u,
               panneaux: u.panneaux.filter((p) => p !== nom),
+              ...(nom === 'dessous' ? { socleMm: 0 } : {}),
               ...(nom === 'porte'
                 ? { porteBays: [], porteOpen: {}, porteHinge: {} }
                 : clearSeg),
@@ -516,6 +529,13 @@ export function createConfigStore(opts = {}) {
           }
           if (SEGMENTED_FACES.includes(nom)) {
             return { ...u, panneaux: next, [`${nom}Bays`]: undefined }
+          }
+          if (nom === 'dessous') {
+            return {
+              ...u,
+              panneaux: next,
+              socleMm: u.socleMm > 0 ? u.socleMm : SOCLE_DEFAULT_MM,
+            }
           }
           return { ...u, panneaux: next }
         }),
@@ -753,13 +773,35 @@ export function createConfigStore(opts = {}) {
 
     setDessusVariant: (variant) => {
       const id = get().activeUnitId
-      const group = ['dessus_interieur', 'dessus_exterieur']
+      const group = DESSUS_VARIANTS
       set((s) => ({
         units: s.units.map((u) => {
           if (u.id !== id) return u
           const without = u.panneaux.filter((p) => !group.includes(p))
           if (!variant) return { ...u, panneaux: without }
           return { ...u, panneaux: [...without, variant] }
+        }),
+        dirty: true,
+      }))
+    },
+
+    setSocleMm: (mm) => {
+      const id = get().activeUnitId
+      const n = Number(mm)
+      set((s) => ({
+        units: s.units.map((u) => {
+          if (u.id !== id) return u
+          if (!Number.isFinite(n) || n <= 0) {
+            return {
+              ...u,
+              socleMm: 0,
+              panneaux: (u.panneaux || []).filter((p) => p !== 'dessous'),
+            }
+          }
+          const panneaux = (u.panneaux || []).includes('dessous')
+            ? u.panneaux
+            : [...(u.panneaux || []), 'dessous']
+          return { ...u, socleMm: n, panneaux }
         }),
         dirty: true,
       }))
