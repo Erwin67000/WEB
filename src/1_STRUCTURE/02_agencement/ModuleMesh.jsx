@@ -410,7 +410,7 @@ export function FaceSegments({
 
 function FaceSegmentMesh({ nom, dims, modules, group, color, epaisseur, pickable }) {
   const data = useMemo(() => {
-    const params = faceGroupBuildParams(group, dims, modules)
+    const params = faceGroupBuildParams(group, dims, modules, nom)
     return buildPanneauComplet(nom, dims, {
       epaisseur,
       ...params,

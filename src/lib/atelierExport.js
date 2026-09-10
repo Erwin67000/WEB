@@ -343,10 +343,11 @@ export function buildAtelierRows(state) {
     for (const nom of SEGMENTED_FACES) {
       const groups = faceGroupsForUnit(unit, nom)
       groups.forEach((g, gi) => {
-        const params = faceGroupBuildParams(g, dims, modules)
+        const params = faceGroupBuildParams(g, dims, modules, nom)
         const pts = panneauPoints(nom, dims, { epaisseur: epP, ...params })
         const box = aabb(pts)
         const cov = couvertureOf(g, panelBays.length)
+        const typeNote = params.type ? ` · ${params.type}` : ''
         rows.push(
           row({
             ...ctx,
@@ -365,7 +366,7 @@ export function buildAtelierRows(state) {
             ),
             epaisseur_mm: mm(epP),
             ...usinageFromAabb(box),
-            notes: `${PANNEAU_LABELS[nom] || nom} · ${cov}`,
+            notes: `${PANNEAU_LABELS[nom] || nom} · ${cov}${typeNote}`,
           }),
         )
       })

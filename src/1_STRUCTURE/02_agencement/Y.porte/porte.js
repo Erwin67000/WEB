@@ -12,6 +12,8 @@ import {
   PANNEAU_DEFS,
   Panneau,
   computeQuatreRectangles,
+  RECTANGLE_3BISEAUX,
+  RECTANGLE_2BISEAUX,
 } from '../../00_matrice/matrice_panneau.js'
 
 export function computePorteRectangles(dims, params = {}) {
@@ -22,6 +24,8 @@ export function computePorteRectangles(dims, params = {}) {
     epaisseur: params.epaisseur ?? EPAISSEUR_PANNEAU,
     zMin: params.zMin,
     zMax: params.zMax,
+    type: params.type,
+    coteDroit: params.coteDroit,
   })
 }
 
@@ -59,21 +63,21 @@ export function buildPorte(dims, params = {}) {
 
 /**
  * Façade du **1er tiroir calé tout en bas**.
- * Géométrie à définir ici (biseau bas / points d’arêtes, etc.).
- *
- * Défaut actuel : porte, bas = Z naturel de la porte, haut = Z haut du tiroir.
+ * rectangle-3biseaux : biseau 45° bas / gauche / droite, tranche haute plate (plan Z).
  */
 export function buildFacadeTiroirBas(dims, { zMax, epaisseur } = {}) {
   return buildPorte(dims, {
     id: 'facade',
     zMax,
     epaisseur: epaisseur ?? EPAISSEUR_PANNEAU,
+    type: RECTANGLE_3BISEAUX,
+    coteDroit: 'zMax',
   })
 }
 
 /**
  * Façade de tous les **autres cas** (2e tiroir, 1er relevé, …).
- * Dépend uniquement des dimensions du tiroir et de sa position Z.
+ * rectangle-2biseaux : biseau 45° gauche / droite, tranches haut et bas plates (plan Z).
  */
 export function buildFacadeTiroir(dims, { zMin, zMax, epaisseur } = {}) {
   return buildPorte(dims, {
@@ -81,5 +85,6 @@ export function buildFacadeTiroir(dims, { zMin, zMax, epaisseur } = {}) {
     zMin,
     zMax,
     epaisseur: epaisseur ?? EPAISSEUR_PANNEAU,
+    type: RECTANGLE_2BISEAUX,
   })
 }

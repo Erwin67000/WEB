@@ -10,6 +10,13 @@
  *   decale[i]    = base[i] − DECALAGE × [0,1,0]
  *   tolerance[i] = decale[i] − TOLERANCE × [0,1,0]
  *   arriere[i]   = tolerance[i] + EPAISSEUR × unite[i]
+ *
+ * Types de contour (face arrière décalée) :
+ *   rectangle-4biseaux — biseau 45° sur les 4 côtés (défaut, panneau plein)
+ *   rectangle-3biseaux — biseau 45° sur 3 côtés, 1 côté droit (plan Z)
+ *                        joue partielle haut ou bas ; façade 1er tiroir au sol
+ *   rectangle-2biseaux — biseau 45° sur 2 côtés (Y / X), 2 côtés droits (plan Z)
+ *                        joue partielle milieu ; façades de tiroirs suivantes
  */
 import {
   EPAISSEUR_PANNEAU,
@@ -307,6 +314,86 @@ export const PANNEAU_GROUPES_EXCLUSIFS = {
 }
 
 // ---------------------------------------------------------------------------
+// Types de contour (biseaux 45°)
+// ---------------------------------------------------------------------------
+
+/** Biseau 45° tout autour du rectangle de base. */
+export const RECTANGLE_4BISEAUX = 'rectangle-4biseaux'
+/** Biseau 45° sur 3 côtés ; le 4e (plan Z) reste droit. */
+export const RECTANGLE_3BISEAUX = 'rectangle-3biseaux'
+/** Biseau 45° sur 2 côtés ; les 2 côtés Z restent droits. */
+export const RECTANGLE_2BISEAUX = 'rectangle-2biseaux'
+
+/**
+ * Côtés Z sans biseau, d’après le type de contour.
+ * @param {string} [type]
+ * @param {'zMin'|'zMax'|'bas'|'haut'} [coteDroit] — côté droit si 3 biseaux
+ * @returns {{ zMin: boolean, zMax: boolean }}
+ */
+export function cotesDroitsZ(type, coteDroit) {
+  if (type === RECTANGLE_2BISEAUX || type === 2) {
+    return { zMin: true, zMax: true }
+  }
+  if (type === RECTANGLE_3BISEAUX || type === 3) {
+    if (coteDroit === 'zMin' || coteDroit === 'bas') {
+      return { zMin: true, zMax: false }
+    }
+    return { zMin: false, zMax: true }
+  }
+  return { zMin: false, zMax: false }
+}
+
+/**
+ * Type de contour d’après les bornes Z réellement recalées
+ * (zMin / zMax présents = côté coupé, absent = côté ossature) :
+ *   aucun          → 4 biseaux (panneau plein)
+ *   zMax seul      → 3 biseaux, tranche haute plate
+ *   zMin seul      → 3 biseaux, tranche basse plate
+ *   zMin et zMax   → 2 biseaux, les 2 tranches Z plates
+ *
+ * @param {{ zMin?: number, zMax?: number } | null} bounds
+ */
+export function resolveTypeBiseau(bounds = {}) {
+  const hasZMin = Number.isFinite(Number(bounds?.zMin))
+  const hasZMax = Number.isFinite(Number(bounds?.zMax))
+  if (hasZMin && hasZMax) return { type: RECTANGLE_2BISEAUX }
+  if (!hasZMin && hasZMax) {
+    return { type: RECTANGLE_3BISEAUX, coteDroit: 'zMax' }
+  }
+  if (hasZMin && !hasZMax) {
+    return { type: RECTANGLE_3BISEAUX, coteDroit: 'zMin' }
+  }
+  return { type: RECTANGLE_4BISEAUX }
+}
+
+/**
+ * Annule la composante Z des unites sur les coins dont le côté Z est droit.
+ * Classification des coins via le Z du rectangle de base (après zMin/zMax).
+ *
+ * @param {number[][]} unites
+ * @param {number[][]} base
+ * @param {{ zMin?: boolean, zMax?: boolean }} droit
+ */
+export function maskUniteZ(unites, base, droit = {}) {
+  const dMin = Boolean(droit.zMin)
+  const dMax = Boolean(droit.zMax)
+  if (!unites || (!dMin && !dMax)) {
+    return unites ? unites.map((u) => [...u]) : unites
+  }
+  const zs = base.map((p) => p[2])
+  const zLo = Math.min(...zs)
+  const zHi = Math.max(...zs)
+  return unites.map((u, i) => {
+    const z = base[i][2]
+    const nearerMin = Math.abs(z - zLo) <= Math.abs(z - zHi)
+    if ((dMin && nearerMin) || (dMax && !nearerMin)) {
+      return [u[0], u[1], 0]
+    }
+    return [...u]
+  })
+}
+
+// ---------------------------------------------------------------------------
 // Helpers vectoriels
 // ---------------------------------------------------------------------------
 
@@ -377,13 +464,15 @@ export function computeQuatreRectangles(def, byId, params = {}) {
   const tol = params.tolerance ?? def.tolerance ?? TOLERANCE
   const dec = params.decalage ?? def.decalage ?? DECALAGE_PANNEAU
   const axe = def.axe_decalage ?? [0, 1, 0]
-  const tolUnites = def.tolerance_unite ?? [
+  const type = params.type ?? def.type ?? RECTANGLE_4BISEAUX
+  const coteDroit = params.coteDroit ?? def.coteDroit
+  let tolUnites = def.tolerance_unite ?? [
     [-1, 0, -1],
     [1, 0, -1],
     [1, 0, 1],
     [-1, 0, 1],
   ]
-  const arrUnites = def.arriere_unite
+  let arrUnites = def.arriere_unite
 
   let base = makeRectangleBase(byId, def.rectangle_base)
   const hasZMin = Number.isFinite(Number(params.zMin))
@@ -416,6 +505,13 @@ export function computeQuatreRectangles(def, byId, params = {}) {
       p[2],
     ])
   }
+
+  const droitZ = cotesDroitsZ(type, coteDroit)
+  if (droitZ.zMin || droitZ.zMax) {
+    tolUnites = maskUniteZ(tolUnites, base, droitZ)
+    arrUnites = maskUniteZ(arrUnites, base, droitZ)
+  }
+
   const decale = makeRectangleDecale(base, dec, axe)
   const tolerance = makeRectangleTolerance(decale, tol, tolUnites)
   const arriere = makeRectangleArriere(tolerance, ep, arrUnites)
@@ -425,7 +521,13 @@ export function computeQuatreRectangles(def, byId, params = {}) {
     decale,
     tolerance,
     arriere,
-    params: { epaisseur: ep, tolerance: tol, decalage: dec },
+    params: {
+      epaisseur: ep,
+      tolerance: tol,
+      decalage: dec,
+      type,
+      coteDroit: coteDroit ?? null,
+    },
   }
 }
 
@@ -522,6 +624,12 @@ export default {
   ligne_panneau,
   face_panneau,
   PANNEAU_DEFS,
+  RECTANGLE_4BISEAUX,
+  RECTANGLE_3BISEAUX,
+  RECTANGLE_2BISEAUX,
+  cotesDroitsZ,
+  resolveTypeBiseau,
+  maskUniteZ,
   moinsVec,
   plusVec,
   makeRectangleBase,

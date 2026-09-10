@@ -108,7 +108,7 @@ function collectUnitMeshes(unit, state) {
     const groups = faceGroupsForUnit(unit, nom)
     groups.forEach((g, gi) => {
       try {
-        const params = faceGroupBuildParams(g, dims, modules)
+        const params = faceGroupBuildParams(g, dims, modules, nom)
         const { panneau } = buildPanneauComplet(nom, dims, {
           epaisseur: epP,
           ...params,

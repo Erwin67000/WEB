@@ -16,9 +16,8 @@ import { buildGeometrie } from '../00_matrice/matrice_geometrie.js'
 import {
   PANNEAU_DEFS,
   Panneau,
-  face_panneau,
-  ligne_panneau,
   computeQuatreRectangles,
+  resolveTypeBiseau,
 } from '../00_matrice/matrice_panneau.js'
 import { buildTraversePair } from './traverse.js'
 import {
@@ -105,7 +104,13 @@ export function buildPanneaux(dims, noms = ['fond'], params = {}) {
 }
 
 /** Expose topologie pour debug / inspection. */
-export { face_panneau, ligne_panneau, PANNEAU_DEFS, Panneau }
+export {
+  face_panneau,
+  ligne_panneau,
+  PANNEAU_DEFS,
+  Panneau,
+  resolveTypeBiseau,
+} from '../00_matrice/matrice_panneau.js'
 
 // ---------------------------------------------------------------------------
 // Modules — orchestration
@@ -532,13 +537,18 @@ export function faceGroupsForUnit(unit, faceId) {
   return groupPorteBays(bays, selected)
 }
 
-export function faceGroupBuildParams(group, dims, modules) {
+export function faceGroupBuildParams(group, dims, modules, nom) {
+  let params
   if (group?.kind === 'drawer') {
-    const params = {}
+    params = {}
     if (!group.isTop && Number.isFinite(group.zMax)) params.zMax = group.zMax
-    return params
+  } else {
+    params = porteGroupBuildParams(group, dims, modules)
   }
-  return porteGroupBuildParams(group, dims, modules)
+  if (nom === 'joue1' || nom === 'joue2') {
+    Object.assign(params, resolveTypeBiseau(params))
+  }
+  return params
 }
 
 export function panelBaysOverlappingZ(panelBays, zMin, zMax) {
