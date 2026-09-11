@@ -13,7 +13,9 @@ import {
   panneauLabel,
   TVA,
   EPAISSEUR_PANNEAU,
+  resolveAreteSection,
 } from '../1_STRUCTURE/00_matrice/matrice_constante.js'
+import { outsideDimensions } from '../1_STRUCTURE/00_matrice/matrice_geometrie.js'
 import { MODULE_KINDS } from '../1_STRUCTURE/00_matrice/matrice_configuration.js'
 import { getCatalogItem } from '../data/catalog.js'
 import FurniturePreview3D from '../components/FurniturePreview3D.jsx'
@@ -126,6 +128,8 @@ function buildProductSpecs(row, t, tId, catalog, lang = 'fr') {
     },
   ].filter((r) => r.value)
 
+  const arete = resolveAreteSection({ L, W, H })
+  const ext = L > 0 && W > 0 && H > 0 ? outsideDimensions({ L, W, H }) : null
   const dimensions = [
     {
       label: t('article.spec.length'),
@@ -138,6 +142,16 @@ function buildProductSpecs(row, t, tId, catalog, lang = 'fr') {
     {
       label: t('article.spec.height'),
       value: H > 0 ? formatMm(H, lang) : null,
+    },
+    {
+      label: t('article.spec.envelope'),
+      value: ext
+        ? `${Math.round(ext.Lreel)} × ${Math.round(ext.Wreel)} × ${Math.round(ext.Hreel)} mm`
+        : null,
+    },
+    {
+      label: t('article.spec.edgeSection'),
+      value: arete?.label ? `${arete.label} mm` : null,
     },
   ].filter((r) => r.value)
 
@@ -176,8 +190,23 @@ function buildProductSpecs(row, t, tId, catalog, lang = 'fr') {
     {
       label: t('article.spec.drawerHeight'),
       value: (() => {
-        const h = modules.find((m) => m.kind === 'drawer' && m.hMm)?.hMm
-        return h ? formatMm(h, lang) : null
+        const hs = modules
+          .filter((m) => m.kind === 'drawer')
+          .map((m) => Number(m.hMm))
+          .filter((n) => Number.isFinite(n) && n > 0)
+        if (!hs.length) return null
+        const uniq = [...new Set(hs.map((n) => Math.round(n)))]
+        return uniq.map((h) => formatMm(h, lang)).join(' · ')
+      })(),
+    },
+    {
+      label: t('article.spec.shelfPositions'),
+      value: (() => {
+        const zs = modules
+          .filter((m) => m.kind === 'shelf' && Number.isFinite(Number(m.zMm)))
+          .map((m) => Math.round(Number(m.zMm)))
+        if (!zs.length) return null
+        return zs.map((z) => formatMm(z, lang)).join(' · ')
       })(),
     },
   ].filter((r) => r.value)

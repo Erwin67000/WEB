@@ -3,8 +3,8 @@
  *
  * Source de vérité (atelier) :
  *   src/1_STRUCTURE/03_bibliotheque/modele_boutique.csv
- * Servi après `npm run sync:catalogue` :
- *   public/catalogue/modele_boutique.csv → /catalogue/modele_boutique.csv
+ * Servi (dev : fichier atelier direct) :
+ *   /catalogue/modele_boutique.csv
  *
  * API async : loadCatalog() / getCatalogItem(id)
  */

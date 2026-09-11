@@ -17,6 +17,64 @@ const boutiqueDir = path.join(
 )
 
 /**
+ * En dev, /catalogue/modele_boutique.csv = le CSV atelier
+ * (src/1_STRUCTURE/03_bibliotheque/), pas une copie stale de public/.
+ */
+function boutiqueCsvDevPlugin() {
+  const atelierCsv = path.join(
+    rootDir,
+    'src',
+    '1_STRUCTURE',
+    '03_bibliotheque',
+    'modele_boutique.csv',
+  )
+  const sidecarCsv = path.join(
+    rootDir,
+    'src',
+    '1_STRUCTURE',
+    '03_bibliotheque',
+    'modele_boutique.utf8.csv',
+  )
+  const isOleOrZip = (buf) =>
+    buf &&
+    buf.length >= 4 &&
+    ((buf[0] === 0xd0 && buf[1] === 0xcf && buf[2] === 0x11) ||
+      (buf[0] === 0x50 && buf[1] === 0x4b))
+  const pickCsv = () => {
+    if (fs.existsSync(atelierCsv)) {
+      try {
+        const buf = fs.readFileSync(atelierCsv)
+        if (!isOleOrZip(buf)) return atelierCsv
+      } catch {
+        /* locked / unreadable */
+      }
+    }
+    if (fs.existsSync(sidecarCsv)) return sidecarCsv
+    return atelierCsv
+  }
+  return {
+    name: 'philae-boutique-csv',
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const url = req.url?.split('?')[0] ?? ''
+        if (url !== '/catalogue/modele_boutique.csv') {
+          next()
+          return
+        }
+        const filePath = pickCsv()
+        if (!fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) {
+          next()
+          return
+        }
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8')
+        res.setHeader('Cache-Control', 'no-cache')
+        fs.createReadStream(filePath).pipe(res)
+      })
+    },
+  }
+}
+
+/**
  * Sert /structure/* depuis le monorepo (matrice_catalogue, GLB, docs…).
  * Priorité monorepo ; sinon public/structure.
  */
@@ -63,7 +121,12 @@ function structureStaticPlugin() {
 }
 
 export default defineConfig({
-  plugins: [react(), structureStaticPlugin(), cadExportDevPlugin()],
+  plugins: [
+    react(),
+    boutiqueCsvDevPlugin(),
+    structureStaticPlugin(),
+    cadExportDevPlugin(),
+  ],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

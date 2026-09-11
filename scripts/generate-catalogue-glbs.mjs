@@ -72,6 +72,7 @@ const {
   faceGroupBuildParams,
   SEGMENTED_FACES,
   pinFirstShelfOnDrawers,
+  buildPieds,
 } = await import(
   pathToFileURL(path.join(root, 'src/1_STRUCTURE/02_agencement/agencement.js')).href
 )
@@ -93,42 +94,57 @@ const { buildTablette } = await import(
 
 /** Couleur panneau par défaut (si non spécifiée dans le modèle) */
 const BOUTIQUE_PANNEAU_COULEUR = 'olive'
-const { parseMatriceCatalogue, parseMatriceCatalogueWorkbook } = await import(
+const { parseBoutiqueFile } = await import(
   pathToFileURL(path.join(root, 'src/1_STRUCTURE/00_matrice/matrice_catalogue.js')).href
 )
 
-function readCsvText(p) {
-  const raw = fs.readFileSync(p)
-  let text = raw.toString('utf8')
-  const looksBroken =
-    text.includes('\uFFFD') ||
-    (/Biblioth.|entr.|Etag./.test(text) &&
-      !/Bibliothèque|entrée|Etagère/.test(text))
-  if (looksBroken) text = raw.toString('latin1')
-  return text
+function isOleOrZip(buf) {
+  if (!buf || buf.length < 4) return false
+  if (buf[0] === 0xd0 && buf[1] === 0xcf && buf[2] === 0x11) return true
+  if (buf[0] === 0x50 && buf[1] === 0x4b) return true
+  return false
 }
 
 function loadCatalogueRows() {
-  for (const p of [modeleXlsSrc, modeleXlsPublic, modeleXlsxSrc, modeleXlsxPublic]) {
-    if (fs.existsSync(p)) {
-      const rows = parseMatriceCatalogueWorkbook(fs.readFileSync(p))
+  const sidecar = path.join(
+    root,
+    'src/1_STRUCTURE/03_bibliotheque/modele_boutique.utf8.csv',
+  )
+  const candidates = [
+    modeleSrc,
+    sidecar,
+    modelePath,
+    modeleXlsxSrc,
+    modeleXlsSrc,
+    modeleXlsxPublic,
+    modeleXlsPublic,
+    csvPath,
+    xlsxPath,
+  ]
+  for (const p of candidates) {
+    if (!fs.existsSync(p)) continue
+    try {
+      const buf = fs.readFileSync(p)
+      // Un .csv Excel binaire est ignoré s’il existe un vrai CSV à côté
+      if (
+        p === modeleSrc &&
+        isOleOrZip(buf) &&
+        (fs.existsSync(sidecar) || fs.existsSync(modelePath))
+      ) {
+        console.log(
+          '[generate-glbs] skip Excel binaire',
+          path.relative(root, p),
+        )
+        continue
+      }
+      const rows = parseBoutiqueFile(buf)
       if (rows?.length) {
-        console.log('[generate-glbs] source XLS', path.relative(root, p))
+        console.log('[generate-glbs] source', path.relative(root, p))
         return rows
       }
+    } catch (e) {
+      console.warn('[generate-glbs] skip', path.relative(root, p), e.message)
     }
-  }
-  for (const p of [modelePath, modeleSrc, csvPath]) {
-    if (fs.existsSync(p) && p.endsWith('.csv')) {
-      const rows = parseMatriceCatalogue(readCsvText(p))
-      if (rows?.length) {
-        console.log('[generate-glbs] source CSV', path.relative(root, p))
-        return rows
-      }
-    }
-  }
-  if (fs.existsSync(xlsxPath)) {
-    return parseMatriceCatalogueWorkbook(fs.readFileSync(xlsxPath))
   }
   return null
 }
@@ -321,6 +337,7 @@ function buildRowGroup(row) {
     fondBays: row.fondBays,
     joue1Bays: row.joue1Bays,
     joue2Bays: row.joue2Bays,
+    socleMm: row.socleMm,
   }
   for (const nom of SEGMENTED_FACES) {
     if (!(row.panneaux || []).includes(nom)) continue
@@ -378,6 +395,28 @@ function buildRowGroup(row) {
       if (plines) root.add(plines)
     } catch (e) {
       console.warn(`  [skip porte ${g.key}]`, e.message)
+    }
+  }
+
+  if ((row.panneaux || []).includes('dessous') && Number(row.socleMm) > 0) {
+    try {
+      const { solids } = buildPieds(dims, { socleMm: row.socleMm })
+      for (const s of solids || []) {
+        const col =
+          s.material === 'wood'
+            ? woodColor
+            : new THREE.Color(s.color || '#444')
+        root.add(
+          meshFromBuffers(
+            s.positions,
+            s.indices,
+            col,
+            `pied-${s.id}`,
+          ),
+        )
+      }
+    } catch (e) {
+      console.warn(`  [skip pieds ${row.id}]`, e.message)
     }
   }
 

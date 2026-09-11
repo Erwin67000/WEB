@@ -1069,7 +1069,7 @@ export function ModulesMesh({
   )
 }
 
-function PiedsMesh({
+export function PiedsMesh({
   dims,
   panneaux = [],
   socleMm = 0,

@@ -1,20 +1,29 @@
 /**
  * Catalogue boutique — source unique :
- *   src/1_STRUCTURE/03_bibliotheque/modele_boutique.xls
- * Servi en dev/prod via (après sync) :
- *   /catalogue/modele_boutique.xls (+ csv généré)
+ *   src/1_STRUCTURE/03_bibliotheque/modele_boutique.csv  (CSV UTF-8, pas Excel)
+ * Servi en dev/prod :
+ *   /catalogue/modele_boutique.csv
  *
  * Schéma d’entrée (modele_boutique) :
  *   Boutique (O = visible, vide/autre = masqué), ID, Piece/Room, Nom/Name,
  *   L, P, H, Description FR/ENG, tags, couleur_ossature,
  *   porte / fond / joue1 / joue2 / socle / dessus (O = oui, vide = non),
- *   # tiroir, hauteur_tiroir, # tablette, Options
+ *   Pied (petit|moyen|grand) si socle = O,
+ *   # tiroir, hauteur_tiroir, tiroirs_h, # tablette, tablettes_z,
+ *   porte_cases / fond_cases / joue1_cases / joue2_cases (indices de cases, bas→haut)
  *
  * Une ligne = un modèle préconfiguré (Boutique = O + L/P/H renseignés).
  * Cellule vide = non : pas de panneau, module ou option inventé.
+ * Couleur panneau : variable client, jamais lue dans le CSV.
  */
 import * as XLSX from 'xlsx'
-import { PRIX, TVA } from './matrice_constante.js'
+import {
+  PRIX,
+  TVA,
+  resolveAreteSection,
+  SOCLE_OPTIONS_MM,
+  SOCLE_DEFAULT_MM,
+} from './matrice_constante.js'
 
 /** Colonnes documentées (format interne boutique / GLB). */
 export const CATALOGUE_COLUMNS = [
@@ -41,13 +50,13 @@ export const CATALOGUE_COLUMNS = [
   'sku',
 ]
 
-/** URL principale — Excel atelier (colonne Boutique). */
-export const MATRICE_CATALOGUE_URL = '/catalogue/modele_boutique.xls'
+/** URL principale — CSV atelier (colonne Boutique). */
+export const MATRICE_CATALOGUE_URL = '/catalogue/modele_boutique.csv'
 
-/** Fallbacks (CSV généré + ancien pipeline). */
+/** Fallbacks (ancien Excel / pipeline). */
 export const MATRICE_CATALOGUE_FALLBACKS = [
-  '/catalogue/modele_boutique.csv',
   '/catalogue/modele_boutique.xlsx',
+  '/catalogue/modele_boutique.xls',
   '/catalogue/matrice_catalogue.csv',
   '/catalogue/matrice_catalogue.xlsx',
 ]
@@ -194,6 +203,49 @@ function cellStr(v) {
   return String(v).trim()
 }
 
+function parsePipeNums(raw) {
+  if (raw == null || String(raw).trim() === '') return []
+  return String(raw)
+    .split(/[|;,/]+/)
+    .map((s) => Number(String(s).trim().replace(',', '.')))
+    .filter((n) => Number.isFinite(n) && n > 0)
+}
+
+/**
+ * Cases verticales (bas → haut, 0 = plus bas).
+ * vide ou O = toutes les cases (si le panneau est coché).
+ * « 0|2 » = seulement les cases 0 et 2.
+ */
+function parseBayIndices(raw) {
+  const s = String(raw ?? '').trim()
+  if (!s || /^o$/i.test(s)) return undefined
+  const nums = String(s)
+    .split(/[|;,/]+/)
+    .map((x) => Number(String(x).trim()))
+    .filter((n) => Number.isInteger(n) && n >= 0)
+  return nums.length ? [...new Set(nums)].sort((a, b) => a - b) : undefined
+}
+
+function parseSocleKind(raw) {
+  const s = String(raw ?? '').trim().toLowerCase()
+  if (!s) return null
+  const byId = SOCLE_OPTIONS_MM.find((o) => o.id === s)
+  if (byId) return byId
+  const n = Number(s)
+  return SOCLE_OPTIONS_MM.find((o) => o.mm === n) || null
+}
+
+function parseHinge(raw) {
+  const s = String(raw ?? '').trim().toLowerCase()
+  if (!s) return null
+  if (['center', 'centre', 'milieu', 'double', 'middle'].includes(s)) {
+    return 'center'
+  }
+  if (['right', 'droite'].includes(s)) return 'right'
+  if (['left', 'gauche'].includes(s)) return 'left'
+  return null
+}
+
 function slugify(s) {
   return String(s || '')
     .normalize('NFD')
@@ -293,10 +345,11 @@ export function normalizeModeleBoutiqueRow(obj, index = 0, ctx = {}) {
   const taille = cellStr(get('taille', 'Taille'))
   const tagsRaw = cellStr(get('tags', 'Tags'))
   const couleurOss = cellStr(get('couleur_ossature', 'texture', 'ossature_finish'))
-  const couleurPan = cellStr(get('couleur_panneau', 'panneauCouleur'))
   const nTiroir = Number(get('# tiroir', 'nb_tiroir', 'tiroirs')) || 0
   const nTablette = Number(get('# tablette', 'nb_tablette', 'tablettes')) || 0
   const hTiroir = Number(get('hauteur_tiroir', 'hauteur tiroir', 'h_tiroir')) || 0
+  const tiroirsH = parsePipeNums(get('tiroirs_h', 'tiroirs h', 'hauteurs_tiroir'))
+  const tablettesZ = parsePipeNums(get('tablettes_z', 'tablettes z', 'z_tablette'))
   const options = cellStr(get('Options', 'options'))
 
   // Actif seulement si dimensions + nom
@@ -334,14 +387,35 @@ export function normalizeModeleBoutiqueRow(obj, index = 0, ctx = {}) {
   const nameEn = nameEnCell || ctx.lastNameEn || ''
   const categoryEn = roomEnCell || ctx.lastRoomEn || ''
 
-  // Modules
+  // Modules — tiroirs d’abord (empilement bas), tablettes ensuite.
+  const nDrawers = Math.max(nTiroir, tiroirsH.length)
+  const nShelves = Math.max(nTablette, tablettesZ.length)
+  const modules = []
+  let modI = 0
+  for (let b = 0; b < nDrawers; b++) {
+    const hMm = tiroirsH[b] || hTiroir || undefined
+    modules.push({
+      id: `mod-${modI++}`,
+      kind: 'drawer',
+      bayIndex: b,
+      openFactor: 0,
+      ...(hMm ? { hMm } : {}),
+    })
+  }
+  for (let b = 0; b < nShelves; b++) {
+    const zMm = tablettesZ[b]
+    modules.push({
+      id: `mod-${modI++}`,
+      kind: 'shelf',
+      bayIndex: b,
+      openFactor: 0,
+      ...(Number.isFinite(zMm) ? { zMm } : {}),
+    })
+  }
   const modParts = []
-  if (nTablette > 0) modParts.push(`shelf:${nTablette}`)
-  if (nTiroir > 0) modParts.push(`drawer:${nTiroir}`)
+  if (nShelves > 0) modParts.push(`shelf:${nShelves}`)
+  if (nDrawers > 0) modParts.push(`drawer:${nDrawers}`)
   const modulesSpec = modParts.join('|')
-  const modules = parseModulesSpec(modulesSpec).map((m) =>
-    m.kind === 'drawer' && hTiroir > 0 ? { ...m, hMm: hTiroir } : m,
-  )
 
   // Panneaux O/N
   const panneaux = []
@@ -381,10 +455,24 @@ export function normalizeModeleBoutiqueRow(obj, index = 0, ctx = {}) {
 
   const tags = parseTagsField(tagsRaw, taille, type ? `#${slugify(type)}` : '')
   const finish = (couleurOss || 'brut').toLowerCase()
-  const panneauCouleur =
-    COULEUR_PANNEAU_MAP[(couleurPan || 'olive').toLowerCase()] || 'olive'
+
+  const socleKind = panneaux.includes('dessous')
+    ? parseSocleKind(
+        get('Pied', 'pied', 'Section Pied', 'type_socle', 'socle_type'),
+      ) || SOCLE_OPTIONS_MM.find((o) => o.mm === SOCLE_DEFAULT_MM)
+    : null
+  const socleMm = socleKind?.mm || 0
+
+  const porteBays = parseBayIndices(get('porte_cases'))
+  const fondBays = parseBayIndices(get('fond_cases'))
+  const joue1Bays = parseBayIndices(
+    get('joue1_cases', 'joue_cases', 'joue_gauche_cases'),
+  )
+  const joue2Bays = parseBayIndices(get('joue2_cases', 'joue_droite_cases'))
+  const porteHingeDefault = parseHinge(get('porte_charniere', 'charniere'))
 
   const price = estimatePriceTtc({ L, W: P, H, modules, panneaux })
+  const arete = resolveAreteSection({ L, W: P, H })
 
   const short =
     descriptionFr ||
@@ -419,7 +507,13 @@ export function normalizeModeleBoutiqueRow(obj, index = 0, ctx = {}) {
     modules,
     panneaux_spec: panneaux.join('|'),
     panneaux,
-    panneau_couleur: panneauCouleur,
+    socleMm,
+    socleKind: socleKind?.id || '',
+    porteBays,
+    fondBays,
+    joue1Bays,
+    joue2Bays,
+    porteHingeDefault,
     price_from: price,
     price_ttc_eur: price,
     price_furniture_ttc_eur: price,
@@ -429,12 +523,17 @@ export function normalizeModeleBoutiqueRow(obj, index = 0, ctx = {}) {
     short_description: short,
     descriptionFr: descriptionFr || '',
     descriptionEn: descriptionEn || '',
-    featured: index < 3,
+    featured: hasHeader(obj, 'MiseEnAvant', 'featured')
+      ? isOn(get('MiseEnAvant', 'featured'))
+      : index < 3,
     active,
     sort_order: Number(rawId) || (ctx.lastIdNum || 0) * 10 + index + 1,
     docs_ready: false,
     sku: `PHL-${idNum || id.toUpperCase().slice(0, 12)}`,
     options,
+    arete_mm: arete.label,
+    tablettes_z: tablettesZ,
+    tiroirs_h: tiroirsH.length ? tiroirsH : nDrawers && hTiroir ? [hTiroir] : [],
     source: 'modele_boutique',
   }
 }
@@ -470,7 +569,7 @@ export function normalizeCatalogueRow(obj) {
       modules: parseModulesSpec(modulesSpec),
       panneaux_spec: panneauxSpec,
       panneaux: parsePanneauxSpec(panneauxSpec),
-      panneau_couleur: cellStr(obj.panneau_couleur || obj.panneauCouleur || ''),
+      panneau_couleur: '',
       price_from:
         Number(obj.price_furniture_ttc_eur || obj.price_ttc_eur) || 0,
       price_ttc_eur:
@@ -525,6 +624,36 @@ export function parseMatriceCatalogue(text) {
   return finalizeRows(rows)
 }
 
+/** OLE (.xls) ou ZIP (.xlsx) — Excel parfois enregistré avec l’extension .csv. */
+export function isExcelBuffer(buf) {
+  if (!buf || buf.length < 8) return false
+  const b0 = buf[0]
+  const b1 = buf[1]
+  const b2 = buf[2]
+  const b3 = buf[3]
+  if (b0 === 0xd0 && b1 === 0xcf && b2 === 0x11 && b3 === 0xe0) return true
+  if (b0 === 0x50 && b1 === 0x4b) return true
+  return false
+}
+
+/**
+ * Lit un fichier boutique (vrai CSV UTF-8, .xls, .xlsx, ou .csv Excel).
+ * @param {Uint8Array|Buffer} data
+ */
+export function parseBoutiqueFile(data) {
+  const buf = data instanceof Uint8Array ? data : new Uint8Array(data)
+  if (isExcelBuffer(buf)) return parseMatriceCatalogueWorkbook(buf)
+  let text = new TextDecoder('utf-8').decode(buf)
+  if (
+    text.includes('\uFFFD') ||
+    (/Biblioth.|entr.|Etag./.test(text) &&
+      !/Bibliothèque|entrée|Etagère/.test(text))
+  ) {
+    text = new TextDecoder('latin1').decode(buf)
+  }
+  return parseMatriceCatalogue(text)
+}
+
 export function parseMatriceCatalogueWorkbook(data) {
   const wb = XLSX.read(data, { type: 'array', cellDates: false, raw: false })
   const sheetName =
@@ -562,10 +691,6 @@ let _cache = null
 let _cacheAt = 0
 const CACHE_MS = 2000
 
-function isExcelUrl(url) {
-  return /\.xlsx?$/i.test(url)
-}
-
 /**
  * Charge le catalogue (fetch).
  */
@@ -582,13 +707,8 @@ export async function loadMatriceCatalogue({ force = false } = {}) {
         lastErr = new Error(`${url} → ${res.status}`)
         continue
       }
-      let rows
-      if (isExcelUrl(url)) {
-        const ab = await res.arrayBuffer()
-        rows = parseMatriceCatalogueWorkbook(new Uint8Array(ab))
-      } else {
-        rows = parseMatriceCatalogue(await res.text())
-      }
+      const ab = await res.arrayBuffer()
+      const rows = parseBoutiqueFile(new Uint8Array(ab))
       if (!rows.length) {
         lastErr = new Error(`${url} → aucune ligne active`)
         continue
@@ -625,6 +745,8 @@ export default {
   normalizeModeleBoutiqueRow,
   parseMatriceCatalogue,
   parseMatriceCatalogueWorkbook,
+  parseBoutiqueFile,
+  isExcelBuffer,
   loadMatriceCatalogue,
   getCatalogueItem,
   clearCatalogueCache,

@@ -1,0 +1,15 @@
+{
+  "files.associations": {
+    "*.csv": "csv"
+  },
+  "workbench.editorAssociations": {
+    "*.csv": "default"
+  },
+  "files.autoGuessEncoding": false,
+  "[csv]": {
+    "editor.wordWrap": "off",
+    "editor.insertSpaces": false
+  },
+  "rainbow_csv.enable_auto_csv_lint": true,
+  "rainbow_csv.autodetection_buffer_size": 200000
+}

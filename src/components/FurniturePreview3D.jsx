@@ -1,7 +1,7 @@
 /**
  * Preview 3D :
  * — Boutique / page produit : GLB figé du catalogue (CatalogGlbPreview)
- * — Fallback rare : pipeline calculé (si pas de productId / pas de GLB)
+ * — Live (couleur, socle/pieds, debug) : même pipeline que le configurateur
  *
  * Le configurateur complet reste dans 3Dconfigurateur.jsx
  * (ouvert seulement via « Configurer »).
@@ -11,17 +11,13 @@ import { Canvas, useFrame } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
 import OssatureView from '../1_STRUCTURE/01_meuble3D/OssatureView.jsx'
-import {
-  ModulesMesh,
-  PanneauxMesh,
-  DoorLeaves,
-  FaceSegments,
-} from '../1_STRUCTURE/02_agencement/ModuleMesh.jsx'
+import AgencementView from '../1_STRUCTURE/02_agencement/ModuleMesh.jsx'
 import {
   EPAISSEUR_PANNEAU,
   EPAISSEUR_PORTE,
   BOIS_ATELIER_ID,
   resolveOssatureFinish,
+  unitLiftMm,
 } from '../1_STRUCTURE/00_matrice/matrice_constante.js'
 
 import { ConfigStoreProvider } from '../store/ConfigStoreContext.jsx'
@@ -59,6 +55,9 @@ function FrozenUnit({ unit }) {
   const dims = unit.dims
   const groupRef = useRef()
   const t0 = useRef(performance.now())
+  const liftMm = unitLiftMm(unit)
+  const liftM = liftMm * SCALE
+  const rotY = (unit.rotationZ || 0) * (Math.PI / 180)
 
   useFrame(() => {
     const g = groupRef.current
@@ -66,63 +65,38 @@ function FrozenUnit({ unit }) {
     const t = Math.min(1, (performance.now() - t0.current) / 480)
     const e = 1 - (1 - t) ** 3
     g.scale.setScalar(0.9 + 0.1 * e)
-    g.position.y = (1 - e) * 0.04
+    g.position.y = liftM + (1 - e) * 0.04
   })
 
   return (
-    <group ref={groupRef}>
+    <group ref={groupRef} position={[0, liftM, 0]}>
       <OssatureView
         dims={dims}
         woodFinish={unit.woodFinish || BOIS_ATELIER_ID}
         ossatureFinish={unit.ossatureFinish || 'brut'}
         wireframe={false}
-        rotationZ={(unit.rotationZ || 0) * (Math.PI / 180)}
+        rotationZ={rotY}
         selected={false}
+        showAxes={false}
+        axesZMm={-liftMm}
       />
-      <group rotation={[0, (unit.rotationZ || 0) * (Math.PI / 180), 0]}>
-        <group scale={[SCALE, SCALE, SCALE]}>
-          <group position={[0, 0, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-            <PanneauxMesh
-              dims={dims}
-              panneaux={unit.panneaux || []}
-              woodFinish={unit.woodFinish}
-              panneauCouleur={unit.panneauCouleur}
-              panneauCouleurHex={unit.panneauCouleurHex}
-            />
-            {['fond', 'joue1', 'joue2'].map((nom) => (
-              <FaceSegments
-                key={nom}
-                nom={nom}
-                dims={dims}
-                modules={unit.modules || []}
-                panneaux={unit.panneaux || []}
-                baysField={unit[`${nom}Bays`]}
-                panneauCouleur={unit.panneauCouleur}
-                panneauCouleurHex={unit.panneauCouleurHex}
-              />
-            ))}
-            <DoorLeaves
-              dims={dims}
-              modules={unit.modules || []}
-              panneaux={unit.panneaux || []}
-              porteBays={unit.porteBays}
-              porteOpen={unit.porteOpen}
-              porteHinge={unit.porteHinge}
-              panneauCouleur={unit.panneauCouleur}
-              panneauCouleurHex={unit.panneauCouleurHex}
-            />
-          </group>
-        </group>
-        <group position={[0, 0, 0]}>
-          <ModulesMesh
-            dims={dims}
-            modules={unit.modules || []}
-            woodFinish={unit.woodFinish}
-            ossatureFinish={unit.ossatureFinish}
-            panneauCouleur={unit.panneauCouleur}
-            panneauCouleurHex={unit.panneauCouleurHex}
-          />
-        </group>
+      <group rotation={[0, rotY, 0]}>
+        <AgencementView
+          dims={dims}
+          modules={unit.modules || []}
+          panneaux={unit.panneaux || []}
+          porteBays={unit.porteBays}
+          porteOpen={unit.porteOpen}
+          porteHinge={unit.porteHinge}
+          fondBays={unit.fondBays}
+          joue1Bays={unit.joue1Bays}
+          joue2Bays={unit.joue2Bays}
+          woodFinish={unit.woodFinish}
+          ossatureFinish={unit.ossatureFinish}
+          panneauCouleur={unit.panneauCouleur}
+          panneauCouleurHex={unit.panneauCouleurHex}
+          socleMm={unit.socleMm}
+        />
       </group>
     </group>
   )
@@ -130,7 +104,9 @@ function FrozenUnit({ unit }) {
 
 function PreviewScene({ unit, autoRotate = false }) {
   const maxDim = Math.max(unit.dims.L, unit.dims.W, unit.dims.H) * SCALE
-  const target = furnitureCenterThree(unit.dims)
+  const [tx, ty, tz] = furnitureCenterThree(unit.dims)
+  const liftM = unitLiftMm(unit) * SCALE
+  const target = [tx, ty + liftM, tz]
 
   return (
     <>
@@ -187,8 +163,14 @@ export function unitFromCatalogRow(row) {
       zMm: m.zMm,
     })),
     panneaux: [...panneaux],
+    socleMm: Number(row.socleMm) || 0,
+    porteBays: row.porteBays,
+    fondBays: row.fondBays,
+    joue1Bays: row.joue1Bays,
+    joue2Bays: row.joue2Bays,
+    porteHinge: row.porteHinge,
     panneauCouleur:
-      row.panneauCouleur || row.panneau_couleur || 'gris_cendre',
+      row.panneauCouleur || row.panneau_couleur || 'olive',
     panneauCouleurHex: row.panneauCouleurHex || row.panneau_couleur_hex,
     positionMm: { x: 0, y: 0, z: 0 },
     rotationZ: 0,
@@ -241,12 +223,16 @@ export default function FurniturePreview3D({
         }
       : catalogRow
 
-  // Préférence : GLB catalogue (pas de recalcul) — sauf si couleur boutique live
+  // Préférence : GLB catalogue — sauf couleur live, socle/pieds (colonne AG), debug
   const dims = catalogRow
     ? { L: catalogRow.L_mm, W: catalogRow.W_mm, H: catalogRow.H_mm }
     : unitProp?.dims
+  const socleMm =
+    Number(catalogRow?.socleMm ?? unitProp?.socleMm) || 0
+  const useLive =
+    forceLive || autoRotate || Boolean(panneauCouleur) || socleMm > 0
 
-  if (glbUrl && !forceLive && !autoRotate && !panneauCouleur) {
+  if (glbUrl && !useLive) {
     return (
       <CatalogGlbPreview
         productId={productId}
@@ -316,10 +302,12 @@ function LiveGeometryPreview({
     [unitProp, catalogRow],
   )
 
-  const cameraPos = useMemo(
-    () => (unit ? furnitureCameraPos(unit.dims) : [-1.35, 0.95, -1.7]),
-    [unit],
-  )
+  const cameraPos = useMemo(() => {
+    if (!unit) return [-1.35, 0.95, -1.7]
+    const pos = furnitureCameraPos(unit.dims)
+    pos[1] += unitLiftMm(unit) * SCALE
+    return pos
+  }, [unit])
 
   if (!unit) {
     return (

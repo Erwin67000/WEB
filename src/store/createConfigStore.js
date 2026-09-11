@@ -1006,9 +1006,24 @@ export function createConfigStore(opts = {}) {
           'olive',
         modules,
         panneaux,
+        socleMm: Number(row.socleMm) || 0,
+        porteBays: row.porteBays,
+        fondBays: row.fondBays,
+        joue1Bays: row.joue1Bays,
+        joue2Bays: row.joue2Bays,
         positionMm: { x: 0, y: 0, z: 0 },
         rotationZ: 0,
       })
+      if (row.porteHingeDefault) {
+        const hinge = {}
+        for (const g of porteGroupsForUnit(unit)) {
+          hinge[g.key] = row.porteHingeDefault
+        }
+        unit.porteHinge = constrainPorteHinges(
+          { ...unit, porteHinge: hinge },
+          dims.L,
+        )
+      }
       set({
         units: [unit],
         activeUnitId: unit.id,
